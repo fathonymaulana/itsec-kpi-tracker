@@ -47,7 +47,7 @@ function computePrimaryValue(kpi: Kpi, valuesBySmId: Record<number, number>): nu
 }
 
 export default function DeptDashboard() {
-  const { user, token } = useAuth()
+  const { user, token, ready } = useAuth()
   const router = useRouter()
   const [kpis, setKpis] = useState<Kpi[]>([])
   const [year, setYear] = useState(CURRENT_YEAR)
@@ -55,9 +55,10 @@ export default function DeptDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!ready) return
     if (!user) { router.push('/login'); return }
     if (user.role !== 'dept_head') { router.push('/board'); return }
-  }, [user, router])
+  }, [user, router, ready])
 
   const fetchData = useCallback(async () => {
     if (!user || !token) return
@@ -94,7 +95,7 @@ export default function DeptDashboard() {
   const offTrack = statuses.filter(s => s === 'off_track').length
   const noData = statuses.filter(s => s === 'no_data').length
 
-  if (!user) return null
+  if (!ready || !user) return null
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F4F4F4]">

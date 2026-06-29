@@ -23,7 +23,7 @@ interface Verification { id: number; kpi_id: number; status: 'pending' | 'verifi
 type TabKey = 'data' | 'anomalies' | 'verifications'
 
 export default function AdminPage() {
-  const { user, token } = useAuth()
+  const { user, token, ready } = useAuth()
   const router = useRouter()
   const [depts, setDepts] = useState<Dept[]>([])
   const [selectedDept, setSelectedDept] = useState<string | null>(null)
@@ -39,10 +39,11 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null)
 
   useEffect(() => {
+    if (!ready) return
     if (!user) { router.push('/login'); return }
     if (user.role === 'dept_head') { router.push('/dept'); return }
     if (user.role === 'board') { router.push('/board'); return }
-  }, [user, router])
+  }, [user, router, ready])
 
   // Fetch departments
   const fetchDepts = useCallback(async () => {
@@ -150,7 +151,7 @@ export default function AdminPage() {
   const pendingVerifications = kpis.filter(k => !getKpiVerification(k.id)).length
   const activeAnomalies = anomalies.filter(a => !a.dismissed).length
 
-  if (!user) return null
+  if (!ready || !user) return null
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F4F4F4]">

@@ -39,7 +39,7 @@ const STATUS_COLORS = {
 }
 
 export default function BoardPage() {
-  const { user, token } = useAuth()
+  const { user, token, ready } = useAuth()
   const router = useRouter()
   const [month, setMonth] = useState(getDefaultMonth())
   const [year, setYear] = useState(getDefaultYear())
@@ -50,9 +50,10 @@ export default function BoardPage() {
   const [showAnomalies, setShowAnomalies] = useState(false)
 
   useEffect(() => {
+    if (!ready) return
     if (!user) { router.push('/login'); return }
     if (user.role === 'dept_head') { router.push('/dept'); return }
-  }, [user, router])
+  }, [user, router, ready])
 
   const fetchData = useCallback(async () => {
     if (!user || !token) return
@@ -72,7 +73,7 @@ export default function BoardPage() {
 
   useEffect(() => { if (user) fetchData() }, [user, fetchData])
 
-  if (!user) return null
+  if (!ready || !user) return null
 
   // Totals across all depts
   const totals = summaries.reduce((acc, d) => ({

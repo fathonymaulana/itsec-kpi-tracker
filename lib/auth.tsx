@@ -11,6 +11,7 @@ export interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null
   token: string | null
+  ready: boolean   // true once localStorage has been checked
   login: (dept_id: string, pin: string) => Promise<void>
   logout: () => void
 }
@@ -18,18 +19,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
+  ready: false,
   login: async () => {},
   logout: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('itsec_kpi_user')
     if (stored) {
       try { setUser(JSON.parse(stored)) } catch { localStorage.removeItem('itsec_kpi_user') }
     }
+    setReady(true)
   }, [])
 
   const login = async (dept_id: string, pin: string) => {
@@ -53,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token: user?.token ?? null, login, logout }}>
+    <AuthContext.Provider value={{ user, token: user?.token ?? null, ready, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

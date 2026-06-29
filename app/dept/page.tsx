@@ -49,7 +49,7 @@ const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1]
 
 export default function DeptPage() {
-  const { user, token } = useAuth()
+  const { user, token, ready } = useAuth()
   const router = useRouter()
   const [kpis, setKpis] = useState<Kpi[]>([])
   const [month, setMonth] = useState(getDefaultMonth())
@@ -64,9 +64,10 @@ export default function DeptPage() {
   const hasFetchedRef = useRef(false)
 
   useEffect(() => {
+    if (!ready) return
     if (!user) { router.push('/login'); return }
     if (user.role !== 'dept_head') { router.push('/board'); return }
-  }, [user, router])
+  }, [user, router, ready])
 
   const fetchKpis = useCallback(async () => {
     if (!user || !token) return
@@ -226,7 +227,7 @@ export default function DeptPage() {
 
   const getKpiAnomalyCount = (kpiId: number) => anomalies.filter(a => a.kpi_id === kpiId).length
 
-  if (!user) return null
+  if (!ready || !user) return null
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F4F4F4]">
