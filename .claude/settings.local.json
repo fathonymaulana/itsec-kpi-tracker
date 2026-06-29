@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\('Path','Machine'\\) + ';' + [System.Environment]::GetEnvironmentVariable\\('Path','User'\\); Set-Location \"c:\\\\Users\\\\ITSEC\\\\Documents\\\\KPI Tracker Dashboard\"; & \"C:\\\\Program Files\\\\Git\\\\cmd\\\\git.exe\" init)"
+    ]
+  }
+}
