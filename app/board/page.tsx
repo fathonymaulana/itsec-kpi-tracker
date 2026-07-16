@@ -3,9 +3,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus, LogOut, FileSearch } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { toast } from 'sonner'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { iconHoverClass } from '@/lib/utils'
+import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
 import { MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -42,7 +45,12 @@ const STATUS_COLORS = {
 export default function BoardPage() {
   const { user, token, ready, logout } = useAuth()
   const router = useRouter()
-  const handleLogout = () => { logout(); router.push('/login') }
+  const handleLogout = () => {
+    const firstName = user?.name?.split(' ')[0]
+    logout()
+    router.push('/login')
+    toast.success('Signed out', { description: firstName ? `See you soon, ${firstName}.` : 'You’ve been signed out safely.' })
+  }
   const [month, setMonth] = useState(getDefaultMonth())
   const [year, setYear] = useState(getDefaultYear())
   const [summaries, setSummaries] = useState<DeptSummary[]>([])
@@ -142,7 +150,7 @@ export default function BoardPage() {
           <div className="flex items-center gap-3 shrink-0 ml-2">
             <button
               onClick={() => router.push('/admin')}
-              className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"
+              className={`flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors ${iconHoverClass}`}
             >
               <FileSearch size={13} />
               <span className="hidden sm:inline">Data Review</span>
@@ -156,9 +164,10 @@ export default function BoardPage() {
                 </AvatarFallback>
               </Avatar>
             </button>
+            <SwitchAccountDialog />
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"
+              className={`flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors ${iconHoverClass}`}
             >
               <LogOut size={13} />
               <span className="hidden sm:inline">Sign out</span>

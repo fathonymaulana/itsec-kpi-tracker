@@ -3,6 +3,8 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
+import { AuthProvider } from '@/lib/auth'
+import { CookieConsent } from '@/components/layout/CookieConsent'
 
 export const metadata: Metadata = {
   title: 'ITSEC KPI Tracker',
@@ -17,8 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="font-sans bg-itsec-grey-8 text-itsec-black antialiased">
-        {children}
-        <Toaster richColors position="top-right" />
+        <AuthProvider>
+          {children}
+          <CookieConsent />
+        </AuthProvider>
+        <Toaster richColors position="bottom-right" visibleToasts={4} />
       </body>
     </html>
   )

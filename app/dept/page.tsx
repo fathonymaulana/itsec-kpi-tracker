@@ -9,6 +9,7 @@ import { KpiCard } from '@/components/kpi/KpiCard'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { iconHoverClass } from '@/lib/utils'
 
 interface SubMetric {
   id: number
@@ -77,7 +78,7 @@ export default function DeptPage() {
       const data = await r.json()
       setKpis(data.kpis || [])
     } catch {
-      toast.error('Failed to load KPIs')
+      toast.error('Couldn’t load your KPIs', { description: 'Please check your connection and try again.' })
     } finally {
       setLoading(false)
     }
@@ -102,7 +103,7 @@ export default function DeptPage() {
       setSavedActuals(actMap)
       setDataSources(ds)
     } catch {
-      toast.error('Failed to load actuals')
+      toast.error('Couldn’t load your saved data', { description: 'Please check your connection and try again.' })
     }
   }, [user, token, year, month])
 
@@ -191,15 +192,15 @@ export default function DeptPage() {
 
       const newAnomalies = (data.anomalies || []) as Anomaly[]
       if (newAnomalies.length > 0) {
-        toast.warning(`${newAnomalies.length} anomaly${newAnomalies.length > 1 ? 'ies' : ''} detected — please review`, {
-          description: newAnomalies.map(a => a.description).join('; '),
+        toast.warning(`Saved — but ${newAnomalies.length} ${newAnomalies.length > 1 ? 'entries look' : 'entry looks'} unusual`, {
+          description: newAnomalies.map(a => a.description).join(' · '),
           duration: 8000,
         })
       } else {
-        toast.success('Data saved successfully')
+        toast.success('Saved', { description: 'Your entries are stored as a draft — Submit Month when ready to send them for review.' })
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Save failed')
+      toast.error('Couldn’t save your entries', { description: err instanceof Error ? err.message : 'Please try again.' })
     } finally {
       setSaving(false)
     }
@@ -217,9 +218,9 @@ export default function DeptPage() {
       const data = await r.json()
       if (!r.ok) throw new Error(data.error || 'Submit failed')
       setSubmitted(true)
-      toast.success(`${MONTHS[month - 1]} ${year} submitted for review`)
+      toast.success(`${MONTHS[month - 1]} ${year} submitted`, { description: 'Your data is locked and ready for Corporate Planning’s review.' })
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Submit failed')
+      toast.error('Couldn’t submit this month', { description: err instanceof Error ? err.message : 'Please try again.' })
     } finally {
       setSaving(false)
     }
@@ -289,7 +290,7 @@ export default function DeptPage() {
         <Button
           size="sm"
           variant="outline"
-          className="h-8 text-xs gap-1.5"
+          className={`h-8 text-xs gap-1.5 ${iconHoverClass}`}
           onClick={handleSave}
           disabled={saving || submitted}
         >
@@ -298,7 +299,7 @@ export default function DeptPage() {
         </Button>
         <Button
           size="sm"
-          className="h-8 text-xs gap-1.5 bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white"
+          className={`h-8 text-xs gap-1.5 bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`}
           onClick={handleSubmit}
           disabled={saving || submitted}
         >

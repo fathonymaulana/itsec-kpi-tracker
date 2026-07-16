@@ -50,7 +50,7 @@ export default function ProfilePage() {
       const data = await r.json()
       setProfile(data)
       setName(data.name || '')
-    } catch { toast.error('Failed to load profile') }
+    } catch { toast.error('Couldn’t load your profile', { description: 'Please refresh the page.' }) }
     finally { setLoading(false) }
   }, [token])
 
@@ -74,9 +74,9 @@ export default function ProfilePage() {
       if (!r.ok) throw new Error(data.error || 'Upload failed')
       refreshUser({ avatar_url: data.avatar_url })
       await fetchProfile()
-      toast.success('Avatar updated')
+      toast.success('Avatar updated', { description: 'Looking good — your new photo is live.' })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed')
+      toast.error('Couldn’t upload that image', { description: err instanceof Error ? err.message : 'Please try a different file.' })
     } finally {
       setUploadingAvatar(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -96,7 +96,7 @@ export default function ProfilePage() {
       refreshUser({ name: name.trim() })
       toast.success('Name updated')
     } catch {
-      toast.error('Failed to update name')
+      toast.error('Couldn’t update your name', { description: 'Please try again.' })
     } finally {
       setSavingName(false)
     }
@@ -115,9 +115,9 @@ export default function ProfilePage() {
       if (!r.ok) throw new Error(data.error || 'Request failed')
       setNewPin('')
       await fetchProfile()
-      toast.success('PIN change requested — waiting on Super Admin approval')
+      toast.success('PIN change requested', { description: 'Your current PIN still works until Super Admin approves the change.' })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Request failed')
+      toast.error('Couldn’t submit that request', { description: err instanceof Error ? err.message : 'Please try again.' })
     } finally {
       setSubmittingPin(false)
     }

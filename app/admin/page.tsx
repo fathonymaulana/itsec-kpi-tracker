@@ -8,6 +8,7 @@ import { AppNav } from '@/components/layout/AppNav'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { Button } from '@/components/ui/button'
+import { iconHoverClass } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -120,9 +121,12 @@ export default function AdminPage() {
       })
       if (!r.ok) throw new Error('Failed')
       await fetchDeptData()
-      toast.success(status === 'verified' ? 'KPI verified' : 'KPI flagged for correction')
+      toast.success(
+        status === 'verified' ? 'Marked as verified' : 'Flagged for correction',
+        { description: status === 'verified' ? 'This KPI is confirmed accurate for the period.' : 'The department will see this flag on their entry.' }
+      )
     } catch {
-      toast.error('Action failed')
+      toast.error('That action didn’t go through', { description: 'Please try again.' })
     } finally {
       setActionLoading(null)
     }
@@ -141,7 +145,7 @@ export default function AdminPage() {
       await fetchDeptData()
       toast.success('Anomaly dismissed')
     } catch {
-      toast.error('Failed to dismiss')
+      toast.error('Couldn’t dismiss that anomaly', { description: 'Please try again.' })
     } finally {
       setActionLoading(null)
     }
@@ -168,7 +172,7 @@ export default function AdminPage() {
         actions={
           <button
             onClick={() => router.push('/board')}
-            className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"
+            className={`flex items-center gap-1.5 text-white/70 hover:text-white text-xs px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors ${iconHoverClass}`}
           >
             <BarChart3 size={13} />
             <span className="hidden sm:inline">Executive Dashboard</span>

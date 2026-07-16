@@ -12,7 +12,9 @@ import {
   CheckCircleLinear as IconCheckCircle,
   CloseCircleLinear as IconCloseCircle,
   ClockCircleLinear as IconClock,
+  TransferHorizontalLinear as IconSwitch,
 } from '@solar-icons/react-perf'
+import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +27,7 @@ import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader,
   SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarInset, SidebarTrigger,
 } from '@/components/ui/sidebar'
+import { iconHoverClass } from '@/lib/utils'
 
 type Role = 'dept_head' | 'corp_planning' | 'board' | 'super_admin'
 interface AdminUser { id: number; name: string; avatar_url: string | null; role: Role; dept_id: string | null; dept_name: string | null; active: boolean; created_at: string }
@@ -63,13 +66,17 @@ export default function SuperAdminPage() {
       setUsers((await uRes.json()).users || [])
       setRequests((await rRes.json()).requests || [])
       setDepts((await dRes.json()).departments || [])
-    } catch { toast.error('Failed to load data') }
+    } catch { toast.error('Couldn’t load the dashboard', { description: 'Please refresh the page.' }) }
     finally { setLoading(false) }
   }, [token])
 
   useEffect(() => { if (user?.role === 'super_admin') fetchAll() }, [user, fetchAll])
 
-  const handleLogout = () => { logout(); router.push('/login') }
+  const handleLogout = () => {
+    logout()
+    router.push('/login')
+    toast.success('Signed out', { description: 'See you next time.' })
+  }
 
   const handleReview = async (id: number, action: 'approve' | 'reject') => {
     if (!token) return
@@ -81,8 +88,11 @@ export default function SuperAdminPage() {
       })
       if (!r.ok) throw new Error()
       await fetchAll()
-      toast.success(action === 'approve' ? 'PIN change approved' : 'PIN change rejected')
-    } catch { toast.error('Action failed') }
+      toast.success(
+        action === 'approve' ? 'PIN change approved' : 'PIN change rejected',
+        { description: action === 'approve' ? 'Their new PIN is active immediately.' : 'They’ll need to submit a new request.' }
+      )
+    } catch { toast.error('That action didn’t go through', { description: 'Please try again.' }) }
   }
 
   const handleToggleActive = async (u: AdminUser) => {
@@ -95,8 +105,10 @@ export default function SuperAdminPage() {
       })
       if (!r.ok) throw new Error()
       await fetchAll()
-      toast.success(u.active ? 'User deactivated' : 'User reactivated')
-    } catch { toast.error('Action failed') }
+      toast.success(u.active ? `${u.name} deactivated` : `${u.name} reactivated`, {
+        description: u.active ? 'They can no longer sign in.' : 'They can sign in again with their existing PIN.',
+      })
+    } catch { toast.error('That action didn’t go through', { description: 'Please try again.' }) }
   }
 
   const pendingCount = requests.filter(r => r.status === 'pending').length
@@ -159,6 +171,16 @@ export default function SuperAdminPage() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
+              <SwitchAccountDialog
+                renderTrigger={(onClick) => (
+                  <SidebarMenuButton onClick={onClick}>
+                    <IconSwitch size={14} />
+                    <span>Switch Account</span>
+                  </SidebarMenuButton>
+                )}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton onClick={handleLogout}>
                 <IconLogout size={14} />
                 <span>Sign out</span>
@@ -176,7 +198,7 @@ export default function SuperAdminPage() {
           {tab === 'users' && (
             <>
               <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 w-56 text-xs" />
-              <Button size="sm" className="h-8 bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white" onClick={() => setDialogUser('new')}>
+              <Button size="sm" className={`h-8 bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`} onClick={() => setDialogUser('new')}>
                 <IconUserPlus size={14} className="mr-1" />
                 Add User
               </Button>
@@ -337,10 +359,13 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
       })
       const data = await r.json()
       if (!r.ok) throw new Error(data.error || 'Save failed')
-      toast.success(initial ? 'User updated' : 'User created')
+      toast.success(
+        initial ? 'Changes saved' : `${name.trim()} added`,
+        { description: initial ? undefined : 'They can sign in with the PIN you set.' }
+      )
       onSaved()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Save failed')
+      toast.error('Couldn’t save that user', { description: err instanceof Error ? err.message : 'Please try again.' })
     } finally {
       setSaving(false)
     }
@@ -420,10 +445,10 @@ function ResetPinDialog({ targetUser, token, onClose, onSaved }: {
         body: JSON.stringify({ new_pin: pin }),
       })
       if (!r.ok) throw new Error()
-      toast.success(`PIN reset for ${targetUser.name}`)
+      toast.success(`PIN reset for ${targetUser.name}`, { description: 'Effective immediately — share the new PIN with them directly.' })
       onSaved()
     } catch {
-      toast.error('Reset failed')
+      toast.error('Couldn’t reset that PIN', { description: 'Please try again.' })
     } finally {
       setSaving(false)
     }

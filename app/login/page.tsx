@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, FormEvent, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -22,8 +22,18 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const { login } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectId = searchParams.get('user')
   const [directory, setDirectory] = useState<DirectoryUser[]>([])
   const [selected, setSelected] = useState('')
   const [pin, setPin] = useState('')
@@ -33,9 +43,14 @@ export default function LoginPage() {
   useEffect(() => {
     fetch('/api/users/directory')
       .then(r => r.json())
-      .then(data => setDirectory(data.users || []))
+      .then(data => {
+        setDirectory(data.users || [])
+        if (preselectId) setSelected(preselectId)
+      })
       .catch(() => setError('Failed to load users. Please refresh.'))
-  }, [])
+  }, [preselectId])
+
+  const preselectedUser = directory.find(u => String(u.id) === preselectId)
 
   const management = directory.filter(u => u.role !== 'dept_head')
   const byDept = directory.filter(u => u.role === 'dept_head').reduce<Record<string, DirectoryUser[]>>((acc, u) => {
@@ -81,7 +96,11 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="bg-white border border-[#EBEBEB] shadow-sm w-full max-w-sm p-8">
           <h1 className="font-semibold text-[#1A1A1A] text-xl mb-1">KPI Tracker</h1>
-          <p className="text-[#808080] text-sm font-normal mb-8">Sign in with your name and PIN</p>
+          <p className="text-[#808080] text-sm font-normal mb-6">
+            {preselectedUser
+              ? <>Switching to <span className="font-medium text-[#1A1A1A]">{preselectedUser.name}</span> — enter their PIN to continue.</>
+              : 'Sign in with your name and PIN'}
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
