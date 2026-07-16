@@ -1,9 +1,10 @@
 'use client'
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Link2, Info } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Link2, Info, X, Save } from 'lucide-react'
 
 interface DataSourceModalProps {
   open: boolean
@@ -26,67 +27,80 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-semibold text-[#1A1A1A] flex items-center gap-2">
-            <Link2 size={16} className="text-[#CC1F1F]" />
-            Data Source — {kpiName}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent showCloseButton={false} className="max-w-[549px] rounded-[32px] p-6 gap-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="size-10 rounded-lg bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0">
+              <Link2 size={18} className="text-[#EF3224]" />
+            </div>
+            <h2 className="text-xl font-semibold text-[#282828] tracking-[-0.1px] leading-7 min-w-0">
+              Data Source — {kpiName}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="size-10 rounded-full bg-[#282828] hover:bg-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0 transition-colors"
+          >
+            <X size={16} className="text-white" />
+          </button>
+        </div>
 
-        <div className="bg-[#F9F9F9] border border-[#EBEBEB] rounded p-3 flex gap-2 text-xs text-[#595959]">
-          <Info size={14} className="shrink-0 mt-0.5 text-[#808080]" />
-          <span>Provide a link to the source data (Google Drive, internal system, or website). Ensure Corporate Planning, HR, and the President Office have viewing access before submitting.</span>
+        <div className="bg-[#f5f5f5] rounded-[20px] p-6 flex gap-3 items-start">
+          <Info size={24} className="shrink-0 text-[#737373]" />
+          <p className="text-xs text-[#737373] leading-4 text-justify">
+            Provide a link to the source data (Google Drive, internal system, or website). Ensure Corporate Planning, HR, and the President Office have viewing access before submitting.
+          </p>
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-[#595959] mb-1.5">
-              Source Link <span className="text-[#CC1F1F]">*</span>
-            </label>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[#0a0a0a]">Source Link</label>
             <Input
               type="url"
               value={url}
               onChange={e => setUrl(e.target.value)}
-              placeholder="https://drive.google.com/... or system URL"
-              className="text-sm"
+              placeholder="Please enter your source link"
+              className="h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm"
             />
+            <p className="text-xs text-[#737373] leading-4">Please provide a brief description of the source link you are entering.</p>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-[#595959] mb-1.5">
-              Notes <span className="text-[#808080] font-normal">(sheet name, export date, etc.)</span>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[#0a0a0a]">
+              Notes <span className="text-[#737373] font-normal">(sheet name, export date, etc.)</span>
             </label>
             <Input
               value={note}
               onChange={e => setNote(e.target.value)}
               placeholder="e.g. Tab 'May 2026', exported 2026-06-01"
-              className="text-sm"
+              className="h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm"
             />
+            <p className="text-xs text-[#737373] leading-4">Please provide a concise overview of the source link you are submitting.</p>
           </div>
 
           <label className="flex items-start gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={confirmed}
-              onChange={e => setConfirmed(e.target.checked)}
-              className="mt-0.5"
-            />
-            <span className="text-xs text-[#595959]">
+            <Checkbox checked={confirmed} onCheckedChange={v => setConfirmed(v === true)} className="mt-0.5" />
+            <span className="text-sm text-[#0a0a0a] leading-[18px]">
               I confirm that Corporate Planning, HR, and the President Office have viewing access to this link.
             </span>
           </label>
         </div>
 
-        <div className="flex gap-2 justify-end pt-2">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+        <div className="flex gap-4 justify-end">
           <Button
-            size="sm"
+            variant="outline"
+            onClick={onClose}
+            className="h-12 px-5 rounded-2xl border-[#e5e5e5] text-[#595959] font-medium"
+          >
+            Cancel
+          </Button>
+          <Button
             disabled={!url || !confirmed}
             onClick={handleSave}
-            className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white"
+            className="h-12 px-5 rounded-2xl bg-[#282828] hover:bg-[#171717] text-white font-medium gap-2"
           >
             Save Source
+            <Save size={16} />
           </Button>
         </div>
       </DialogContent>

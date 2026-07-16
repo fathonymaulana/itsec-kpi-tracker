@@ -49,13 +49,13 @@ export function CookieConsent() {
         entered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
       )}
     >
-      <div className="w-full max-w-2xl bg-white border border-[#EBEBEB] shadow-lg rounded-sm p-5">
+      <div className="w-full max-w-2xl bg-white border border-[#e5e5e5] shadow-2xl rounded-3xl p-5">
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-sm bg-[#FDECEA] flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#FDECEA] flex items-center justify-center shrink-0">
             <Cookie size={16} className="text-[#CC1F1F]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[#1A1A1A]">A quick word on cookies</p>
+            <p className="text-sm font-medium text-[#282828]">A quick word on cookies</p>
             <p className="text-sm text-[#595959] font-normal mt-1 leading-relaxed">
               KPI Tracker is an internal ITSEC tool, and it keeps its footprint just as internal: the only cookies and
               local storage we use are the ones that keep you signed in, remember your interface preferences, and
@@ -72,10 +72,10 @@ export function CookieConsent() {
             </button>
 
             {expanded && (
-              <ul className="mt-3 space-y-2 border-t border-[#EBEBEB] pt-3">
+              <ul className="mt-3 space-y-2 border-t border-[#e5e5e5] pt-3">
                 {STORAGE_ITEMS.map(item => (
                   <li key={item.label} className="text-xs text-[#595959] font-normal">
-                    <span className="font-medium text-[#1A1A1A]">{item.label}.</span> {item.detail}
+                    <span className="font-medium text-[#282828]">{item.label}.</span> {item.detail}
                   </li>
                 ))}
               </ul>

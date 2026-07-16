@@ -120,7 +120,7 @@ export default function DeptDashboard() {
             { label: 'Off Track', value: offTrack, color: '#991B1B', bg: '#FEE2E2', border: '#FECACA' },
             { label: 'No Data', value: noData, color: '#6B7280', bg: '#F3F4F6', border: '#E5E7EB' },
           ].map(s => (
-            <div key={s.label} className="bg-white border rounded-sm p-4" style={{ borderColor: s.border }}>
+            <div key={s.label} className="bg-white border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4" style={{ borderColor: s.border }}>
               <div className="text-2xl font-semibold" style={{ color: s.color }}>{s.value}</div>
               <div className="text-xs text-[#808080] mt-1 font-normal">{s.label}</div>
             </div>
@@ -130,7 +130,7 @@ export default function DeptDashboard() {
         {/* KPI cards with charts */}
         {loading ? (
           <div className="space-y-4">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-48 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />)}
+            {[...Array(4)].map((_, i) => <div key={i} className="h-48 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />)}
           </div>
         ) : (
           <div className="space-y-4">
@@ -155,11 +155,11 @@ export default function DeptDashboard() {
               const { value: currentV, status: currentStatus } = statusFor(kpi, currentVals)
 
               return (
-                <div key={kpi.id} className="bg-white border border-[#EBEBEB] rounded-sm overflow-hidden">
-                  <div className="px-5 pt-4 pb-3 flex items-start justify-between gap-4">
+                <div key={kpi.id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                  <div className="px-6 pt-4 pb-3 flex items-start justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-[#1A1A1A] text-sm">{kpi.name}</span>
+                        <span className="font-medium text-[#282828] text-sm">{kpi.name}</span>
                         <StatusBadge status={currentStatus} />
                       </div>
                       <div className="text-[#808080] text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>

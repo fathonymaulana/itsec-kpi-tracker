@@ -92,11 +92,11 @@ function LoginForm() {
 
       {/* Login card */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="bg-white border border-[#EBEBEB] shadow-sm w-full max-w-sm p-8">
-          <h1 className="font-semibold text-[#1A1A1A] text-xl mb-1">KPI Tracker</h1>
-          <p className="text-[#808080] text-sm font-normal mb-6">
+        <div className="bg-white border border-[#e5e5e5] shadow-2xl rounded-3xl w-full max-w-sm p-8">
+          <h1 className="font-semibold text-[#282828] text-xl mb-1">KPI Tracker</h1>
+          <p className="text-[#737373] text-sm font-normal mb-6">
             {preselectedUser
-              ? <>Switching to <span className="font-medium text-[#1A1A1A]">{preselectedUser.name}</span> — enter their PIN to continue.</>
+              ? <>Switching to <span className="font-medium text-[#282828]">{preselectedUser.name}</span> — enter their PIN to continue.</>
               : 'Sign in with your name and PIN'}
           </p>
 

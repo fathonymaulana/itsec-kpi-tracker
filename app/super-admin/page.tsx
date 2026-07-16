@@ -208,9 +208,9 @@ export default function SuperAdminPage() {
 
         <main className="p-6">
           {loading ? (
-            <div className="h-64 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />
+            <div className="h-64 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
           ) : tab === 'users' ? (
-            <div className="bg-white border border-[#EBEBEB] rounded-sm overflow-hidden">
+            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -263,7 +263,7 @@ export default function SuperAdminPage() {
               </Table>
             </div>
           ) : (
-            <div className="bg-white border border-[#EBEBEB] rounded-sm overflow-hidden">
+            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
               {requests.length === 0 ? (
                 <div className="text-center py-16 text-[#AAAAAA] text-sm">No PIN change requests.</div>
               ) : (

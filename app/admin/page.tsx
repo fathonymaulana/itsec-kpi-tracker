@@ -277,7 +277,7 @@ export default function AdminPage() {
                 {tab === 'data' && (
                   <div className="space-y-3">
                     {loading ? (
-                      [...Array(4)].map((_, i) => <div key={i} className="h-24 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />)
+                      [...Array(4)].map((_, i) => <div key={i} className="h-24 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />)
                     ) : kpis.length === 0 ? (
                       <div className="text-center py-16 text-[#AAAAAA] text-sm">No data for this period.</div>
                     ) : kpis.map(kpi => {
@@ -359,7 +359,7 @@ export default function AdminPage() {
                         {anomalies.map(a => (
                           <div
                             key={a.id}
-                            className={`bg-white border border-[#EBEBEB] rounded-sm p-4 flex items-start gap-3 ${a.dismissed ? 'opacity-50' : ''}`}
+                            className={`bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3 ${a.dismissed ? 'opacity-50' : ''}`}
                           >
                             <AlertTriangle size={14} className={a.dismissed ? 'text-[#DDDDDD]' : 'text-[#F59E0B]'} />
                             <div className="flex-1">
@@ -401,7 +401,7 @@ export default function AdminPage() {
                         {kpis.map(kpi => {
                           const v = getKpiVerification(kpi.id)
                           return (
-                            <div key={kpi.id} className="bg-white border border-[#EBEBEB] rounded-sm px-4 py-3 flex items-center gap-3">
+                            <div key={kpi.id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-4 py-3 flex items-center gap-3">
                               <div className="flex-1">
                                 <div className="text-xs font-medium text-[#1A1A1A]">{kpi.name}</div>
                                 <div className="text-[11px] text-[#AAAAAA] mt-0.5 font-normal">{kpi.target_text}</div>

@@ -181,7 +181,7 @@ export default function BoardPage() {
         {anomalies.length > 0 && (
           <button
             onClick={() => setShowAnomalies(s => !s)}
-            className="w-full mb-6 flex items-center gap-3 bg-[#FFF8E6] border border-[#FDE68A] px-4 py-3 rounded-sm text-left hover:bg-[#FFF3CC] transition-colors"
+            className="w-full mb-6 flex items-center gap-3 bg-[#FFF8E6] border border-[#FDE68A] px-4 py-3 rounded-2xl text-left hover:bg-[#FFF3CC] transition-colors"
           >
             <AlertTriangle size={15} className="text-[#B45309] shrink-0" />
             <span className="text-sm font-medium text-[#B45309] flex-1">
@@ -192,9 +192,9 @@ export default function BoardPage() {
         )}
 
         {showAnomalies && (
-          <div className="mb-6 bg-white border border-[#EBEBEB] rounded-sm overflow-hidden">
+          <div className="mb-6 bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
             {anomalies.map((a, i) => (
-              <div key={i} className={`px-4 py-3 flex items-start gap-3 ${i > 0 ? 'border-t border-[#F2F2F2]' : ''}`}>
+              <div key={i} className={`px-4 py-3 flex items-start gap-3 ${i > 0 ? 'border-t border-[#e5e5e5]' : ''}`}>
                 <AlertTriangle size={13} className="text-[#F59E0B] shrink-0 mt-0.5" />
                 <div>
                   <div className="text-xs font-medium text-[#1A1A1A]">{a.department_name} — {a.kpi_name}</div>
@@ -213,7 +213,7 @@ export default function BoardPage() {
             { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: '#991B1B', bg: '#FEE2E2', border: '#FECACA', Icon: TrendingDown },
             { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: '#6B7280', bg: '#F3F4F6', border: '#E5E7EB', Icon: Minus },
           ].map(s => (
-            <div key={s.label} className="bg-white border rounded-sm p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
+            <div key={s.label} className="bg-white border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
               <s.Icon size={16} style={{ color: s.color }} className="mt-0.5 shrink-0" />
               <div>
                 <div className="text-2xl font-semibold" style={{ color: s.color }}>{s.value}</div>
@@ -226,8 +226,8 @@ export default function BoardPage() {
 
         {/* Stacked bar chart */}
         {!loading && chartData.length > 0 && (
-          <div className="bg-white border border-[#EBEBEB] rounded-sm p-5 mb-6">
-            <h3 className="font-medium text-[#1A1A1A] text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
+          <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
+            <h3 className="font-medium text-[#282828] text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
             <div style={{ height: 220 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
@@ -253,13 +253,13 @@ export default function BoardPage() {
           <h3 className="font-medium text-[#1A1A1A] text-sm mb-3">Department Breakdown</h3>
           {loading ? (
             <div className="space-y-2">
-              {[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />)}
+              {[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />)}
             </div>
           ) : summaries.map(dept => {
             const expanded = expandedDepts.has(dept.dept_id)
             const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
             return (
-              <div key={dept.dept_id} className="bg-white border border-[#EBEBEB] rounded-sm overflow-hidden">
+              <div key={dept.dept_id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
                 <button
                   onClick={() => toggleDept(dept.dept_id)}
                   className="w-full px-5 py-3.5 flex items-center gap-4 hover:bg-[#FAFAFA] transition-colors"

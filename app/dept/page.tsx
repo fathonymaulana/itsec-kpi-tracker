@@ -313,7 +313,7 @@ export default function DeptPage() {
         {loading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />
+              <div key={i} className="h-24 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
             ))}
           </div>
         ) : kpis.length === 0 ? (

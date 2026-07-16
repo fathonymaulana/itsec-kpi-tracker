@@ -131,13 +131,13 @@ export default function ProfilePage() {
       <main className="flex-1 px-6 md:px-8 py-8 max-w-xl mx-auto w-full space-y-4">
         {loading ? (
           <div className="space-y-4">
-            <div className="h-40 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />
-            <div className="h-40 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />
+            <div className="h-40 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
+            <div className="h-40 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
           </div>
         ) : profile && (
           <>
             {/* Profile card */}
-            <div className="bg-white border border-[#EBEBEB] rounded-sm p-6">
+            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
               <h2 className="font-medium text-[#1A1A1A] text-sm mb-4">Profile</h2>
 
               <div className="flex items-center gap-4 mb-5">
@@ -178,7 +178,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Password card */}
-            <div className="bg-white border border-[#EBEBEB] rounded-sm p-6">
+            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
               <h2 className="font-medium text-[#1A1A1A] text-sm mb-1">Password</h2>
               <p className="text-xs text-[#808080] mb-4">Changing your PIN requires Super Admin approval — your current PIN keeps working until then.</p>
 
