@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Save, Send, AlertTriangle, CheckCircle2, LayoutDashboard } from 'lucide-react'
+import { Save, Send, AlertTriangle, CheckCircle2, LayoutDashboard, Search } from 'lucide-react'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { AppNav } from '@/components/layout/AppNav'
 import { KpiCard } from '@/components/kpi/KpiCard'
@@ -62,6 +62,8 @@ export default function DeptPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [searchInput, setSearchInput] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
   const hasFetchedRef = useRef(false)
 
   useEffect(() => {
@@ -228,6 +230,11 @@ export default function DeptPage() {
 
   const getKpiAnomalyCount = (kpiId: number) => anomalies.filter(a => a.kpi_id === kpiId).length
 
+  const runSearch = () => setAppliedSearch(searchInput.trim())
+  const visibleKpis = appliedSearch
+    ? kpis.filter(k => k.name.toLowerCase().includes(appliedSearch.toLowerCase()))
+    : kpis
+
   if (!ready || !user) return null
 
   return (
@@ -317,6 +324,31 @@ export default function DeptPage() {
           </p>
         </div>
 
+        {/* Quick search — jumps to a matrix by name, doesn't hide the full entry form for anything else */}
+        {kpis.length > 0 && (
+          <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl flex items-center gap-4 px-4 py-3.5 mb-6">
+            <div className="size-10 rounded-full bg-[#f5f5f5] flex items-center justify-center shrink-0">
+              <Search size={16} className="text-[#737373]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <input
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && runSearch()}
+                placeholder="Search matrix name..."
+                className="w-full bg-[#f5f5f5] border border-[#e5e5e5] rounded-2xl px-4 py-2.5 text-base text-[#282828] placeholder:text-[#737373] focus:outline-none focus:border-[#CC1F1F]"
+              />
+            </div>
+            <button
+              onClick={runSearch}
+              className={`h-12 px-5 rounded-2xl bg-[#282828] hover:bg-[#171717] text-white text-sm font-medium flex items-center gap-2 shrink-0 transition-colors ${iconHoverClass}`}
+            >
+              Start Search
+              <Search size={16} />
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
@@ -329,9 +361,16 @@ export default function DeptPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-medium text-[#282828] text-sm">{MONTHS[month - 1]} {year}</h2>
-              <span className="text-xs text-[#737373] font-normal">{kpis.length} KPI{kpis.length > 1 ? 's' : ''}</span>
+              <span className="text-xs text-[#737373] font-normal">
+                {appliedSearch ? `${visibleKpis.length} of ${kpis.length} KPIs` : `${kpis.length} KPI${kpis.length > 1 ? 's' : ''}`}
+              </span>
             </div>
-            {kpis.map(kpi => (
+            {visibleKpis.length === 0 ? (
+              <div className="text-center py-16 text-[#AAAAAA] text-sm">
+                No KPI matches &quot;{appliedSearch}&quot;.{' '}
+                <button onClick={() => { setSearchInput(''); setAppliedSearch('') }} className="text-[#CC1F1F] hover:underline">Clear search</button>
+              </div>
+            ) : visibleKpis.map(kpi => (
               <KpiCard
                 key={kpi.id}
                 kpi={kpi}
