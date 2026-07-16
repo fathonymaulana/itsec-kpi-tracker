@@ -247,10 +247,10 @@ export default function DeptPage() {
       />
 
       {/* Controls bar */}
-      <div className="bg-white border-b border-[#EBEBEB] px-6 md:px-8 py-3 flex items-center gap-3 flex-wrap">
+      <div className="bg-white border-b border-[#e5e5e5] px-6 md:px-8 py-3 flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Select value={String(month)} onValueChange={v => v && setMonth(parseInt(v))}>
-            <SelectTrigger className="w-[130px] h-8 text-xs">
+            <SelectTrigger className="w-[130px] !h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -260,7 +260,7 @@ export default function DeptPage() {
             </SelectContent>
           </Select>
           <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
-            <SelectTrigger className="w-[90px] h-8 text-xs">
+            <SelectTrigger className="w-[90px] !h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -290,7 +290,7 @@ export default function DeptPage() {
         <Button
           size="sm"
           variant="outline"
-          className={`h-8 text-xs gap-1.5 ${iconHoverClass}`}
+          className={`h-9 rounded-lg text-xs gap-1.5 ${iconHoverClass}`}
           onClick={handleSave}
           disabled={saving || submitted}
         >
@@ -299,7 +299,7 @@ export default function DeptPage() {
         </Button>
         <Button
           size="sm"
-          className={`h-8 text-xs gap-1.5 bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`}
+          className={`h-9 rounded-lg text-xs gap-1.5 bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`}
           onClick={handleSubmit}
           disabled={saving || submitted}
         >
@@ -309,7 +309,14 @@ export default function DeptPage() {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 px-6 md:px-8 py-6 max-w-5xl mx-auto w-full">
+      <main className="flex-1 px-6 md:px-8 py-8 max-w-5xl mx-auto w-full">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Data Entry</h1>
+          <p className="text-sm text-[#737373] mt-1">
+            Enter this month&apos;s actuals for every KPI in {user.dept_name}. Save as you go, then Submit Month once everything looks right — submitted data locks and moves to Corporate Planning for review.
+          </p>
+        </div>
+
         {loading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
@@ -321,8 +328,8 @@ export default function DeptPage() {
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-medium text-[#1A1A1A] text-sm">{MONTHS[month - 1]} {year}</h2>
-              <span className="text-xs text-[#AAAAAA] font-normal">{kpis.length} KPI{kpis.length > 1 ? 's' : ''}</span>
+              <h2 className="font-medium text-[#282828] text-sm">{MONTHS[month - 1]} {year}</h2>
+              <span className="text-xs text-[#737373] font-normal">{kpis.length} KPI{kpis.length > 1 ? 's' : ''}</span>
             </div>
             {kpis.map(kpi => (
               <KpiCard

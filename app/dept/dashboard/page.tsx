@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { ArrowLeft, TrendingUp, Eye, TrendingDown, CircleDashed } from 'lucide-react'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { AppNav } from '@/components/layout/AppNav'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
@@ -10,6 +10,7 @@ import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { getStatus, MONTHS, type KpiStatus } from '@/lib/status'
 import { getPrimarySubMetric, resolvePrimaryValue } from '@/lib/kpi-primary'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR]
@@ -100,31 +101,49 @@ export default function DeptDashboard() {
         }
       />
 
-      <div className="bg-white border-b border-[#EBEBEB] px-6 md:px-8 py-3 flex items-center gap-3">
+      <div className="bg-white border-b border-[#e5e5e5] px-6 md:px-8 py-3 flex items-center gap-3">
         <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
-          <SelectTrigger className="w-[90px] h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[90px] !h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             {YEARS.map(y => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}
           </SelectContent>
         </Select>
         <div className="flex-1" />
-        <span className="text-xs text-[#AAAAAA]">{kpis.length} KPIs</span>
+        <span className="text-xs text-[#737373]">{kpis.length} KPIs</span>
       </div>
 
-      <main className="flex-1 px-6 md:px-8 py-6 max-w-6xl mx-auto w-full">
+      <main className="flex-1 px-6 md:px-8 py-8 max-w-6xl mx-auto w-full">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Dashboard</h1>
+          <p className="text-sm text-[#737373] mt-1">
+            {kpis.length > 0
+              ? `A month-by-month view of every KPI ${user.dept_name} tracks, so you can spot trends before they become problems.`
+              : 'Once KPIs are configured for your department, their trends will show up here.'}
+          </p>
+        </div>
+
         {/* Stat summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {[
-            { label: 'On Track', value: onTrack, color: '#166534', bg: '#DCFCE7', border: '#BBF7D0' },
-            { label: 'Watch', value: watch, color: '#92400E', bg: '#FEF9C3', border: '#FDE68A' },
-            { label: 'Off Track', value: offTrack, color: '#991B1B', bg: '#FEE2E2', border: '#FECACA' },
-            { label: 'No Data', value: noData, color: '#6B7280', bg: '#F3F4F6', border: '#E5E7EB' },
-          ].map(s => (
-            <div key={s.label} className="bg-white border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4" style={{ borderColor: s.border }}>
-              <div className="text-2xl font-semibold" style={{ color: s.color }}>{s.value}</div>
-              <div className="text-xs text-[#808080] mt-1 font-normal">{s.label}</div>
-            </div>
-          ))}
+            { label: 'On Track', value: onTrack, color: '#0d9488', Icon: TrendingUp, caption: 'performing at or above target' },
+            { label: 'Watch', value: watch, color: '#B45309', Icon: Eye, caption: 'trending toward target, worth watching' },
+            { label: 'Off Track', value: offTrack, color: '#CC1F1F', Icon: TrendingDown, caption: 'below target — needs attention' },
+            { label: 'No Data', value: noData, color: '#737373', Icon: CircleDashed, caption: 'not yet entered this month' },
+          ].map(s => {
+            const pct = kpis.length > 0 ? Math.round((s.value / kpis.length) * 100) : 0
+            return (
+              <div key={s.label} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
+                <div className="text-sm text-[#737373]">{s.label}</div>
+                <div className="text-[40px] leading-[48px] font-medium text-[#282828] tracking-[-0.5px]">{s.value}</div>
+                <div className="flex items-center gap-1">
+                  <s.Icon size={14} style={{ color: s.color }} />
+                  <span className="text-base font-semibold" style={{ color: s.color }}>{pct}%</span>
+                  <span className="text-xs text-[#737373]">of {kpis.length || 0}</span>
+                </div>
+                <div className="text-xs text-[#737373] mt-1">{s.caption}</div>
+              </div>
+            )
+          })}
         </div>
 
         {/* KPI cards with charts */}
@@ -153,6 +172,7 @@ export default function DeptDashboard() {
               const unit = primaryCalcSm?.unit || kpi.sub_metrics[0]?.unit || ''
               const currentVals = allActuals[currentMonth] || {}
               const { value: currentV, status: currentStatus } = statusFor(kpi, currentVals)
+              const chartConfig: ChartConfig = { value: { label: kpi.name, color: '#CC1F1F' } }
 
               return (
                 <div key={kpi.id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
@@ -162,23 +182,23 @@ export default function DeptDashboard() {
                         <span className="font-medium text-[#282828] text-sm">{kpi.name}</span>
                         <StatusBadge status={currentStatus} />
                       </div>
-                      <div className="text-[#808080] text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>
+                      <div className="text-[#737373] text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>
                     </div>
                     {currentV !== null && (
                       <div className="text-right shrink-0">
-                        <div className="text-lg font-medium text-[#1A1A1A]">
+                        <div className="text-lg font-medium text-[#282828]">
                           {unit === '%' ? `${(currentV * 100).toFixed(1)}%`
                             : unit === 'x' ? `${currentV.toFixed(2)}×`
                             : currentV.toLocaleString(undefined, { maximumFractionDigits: 1 })}
                         </div>
-                        <div className="text-[10px] text-[#AAAAAA]">{MONTHS[currentMonth - 1]}</div>
+                        <div className="text-[10px] text-[#737373]">{MONTHS[currentMonth - 1]}</div>
                       </div>
                     )}
                   </div>
 
                   {hasData && (
-                    <div className="px-2 pb-1" style={{ height: 100 }}>
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="px-2 pb-1">
+                      <ChartContainer config={chartConfig} className="h-[100px] w-full aspect-auto">
                         <AreaChart data={chartData} margin={{ top: 4, right: 12, left: -20, bottom: 0 }}>
                           <defs>
                             <linearGradient id={`grad-${kpi.id}`} x1="0" y1="0" x2="0" y2="1">
@@ -189,13 +209,13 @@ export default function DeptDashboard() {
                           <CartesianGrid strokeDasharray="3 3" stroke="#F2F2F2" vertical={false} />
                           <XAxis dataKey="month" tick={{ fontSize: 9, fill: '#AAAAAA' }} tickLine={false} axisLine={false} />
                           <YAxis tick={{ fontSize: 9, fill: '#AAAAAA' }} tickLine={false} axisLine={false} width={36} />
-                          <Tooltip
-                            contentStyle={{ fontSize: 11, border: '1px solid #EBEBEB', borderRadius: 2, padding: '4px 8px' }}
-                            formatter={(v) => {
-                              const n = Array.isArray(v) ? v[0] : v
-                              return [unit === '%' ? `${n}%` : (n ?? ''), kpi.name]
-                            }}
-                            labelStyle={{ color: '#808080' }}
+                          <ChartTooltip
+                            content={
+                              <ChartTooltipContent
+                                indicator="dot"
+                                formatter={(value) => [unit === '%' ? `${value}%` : `${value}`, kpi.name]}
+                              />
+                            }
                           />
                           <Area
                             type="monotone"
@@ -208,11 +228,11 @@ export default function DeptDashboard() {
                             activeDot={{ r: 3, fill: '#CC1F1F' }}
                           />
                         </AreaChart>
-                      </ResponsiveContainer>
+                      </ChartContainer>
                     </div>
                   )}
 
-                  <div className="px-5 py-3 border-t border-[#F2F2F2]">
+                  <div className="px-5 py-3 border-t border-[#e5e5e5]">
                     <MonthGrid data={monthStatuses} compact />
                   </div>
                 </div>
