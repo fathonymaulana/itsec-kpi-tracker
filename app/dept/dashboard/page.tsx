@@ -7,8 +7,8 @@ import { useAuth, authHeaders } from '@/lib/auth'
 import { AppNav } from '@/components/layout/AppNav'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
-import { computeCalcValue } from '@/lib/calculations'
 import { getStatus, MONTHS, type KpiStatus } from '@/lib/status'
+import { getPrimarySubMetric, resolvePrimaryValue } from '@/lib/kpi-primary'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -17,33 +17,21 @@ const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR]
 interface SubMetric {
   id: number; name: string; unit: string;
   is_calculated: number; formula_key: string | null; calc_input_positions: string | null
+  numeric_target: number | null; direction: number | null
 }
 interface Kpi {
   id: number; name: string; target_text: string; numeric_target: number | null; direction: number
   sub_metrics: SubMetric[]
 }
 
-function computePrimaryValue(kpi: Kpi, valuesBySmId: Record<number, number>): number | null {
-  const inputSMs = kpi.sub_metrics.filter(sm => !sm.is_calculated)
-  const calcSMs = kpi.sub_metrics.filter(sm => sm.is_calculated)
-  if (calcSMs.length > 0) {
-    const sm = calcSMs[0]
-    if (!sm.formula_key) return null
-    const positions: number[] = sm.calc_input_positions
-      ? sm.calc_input_positions.split(',').map(p => parseInt(p.trim()) - 1)
-      : inputSMs.map((_, i) => i)
-    const inputs = positions.map(pos => {
-      const inputSm = inputSMs[pos]
-      if (!inputSm) return null
-      const v = valuesBySmId[inputSm.id]
-      return v === undefined ? null : v
-    })
-    return computeCalcValue(sm.formula_key, inputs)
-  }
-  const first = inputSMs[0]
-  if (!first) return null
-  const v = valuesBySmId[first.id]
-  return v === undefined ? null : v
+// Status compares against the PRIMARY sub-metric's own target/direction (set per-row, not per-KPI —
+// see lib/kpi-primary.ts), matching the logic already used server-side in app/api/board/summary/[year].
+// kpi.numeric_target/direction are stale for KPIs with multiple components and must not be used here.
+function statusFor(kpi: Kpi, valuesBySmId: Record<number, number>): { value: number | null; status: KpiStatus } {
+  const primary = getPrimarySubMetric(kpi.sub_metrics)
+  const value = resolvePrimaryValue(kpi.sub_metrics, valuesBySmId)
+  const status = getStatus(value, primary?.numeric_target ?? null, primary?.direction ?? 1)
+  return { value, status }
 }
 
 export default function DeptDashboard() {
@@ -87,8 +75,7 @@ export default function DeptDashboard() {
   const currentMonth = new Date().getMonth() + 1
   const statuses = kpis.map(kpi => {
     const vals = allActuals[currentMonth] || {}
-    const v = computePrimaryValue(kpi, vals)
-    return getStatus(v, kpi.numeric_target, kpi.direction)
+    return statusFor(kpi, vals).status
   })
   const onTrack = statuses.filter(s => s === 'on_track').length
   const watch = statuses.filter(s => s === 'watch').length
@@ -152,8 +139,7 @@ export default function DeptDashboard() {
               const chartData = MONTHS.map((label, mi) => {
                 const m = mi + 1
                 const vals = allActuals[m] || {}
-                const v = computePrimaryValue(kpi, vals)
-                const status = getStatus(v, kpi.numeric_target, kpi.direction)
+                const { value: v, status } = statusFor(kpi, vals)
                 monthStatuses[m] = status
                 const primaryCalcSm = kpi.sub_metrics.find(sm => sm.is_calculated)
                 const unit = primaryCalcSm?.unit || kpi.sub_metrics[0]?.unit || ''
@@ -166,8 +152,7 @@ export default function DeptDashboard() {
               const primaryCalcSm = kpi.sub_metrics.find(sm => sm.is_calculated)
               const unit = primaryCalcSm?.unit || kpi.sub_metrics[0]?.unit || ''
               const currentVals = allActuals[currentMonth] || {}
-              const currentV = computePrimaryValue(kpi, currentVals)
-              const currentStatus = getStatus(currentV, kpi.numeric_target, kpi.direction)
+              const { value: currentV, status: currentStatus } = statusFor(kpi, currentVals)
 
               return (
                 <div key={kpi.id} className="bg-white border border-[#EBEBEB] rounded-sm overflow-hidden">

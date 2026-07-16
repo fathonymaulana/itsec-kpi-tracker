@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CheckCircle2, AlertTriangle, ExternalLink, ChevronRight, Building2, Shield, Clock } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, ExternalLink, ChevronRight, Building2, Shield, Clock, BarChart3 } from 'lucide-react'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { AppNav } from '@/components/layout/AppNav'
 import { KpiCard } from '@/components/kpi/KpiCard'
@@ -38,11 +38,18 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
 
+  const canVerify = user?.role === 'corp_planning'
+
+  // Deep-link from the board's "View KPI details" links: /admin?dept=CorCom
+  useEffect(() => {
+    const deptFromUrl = new URLSearchParams(window.location.search).get('dept')
+    if (deptFromUrl) setSelectedDept(deptFromUrl)
+  }, [])
+
   useEffect(() => {
     if (!ready) return
     if (!user) { router.push('/login'); return }
     if (user.role === 'dept_head') { router.push('/dept'); return }
-    if (user.role === 'board') { router.push('/board'); return }
   }, [user, router, ready])
 
   // Fetch departments
@@ -155,7 +162,19 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F4F4F4]">
-      <AppNav title="Corporate Planning" subtitle="Data Verification" />
+      <AppNav
+        title={canVerify ? 'Corporate Planning' : 'Board'}
+        subtitle={canVerify ? 'Data Verification' : 'Data Review'}
+        actions={
+          <button
+            onClick={() => router.push('/board')}
+            className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"
+          >
+            <BarChart3 size={13} />
+            <span className="hidden sm:inline">Executive Dashboard</span>
+          </button>
+        }
+      />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
@@ -269,7 +288,7 @@ export default function AdminPage() {
                             anomalyCount={kpiAnomalies.length}
                             readOnly
                           />
-                          {/* Verification action row */}
+                          {/* Verification status / action row */}
                           <div className="flex items-center gap-2 px-1">
                             {verification ? (
                               <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
@@ -282,7 +301,7 @@ export default function AdminPage() {
                                   : <><AlertTriangle size={10} /> Flagged</>}
                                 {verification.note && <span className="ml-1 text-[10px]">— {verification.note}</span>}
                               </div>
-                            ) : (
+                            ) : canVerify ? (
                               <>
                                 <Button
                                   size="sm"
@@ -304,18 +323,20 @@ export default function AdminPage() {
                                   <AlertTriangle size={10} />
                                   Flag
                                 </Button>
-                                {dataSources[kpi.id]?.url && (
-                                  <a
-                                    href={dataSources[kpi.id].url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex items-center gap-1 text-[11px] text-[#808080] hover:text-[#CC1F1F] ml-auto"
-                                  >
-                                    <ExternalLink size={10} />
-                                    Source
-                                  </a>
-                                )}
                               </>
+                            ) : (
+                              <span className="text-[11px] text-[#AAAAAA]">Pending verification</span>
+                            )}
+                            {dataSources[kpi.id]?.url && (
+                              <a
+                                href={dataSources[kpi.id].url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-1 text-[11px] text-[#808080] hover:text-[#CC1F1F] ml-auto"
+                              >
+                                <ExternalLink size={10} />
+                                Source
+                              </a>
                             )}
                           </div>
                         </div>
@@ -345,7 +366,7 @@ export default function AdminPage() {
                                 {new Date(a.created_at).toLocaleDateString()}
                               </div>
                             </div>
-                            {!a.dismissed && (
+                            {!a.dismissed && canVerify && (
                               <Button
                                 size="sm"
                                 variant="outline"

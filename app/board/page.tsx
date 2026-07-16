@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus, LogOut, FileSearch } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
@@ -39,8 +39,9 @@ const STATUS_COLORS = {
 }
 
 export default function BoardPage() {
-  const { user, token, ready } = useAuth()
+  const { user, token, ready, logout } = useAuth()
   const router = useRouter()
+  const handleLogout = () => { logout(); router.push('/login') }
   const [month, setMonth] = useState(getDefaultMonth())
   const [year, setYear] = useState(getDefaultYear())
   const [summaries, setSummaries] = useState<DeptSummary[]>([])
@@ -137,7 +138,23 @@ export default function BoardPage() {
           </Select>
         </div>
         {user && (
-          <div className="text-white/40 text-xs ml-2 hidden sm:block">{user.dept_name}</div>
+          <div className="flex items-center gap-3 shrink-0 ml-2">
+            <button
+              onClick={() => router.push('/admin')}
+              className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"
+            >
+              <FileSearch size={13} />
+              <span className="hidden sm:inline">Data Review</span>
+            </button>
+            <div className="text-white/40 text-xs hidden sm:block">{user.dept_name}</div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"
+            >
+              <LogOut size={13} />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
+          </div>
         )}
       </header>
 
@@ -250,8 +267,15 @@ export default function BoardPage() {
                   </div>
                 </button>
                 {expanded && (
-                  <div className="border-t border-[#F2F2F2] px-5 py-3">
+                  <div className="border-t border-[#F2F2F2] px-5 py-3 space-y-3">
                     <MonthGrid data={dept.month_statuses} compact />
+                    <button
+                      onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
+                      className="flex items-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors"
+                    >
+                      <FileSearch size={11} />
+                      View KPI details & sources
+                    </button>
                   </div>
                 )}
               </div>
