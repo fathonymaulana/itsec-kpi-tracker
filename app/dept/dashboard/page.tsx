@@ -114,7 +114,7 @@ export default function DeptDashboard() {
       />
 
       <div className="bg-white border-b border-[#EBEBEB] px-6 md:px-8 py-3 flex items-center gap-3">
-        <Select value={String(year)} onValueChange={v => setYear(parseInt(v))}>
+        <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
           <SelectTrigger className="w-[90px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             {YEARS.map(y => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}
@@ -206,7 +206,10 @@ export default function DeptDashboard() {
                           <YAxis tick={{ fontSize: 9, fill: '#AAAAAA' }} tickLine={false} axisLine={false} width={36} />
                           <Tooltip
                             contentStyle={{ fontSize: 11, border: '1px solid #EBEBEB', borderRadius: 2, padding: '4px 8px' }}
-                            formatter={(v: number) => [unit === '%' ? `${v}%` : v, kpi.name]}
+                            formatter={(v) => {
+                              const n = Array.isArray(v) ? v[0] : v
+                              return [unit === '%' ? `${n}%` : (n ?? ''), kpi.name]
+                            }}
                             labelStyle={{ color: '#808080' }}
                           />
                           <Area

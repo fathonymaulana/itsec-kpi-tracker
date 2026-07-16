@@ -169,7 +169,7 @@ export default function DeptPage() {
           payload.push({
             sub_metric_id: sm.id,
             kpi_id: kpi.id,
-            dept_id: user.dept_id,
+            dept_id: user.dept_id ?? '',
             year,
             month,
             value,
@@ -248,7 +248,7 @@ export default function DeptPage() {
       {/* Controls bar */}
       <div className="bg-white border-b border-[#EBEBEB] px-6 md:px-8 py-3 flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <Select value={String(month)} onValueChange={v => setMonth(parseInt(v))}>
+          <Select value={String(month)} onValueChange={v => v && setMonth(parseInt(v))}>
             <SelectTrigger className="w-[130px] h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -258,7 +258,7 @@ export default function DeptPage() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={String(year)} onValueChange={v => setYear(parseInt(v))}>
+          <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
             <SelectTrigger className="w-[90px] h-8 text-xs">
               <SelectValue />
             </SelectTrigger>

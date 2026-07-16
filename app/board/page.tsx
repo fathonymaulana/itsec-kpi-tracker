@@ -2,10 +2,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
-import { MONTHS, getDefaultMonth, getDefaultYear, getStatus, type KpiStatus } from '@/lib/status'
+import { MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -119,7 +119,7 @@ export default function BoardPage() {
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
-          <Select value={String(month)} onValueChange={v => setMonth(parseInt(v))}>
+          <Select value={String(month)} onValueChange={v => v && setMonth(parseInt(v))}>
             <SelectTrigger className="w-[110px] h-7 text-xs bg-white/10 border-white/20 text-white">
               <SelectValue />
             </SelectTrigger>
@@ -127,7 +127,7 @@ export default function BoardPage() {
               {MONTHS.map((m, i) => <SelectItem key={i + 1} value={String(i + 1)} className="text-xs">{m}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={String(year)} onValueChange={v => setYear(parseInt(v))}>
+          <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
             <SelectTrigger className="w-[80px] h-7 text-xs bg-white/10 border-white/20 text-white">
               <SelectValue />
             </SelectTrigger>

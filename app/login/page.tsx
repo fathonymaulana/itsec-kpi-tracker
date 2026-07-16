@@ -78,7 +78,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-[#595959] mb-1.5">Department / Role</label>
-              <Select value={selected} onValueChange={setSelected}>
+              <Select value={selected} onValueChange={v => setSelected(v ?? '')}>
                 <SelectTrigger className="w-full text-sm">
                   <SelectValue placeholder="Select your department or role" />
                 </SelectTrigger>

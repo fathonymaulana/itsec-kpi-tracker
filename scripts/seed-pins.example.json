@@ -1,0 +1,21 @@
+{
+  "_comment": "Copy this file to scripts/seed-pins.json (gitignored) and fill in the real login PINs before running the seed script. Never commit the real file — these are the app's actual login credentials.",
+  "departments": {
+    "CorCom": "0000",
+    "CorSec": "0000",
+    "FAT": "0000",
+    "HR_GA": "0000",
+    "Internal_Audit": "0000",
+    "Investor_Relations": "0000",
+    "Partner_Manager": "0000",
+    "PMO": "0000",
+    "RD": "0000",
+    "Sales": "0000",
+    "SecOps": "0000",
+    "Technical_Writer": "0000"
+  },
+  "roles": {
+    "corp_planning": "0000",
+    "board": "0000"
+  }
+}

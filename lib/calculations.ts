@@ -64,10 +64,6 @@ export function computeCalcValue(
 
 export function formatValue(value: number | null, formulaKey?: string): string {
   if (value === null || value === undefined) return '—'
-  // Detect percentage-type formulas
-  const isPct = formulaKey && (
-    formulaKey.includes('/') || formulaKey.includes('-')
-  ) && !['A/B', 'B/A', 'B/C', 'C/B', 'D/E'].some(k => k === formulaKey && false)
   // Format large numbers with commas, percentages as %
   if (Math.abs(value) < 10 && formulaKey && !formulaKey.startsWith('1-')) {
     return value.toFixed(2)

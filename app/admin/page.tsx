@@ -186,7 +186,7 @@ export default function AdminPage() {
         <div className="flex-1 overflow-y-auto">
           {/* Mobile dept selector */}
           <div className="md:hidden bg-white border-b border-[#EBEBEB] px-4 py-2">
-            <Select value={selectedDept || ''} onValueChange={v => { setSelectedDept(v); setTab('data') }}>
+            <Select value={selectedDept || ''} onValueChange={v => { if (v) { setSelectedDept(v); setTab('data') } }}>
               <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select department" /></SelectTrigger>
               <SelectContent>
                 {depts.map(d => <SelectItem key={d.id} value={d.id} className="text-xs">{d.name}</SelectItem>)}
@@ -212,13 +212,13 @@ export default function AdminPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 ml-auto">
-                  <Select value={String(month)} onValueChange={v => setMonth(parseInt(v))}>
+                  <Select value={String(month)} onValueChange={v => v && setMonth(parseInt(v))}>
                     <SelectTrigger className="w-[120px] h-7 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {MONTHS.map((m, i) => <SelectItem key={i + 1} value={String(i + 1)} className="text-xs">{m}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Select value={String(year)} onValueChange={v => setYear(parseInt(v))}>
+                  <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
                     <SelectTrigger className="w-[80px] h-7 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {YEARS.map(y => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}

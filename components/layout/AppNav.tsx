@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
-import { LogOut, BarChart2 } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 
 interface AppNavProps {
   title?: string

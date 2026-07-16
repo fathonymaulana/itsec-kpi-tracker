@@ -9,17 +9,15 @@ out/
 build/
 dist/
 
-# SQLite database
-server/*.db
-server/*.db-shm
-server/*.db-wal
-
 # Environment
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Real login PINs — never commit, see scripts/seed-pins.example.json
+scripts/seed-pins.json
 
 # Debug
 npm-debug.log*
