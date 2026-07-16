@@ -10,7 +10,7 @@ import { AlertCircle } from 'lucide-react'
 interface DirectoryUser {
   id: number
   name: string
-  role: 'dept_head' | 'corp_planning' | 'board' | 'super_admin'
+  role: 'dept_head' | 'corp_planning' | 'super_admin'
   dept_id: string | null
   dept_name: string | null
 }
@@ -18,7 +18,6 @@ interface DirectoryUser {
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin',
   corp_planning: 'Corporate Planning',
-  board: 'Board',
 }
 
 export default function LoginPage() {
@@ -70,8 +69,7 @@ function LoginForm() {
       const role = stored.role
       if (role === 'dept_head') router.push('/dept')
       else if (role === 'corp_planning') router.push('/admin')
-      else if (role === 'super_admin') router.push('/super-admin')
-      else router.push('/board')
+      else router.push('/super-admin')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {

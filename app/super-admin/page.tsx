@@ -29,12 +29,12 @@ import {
 } from '@/components/ui/sidebar'
 import { iconHoverClass } from '@/lib/utils'
 
-type Role = 'dept_head' | 'corp_planning' | 'board' | 'super_admin'
+type Role = 'dept_head' | 'corp_planning' | 'super_admin'
 interface AdminUser { id: number; name: string; avatar_url: string | null; role: Role; dept_id: string | null; dept_name: string | null; active: boolean; created_at: string }
 interface PinRequest { id: number; status: 'pending' | 'approved' | 'rejected'; requested_at: string; user: { id: number; name: string; role: Role; dept_id: string | null } }
 interface Dept { id: string; name: string }
 
-const ROLE_LABELS: Record<Role, string> = { dept_head: 'Department Head', corp_planning: 'Corporate Planning', board: 'Board', super_admin: 'Super Admin' }
+const ROLE_LABELS: Record<Role, string> = { dept_head: 'Department Head', corp_planning: 'Corporate Planning', super_admin: 'Super Admin' }
 
 export default function SuperAdminPage() {
   const { user, token, ready, logout } = useAuth()

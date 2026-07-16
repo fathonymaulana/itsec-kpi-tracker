@@ -6,6 +6,9 @@
 create extension if not exists "pgcrypto";
 
 create type verification_status as enum ('pending', 'verified', 'flagged');
+-- 'board' is a retired value kept only because Postgres can't drop enum members in place — the
+-- standalone Board role was merged into corp_planning (both /board and /admin are open to any
+-- non-dept_head role already); application code no longer issues or accepts 'board'.
 create type user_role as enum ('dept_head', 'corp_planning', 'board', 'super_admin');
 
 create table departments (

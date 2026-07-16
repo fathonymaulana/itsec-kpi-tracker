@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   if (!name?.trim() || !role || !pin || !/^\d{4}$/.test(pin)) {
     return NextResponse.json({ error: 'name, role, and a 4-digit pin are required' }, { status: 400 })
   }
-  if (!['dept_head', 'corp_planning', 'board', 'super_admin'].includes(role)) {
+  if (!['dept_head', 'corp_planning', 'super_admin'].includes(role)) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
   }
   if (role === 'dept_head' && !dept_id) {

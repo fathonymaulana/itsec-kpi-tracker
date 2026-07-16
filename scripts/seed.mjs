@@ -45,12 +45,13 @@ const depts = [
   { id: 'Technical_Writer',   name: 'Technical Writer' },
 ]
 
-// One dept_head user per department, plus corp_planning/board/super_admin — mirrors the seed-pins.json
+// One dept_head user per department, plus corp_planning/super_admin — mirrors the seed-pins.json
 // shape (departments/roles keys) from before the per-person user migration, so existing PIN files still work.
+// The former standalone "board" role was merged into corp_planning: both /board and /admin are already
+// open to any non-dept_head role, so a single Corporate Planning account covers everything Board used to.
 const users = [
   ...depts.map(d => ({ name: `${d.name} Team`, role: 'dept_head', dept_id: d.id, pin: pins.departments[d.id] })),
   { name: 'Corporate Planning', role: 'corp_planning', dept_id: null, pin: pins.roles.corp_planning },
-  { name: 'Board', role: 'board', dept_id: null, pin: pins.roles.board },
   { name: 'Super Admin', role: 'super_admin', dept_id: null, pin: pins.roles.super_admin },
 ]
 

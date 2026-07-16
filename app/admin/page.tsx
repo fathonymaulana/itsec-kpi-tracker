@@ -167,7 +167,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#F4F4F4]">
       <AppNav
-        title={canVerify ? 'Corporate Planning' : 'Board'}
+        title="Corporate Planning"
         subtitle={canVerify ? 'Data Verification' : 'Data Review'}
         actions={
           <button

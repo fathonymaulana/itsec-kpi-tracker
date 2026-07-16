@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const patch: Record<string, unknown> = {}
   if (typeof name === 'string' && name.trim()) patch.name = name.trim()
   if (typeof role === 'string') {
-    if (!['dept_head', 'corp_planning', 'board', 'super_admin'].includes(role)) {
+    if (!['dept_head', 'corp_planning', 'super_admin'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
     patch.role = role

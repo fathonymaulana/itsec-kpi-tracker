@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/auth-server'
 
 // GET /api/verifications?dept_id=&year=&month=
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request, ['corp_planning', 'board'])
+  const auth = requireAuth(request, ['corp_planning'])
   if (auth instanceof NextResponse) return auth
 
   const { searchParams } = new URL(request.url)

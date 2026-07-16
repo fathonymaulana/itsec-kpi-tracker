@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Incorrect PIN. Please try again.' }, { status: 401 })
   }
 
-  const token = signToken({ user_id: user.id as number, name: user.name as string, role: user.role as 'dept_head' | 'corp_planning' | 'board' | 'super_admin', dept_id: user.dept_id as string | null })
+  const token = signToken({ user_id: user.id as number, name: user.name as string, role: user.role as 'dept_head' | 'corp_planning' | 'super_admin', dept_id: user.dept_id as string | null })
   const deptName = (user.departments as unknown as { name: string } | null)?.name ?? user.name
 
   return NextResponse.json({

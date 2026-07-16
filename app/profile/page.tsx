@@ -21,7 +21,6 @@ interface Profile {
 const ROLE_LABELS: Record<string, string> = {
   dept_head: 'Department Head',
   corp_planning: 'Corporate Planning',
-  board: 'Board',
   super_admin: 'Super Admin',
 }
 
