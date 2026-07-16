@@ -20,7 +20,14 @@ export function supabaseServer() {
       throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY environment variables')
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    client = createClient<any, 'public', any>(url, key, { auth: { persistSession: false } })
+    client = createClient<any, 'public', any>(url, key, {
+      auth: { persistSession: false },
+      // Without this, Next.js's fetch-patching hands every supabase-js request to Vercel's Data Cache,
+      // which persists across deployments (unlike route-level `dynamic = 'force-dynamic'`, which only
+      // controls whether the route handler itself is statically rendered). That's how a single row
+      // deleted from the DB kept reappearing in API responses through multiple redeploys.
+      global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
+    })
   }
   return client
 }
