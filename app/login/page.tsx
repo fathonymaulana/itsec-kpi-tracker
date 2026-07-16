@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { useAuth } from '@/lib/auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -78,90 +79,96 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F9F9F9]">
-      {/* Red header banner */}
-      <div className="bg-[#CC1F1F] px-8 py-5 flex items-center gap-3">
-        <div className="w-8 h-8 bg-white rounded-sm flex items-center justify-center">
-          <span className="text-[#CC1F1F] font-semibold text-sm">IT</span>
-        </div>
-        <div>
-          <div className="text-white font-semibold text-lg leading-none">ITSEC</div>
-          <div className="text-white/70 text-xs font-normal mt-0.5">Asia Tbk</div>
-        </div>
+    <div className="min-h-screen bg-[#fafafa] relative">
+      {/* Logo badge, top-left */}
+      <div className="absolute left-6 top-4 md:left-24 md:top-4 z-10">
+        <Image src="/login/itsec-logo-badge.svg" alt="ITSEC KPI Tracker" width={179} height={19} className="h-5 w-auto" priority />
       </div>
 
-      {/* Login card */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="bg-white border border-[#e5e5e5] shadow-2xl rounded-3xl w-full max-w-sm p-8">
-          <h1 className="font-semibold text-[#282828] text-xl mb-1">KPI Tracker</h1>
-          <p className="text-[#737373] text-sm font-normal mb-6">
+      {/* Centered content */}
+      <div className="min-h-screen flex items-center justify-center gap-10 lg:gap-[120px] px-6 py-24">
+        {/* Left: heading + form */}
+        <div className="flex flex-col gap-6 items-start w-full max-w-[373px] shrink-0">
+          <h1 className="text-[#282828] text-4xl lg:text-[60px] leading-[1.1] lg:leading-[76px] tracking-[-0.72px] text-center w-full font-normal">
+            Performance Highlights
+          </h1>
+          <p className="text-[#737373] text-base leading-6 tracking-[-0.192px] text-center w-full">
             {preselectedUser
               ? <>Switching to <span className="font-medium text-[#282828]">{preselectedUser.name}</span> — enter their PIN to continue.</>
-              : 'Sign in with your name and PIN'}
+              : 'Track your IT security goals with precision'}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-[#595959] mb-1.5">Your Name</label>
-              <Select value={selected} onValueChange={v => setSelected(v ?? '')}>
-                <SelectTrigger className="w-full text-sm">
-                  <SelectValue placeholder="Select your name" />
-                </SelectTrigger>
-                <SelectContent>
-                  {management.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel className="text-[10px] text-[#AAAAAA] uppercase tracking-wider">Management</SelectLabel>
-                      {management.map(u => (
-                        <SelectItem key={u.id} value={String(u.id)} className="text-sm">
-                          {u.name} <span className="text-[#AAAAAA]">— {ROLE_LABELS[u.role]}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
-                  {Object.entries(byDept).map(([deptName, users]) => (
-                    <SelectGroup key={deptName}>
-                      <SelectLabel className="text-[10px] text-[#AAAAAA] uppercase tracking-wider">{deptName}</SelectLabel>
-                      {users.map(u => (
-                        <SelectItem key={u.id} value={String(u.id)} className="text-sm">{u.name}</SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[#595959] mb-1.5">4-Digit PIN</label>
-              <Input
-                type="password"
-                inputMode="numeric"
-                maxLength={4}
-                value={pin}
-                onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="• • • •"
-                className="text-center text-lg tracking-widest"
-              />
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 text-[#CC1F1F] text-sm bg-[#FDECEA] border border-[#F5A8A8] px-3 py-2 rounded">
-                <AlertCircle size={14} className="shrink-0" />
-                {error}
+          <div className="bg-white border border-[#e5e5e5] shadow-2xl rounded-3xl w-full p-8 flex flex-col gap-6">
+            <form onSubmit={handleSubmit} className="contents">
+              <div className="flex flex-col gap-2 w-full">
+                <label className="text-sm font-medium text-[#282828]">Department / Role</label>
+                <Select value={selected} onValueChange={v => setSelected(v ?? '')}>
+                  <SelectTrigger className="w-full !h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm text-[#737373]">
+                    <SelectValue placeholder="Select your department or role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {management.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel className="text-[10px] text-[#AAAAAA] uppercase tracking-wider">Management</SelectLabel>
+                        {management.map(u => (
+                          <SelectItem key={u.id} value={String(u.id)} className="text-sm">
+                            {u.name} <span className="text-[#AAAAAA]">— {ROLE_LABELS[u.role]}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {Object.entries(byDept).map(([deptName, users]) => (
+                      <SelectGroup key={deptName}>
+                        <SelectLabel className="text-[10px] text-[#AAAAAA] uppercase tracking-wider">{deptName}</SelectLabel>
+                        {users.map(u => (
+                          <SelectItem key={u.id} value={String(u.id)} className="text-sm">{u.name}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-[#737373] leading-5">Choose the department or role that best fits your position.</p>
               </div>
-            )}
 
-            <Button
-              type="submit"
-              disabled={!selected || pin.length !== 4 || loading}
-              className="w-full bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white font-medium mt-2"
-            >
-              {loading ? 'Signing in…' : 'Sign In'}
-            </Button>
-          </form>
+              <div className="flex flex-col gap-2 w-full">
+                <label className="text-sm font-medium text-[#282828]">4-Digit PIN</label>
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={pin}
+                  onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="• • • •"
+                  className="h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-center text-lg tracking-widest"
+                />
+              </div>
 
-          <p className="text-[#AAAAAA] text-xs text-center mt-8 font-normal">
-            Contact Corporate Planning if you have forgotten your PIN.
-          </p>
+              {error && (
+                <div className="flex items-center gap-2 text-[#CC1F1F] text-sm bg-[#FDECEA] border border-[#F5A8A8] px-3 py-2 rounded-lg w-full">
+                  <AlertCircle size={14} className="shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={!selected || pin.length !== 4 || loading}
+                className="w-full h-12 rounded-2xl bg-[#282828] hover:bg-[#171717] text-white font-medium"
+              >
+                {loading ? 'Signing in…' : 'Sign in'}
+              </Button>
+            </form>
+
+            <p className="text-[#737373] text-[10px] leading-4 text-center w-full">
+              Contact Corporate Planning if you have forgotten your PIN.
+            </p>
+          </div>
+        </div>
+
+        {/* Right: photo panel */}
+        <div className="hidden lg:flex relative w-[648px] h-[810px] rounded-[32px] overflow-hidden items-start justify-end p-8 shrink-0">
+          <Image src="/login/office-photo.png" alt="" fill priority className="object-cover pointer-events-none" />
+          <Image src="/login/itsec-logo-white.svg" alt="ITSEC" width={87} height={19} className="relative h-5 w-auto" />
         </div>
       </div>
     </div>
