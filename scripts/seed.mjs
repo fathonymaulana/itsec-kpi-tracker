@@ -43,12 +43,16 @@ const depts = [
   { id: 'Sales',              name: 'Sales' },
   { id: 'SecOps',             name: 'SecOps' },
   { id: 'Technical_Writer',   name: 'Technical Writer' },
-].map(d => ({ ...d, pin: pins.departments[d.id] }))
+]
 
-const roles = [
-  { role_key: 'corp_planning', display_name: 'Corporate Planning' },
-  { role_key: 'board',         display_name: 'Board' },
-].map(r => ({ ...r, pin: pins.roles[r.role_key] }))
+// One dept_head user per department, plus corp_planning/board/super_admin — mirrors the seed-pins.json
+// shape (departments/roles keys) from before the per-person user migration, so existing PIN files still work.
+const users = [
+  ...depts.map(d => ({ name: `${d.name} Team`, role: 'dept_head', dept_id: d.id, pin: pins.departments[d.id] })),
+  { name: 'Corporate Planning', role: 'corp_planning', dept_id: null, pin: pins.roles.corp_planning },
+  { name: 'Board', role: 'board', dept_id: null, pin: pins.roles.board },
+  { name: 'Super Admin', role: 'super_admin', dept_id: null, pin: pins.roles.super_admin },
+]
 
 // Collected by addKpi() below — same call shape as the old server/db.js so the KPI data itself is an
 // unmodified carry-over. sm shape: { name, is_calc?, fk?, pos?, unit?, target?, dir? }. target/dir is this
@@ -476,14 +480,14 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('Seeding departments & roles...')
-  const deptRows = depts.map(d => ({ id: d.id, name: d.name, pin_hash: bcrypt.hashSync(d.pin, 10) }))
-  const { error: deptErr } = await supabase.from('departments').insert(deptRows)
+  console.log('Seeding departments...')
+  const { error: deptErr } = await supabase.from('departments').insert(depts)
   if (deptErr) throw deptErr
 
-  const roleRows = roles.map(r => ({ role_key: r.role_key, pin_hash: bcrypt.hashSync(r.pin, 10), display_name: r.display_name }))
-  const { error: roleErr } = await supabase.from('roles').insert(roleRows)
-  if (roleErr) throw roleErr
+  console.log(`Seeding ${users.length} users...`)
+  const userRows = users.map(u => ({ name: u.name, role: u.role, dept_id: u.dept_id, pin_hash: bcrypt.hashSync(u.pin, 10) }))
+  const { error: userErr } = await supabase.from('users').insert(userRows)
+  if (userErr) throw userErr
 
   console.log(`Seeding ${kpiSeed.length} KPIs...`)
   let subMetricCount = 0
@@ -518,7 +522,7 @@ async function main() {
     subMetricCount += smRows.length
   }
 
-  console.log(`Done: ${depts.length} departments, ${kpiSeed.length} KPIs, ${subMetricCount} sub-metrics.`)
+  console.log(`Done: ${depts.length} departments, ${users.length} users, ${kpiSeed.length} KPIs, ${subMetricCount} sub-metrics.`)
 }
 
 main().catch(err => {

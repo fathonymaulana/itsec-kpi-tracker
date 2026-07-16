@@ -1,0 +1,222 @@
+'use client'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { Camera, Clock, ShieldCheck } from 'lucide-react'
+import { useAuth, authHeaders } from '@/lib/auth'
+import { AppNav } from '@/components/layout/AppNav'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+
+interface Profile {
+  id: number
+  name: string
+  avatar_url: string | null
+  role: string
+  dept_name: string | null
+  pending_pin_request: { id: number; status: string; requested_at: string } | null
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  dept_head: 'Department Head',
+  corp_planning: 'Corporate Planning',
+  board: 'Board',
+  super_admin: 'Super Admin',
+}
+
+export default function ProfilePage() {
+  const { user, token, ready, refreshUser } = useAuth()
+  const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [name, setName] = useState('')
+  const [newPin, setNewPin] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [savingName, setSavingName] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [submittingPin, setSubmittingPin] = useState(false)
+
+  useEffect(() => {
+    if (!ready) return
+    if (!user) { router.push('/login'); return }
+  }, [user, router, ready])
+
+  const fetchProfile = useCallback(async () => {
+    if (!token) return
+    setLoading(true)
+    try {
+      const r = await fetch('/api/users/me', { headers: authHeaders(token) })
+      const data = await r.json()
+      setProfile(data)
+      setName(data.name || '')
+    } catch { toast.error('Failed to load profile') }
+    finally { setLoading(false) }
+  }, [token])
+
+  useEffect(() => { if (user) fetchProfile() }, [user, fetchProfile])
+
+  const handleAvatarPick = () => fileInputRef.current?.click()
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !token) return
+    setUploadingAvatar(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const r = await fetch('/api/users/me/avatar', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      })
+      const data = await r.json()
+      if (!r.ok) throw new Error(data.error || 'Upload failed')
+      refreshUser({ avatar_url: data.avatar_url })
+      await fetchProfile()
+      toast.success('Avatar updated')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadingAvatar(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleSaveName = async () => {
+    if (!token || !name.trim()) return
+    setSavingName(true)
+    try {
+      const r = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() }),
+      })
+      if (!r.ok) throw new Error('Save failed')
+      refreshUser({ name: name.trim() })
+      toast.success('Name updated')
+    } catch {
+      toast.error('Failed to update name')
+    } finally {
+      setSavingName(false)
+    }
+  }
+
+  const handleSubmitPin = async () => {
+    if (!token || newPin.length !== 4) return
+    setSubmittingPin(true)
+    try {
+      const r = await fetch('/api/users/me/pin-request', {
+        method: 'POST',
+        headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_pin: newPin }),
+      })
+      const data = await r.json()
+      if (!r.ok) throw new Error(data.error || 'Request failed')
+      setNewPin('')
+      await fetchProfile()
+      toast.success('PIN change requested — waiting on Super Admin approval')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Request failed')
+    } finally {
+      setSubmittingPin(false)
+    }
+  }
+
+  if (!ready || !user) return null
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#F4F4F4]">
+      <AppNav title={user.dept_name} subtitle="Profile" />
+
+      <main className="flex-1 px-6 md:px-8 py-8 max-w-xl mx-auto w-full space-y-4">
+        {loading ? (
+          <div className="space-y-4">
+            <div className="h-40 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />
+            <div className="h-40 bg-white border border-[#EBEBEB] rounded-sm animate-pulse" />
+          </div>
+        ) : profile && (
+          <>
+            {/* Profile card */}
+            <div className="bg-white border border-[#EBEBEB] rounded-sm p-6">
+              <h2 className="font-medium text-[#1A1A1A] text-sm mb-4">Profile</h2>
+
+              <div className="flex items-center gap-4 mb-5">
+                <div className="relative">
+                  <Avatar size="lg" className="size-16">
+                    {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.name} />}
+                    <AvatarFallback className="text-lg">{profile.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <button
+                    onClick={handleAvatarPick}
+                    disabled={uploadingAvatar}
+                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#CC1F1F] hover:bg-[#8B1A1A] rounded-full flex items-center justify-center text-white transition-colors"
+                    title="Change avatar"
+                  >
+                    <Camera size={12} />
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleAvatarChange} />
+                </div>
+                <div>
+                  <div className="text-xs text-[#808080]">{ROLE_LABELS[profile.role] || profile.role}</div>
+                  {profile.dept_name && <div className="text-xs text-[#AAAAAA]">{profile.dept_name}</div>}
+                  {uploadingAvatar && <div className="text-[11px] text-[#AAAAAA] mt-1">Uploading…</div>}
+                </div>
+              </div>
+
+              <label className="block text-xs font-medium text-[#595959] mb-1.5">Display Name</label>
+              <div className="flex gap-2">
+                <Input value={name} onChange={e => setName(e.target.value)} className="flex-1" />
+                <Button
+                  size="sm"
+                  disabled={savingName || !name.trim() || name.trim() === profile.name}
+                  onClick={handleSaveName}
+                  className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white"
+                >
+                  {savingName ? 'Saving…' : 'Save'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Password card */}
+            <div className="bg-white border border-[#EBEBEB] rounded-sm p-6">
+              <h2 className="font-medium text-[#1A1A1A] text-sm mb-1">Password</h2>
+              <p className="text-xs text-[#808080] mb-4">Changing your PIN requires Super Admin approval — your current PIN keeps working until then.</p>
+
+              {profile.pending_pin_request ? (
+                <div className="flex items-center gap-2 text-xs text-[#B45309] bg-[#FFF8E6] border border-[#FDE68A] px-3 py-2.5 rounded">
+                  <Clock size={13} className="shrink-0" />
+                  Waiting on Super Admin approval — requested {new Date(profile.pending_pin_request.requested_at).toLocaleString()}
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-medium text-[#595959] mb-1.5">New 4-Digit PIN</label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={newPin}
+                      onChange={e => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      placeholder="• • • •"
+                      className="flex-1 text-center tracking-widest"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={submittingPin || newPin.length !== 4}
+                      onClick={handleSubmitPin}
+                      className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white shrink-0"
+                    >
+                      <ShieldCheck size={13} className="mr-1" />
+                      {submittingPin ? 'Submitting…' : 'Request Change'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  )
+}

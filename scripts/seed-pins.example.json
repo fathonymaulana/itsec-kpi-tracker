@@ -16,6 +16,7 @@
   },
   "roles": {
     "corp_planning": "0000",
-    "board": "0000"
+    "board": "0000",
+    "super_admin": "0000"
   }
 }

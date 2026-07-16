@@ -5,6 +5,7 @@ import { AlertTriangle, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus,
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -146,7 +147,15 @@ export default function BoardPage() {
               <FileSearch size={13} />
               <span className="hidden sm:inline">Data Review</span>
             </button>
-            <div className="text-white/40 text-xs hidden sm:block">{user.dept_name}</div>
+            <div className="text-white/40 text-xs hidden sm:block">{user.name}</div>
+            <button onClick={() => router.push('/profile')} title="Profile">
+              <Avatar size="sm" className="ring-2 ring-white/20 hover:ring-white/40 transition-all">
+                {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
+                <AvatarFallback className="bg-white/10 text-white text-[10px]">
+                  {user.name.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"

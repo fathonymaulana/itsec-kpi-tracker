@@ -3,7 +3,9 @@ import jwt from 'jsonwebtoken'
 import { NextRequest, NextResponse } from 'next/server'
 
 export interface AuthPayload {
-  role: 'dept_head' | 'corp_planning' | 'board'
+  user_id: number
+  name: string
+  role: 'dept_head' | 'corp_planning' | 'board' | 'super_admin'
   dept_id: string | null
 }
 

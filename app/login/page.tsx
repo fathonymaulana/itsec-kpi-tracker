@@ -1,5 +1,5 @@
 'use client'
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { Input } from '@/components/ui/input'
@@ -7,34 +7,42 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle } from 'lucide-react'
 
-const DEPARTMENTS = [
-  { id: 'CorCom',             label: 'CorCom' },
-  { id: 'CorSec',             label: 'CorSec' },
-  { id: 'FAT',                label: 'FAT' },
-  { id: 'HR_GA',              label: 'HR & GA' },
-  { id: 'Internal_Audit',     label: 'Internal Audit' },
-  { id: 'Investor_Relations', label: 'Investor Relations' },
-  { id: 'Partner_Manager',    label: 'Partner Manager' },
-  { id: 'PMO',                label: 'PMO' },
-  { id: 'RD',                 label: 'R & D' },
-  { id: 'Sales',              label: 'Sales' },
-  { id: 'SecOps',             label: 'SecOps' },
-  { id: 'Technical_Writer',   label: 'Technical Writer' },
-]
+interface DirectoryUser {
+  id: number
+  name: string
+  role: 'dept_head' | 'corp_planning' | 'board' | 'super_admin'
+  dept_id: string | null
+  dept_name: string | null
+}
 
-// Corp planning and board use PIN-only auth; dept_id sent as placeholder
-const ROLE_ITEMS = [
-  { id: 'corp_planning', label: 'Corporate Planning' },
-  { id: 'board',         label: 'Board' },
-]
+const ROLE_LABELS: Record<string, string> = {
+  super_admin: 'Super Admin',
+  corp_planning: 'Corporate Planning',
+  board: 'Board',
+}
 
 export default function LoginPage() {
   const { login } = useAuth()
   const router = useRouter()
+  const [directory, setDirectory] = useState<DirectoryUser[]>([])
   const [selected, setSelected] = useState('')
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/users/directory')
+      .then(r => r.json())
+      .then(data => setDirectory(data.users || []))
+      .catch(() => setError('Failed to load users. Please refresh.'))
+  }, [])
+
+  const management = directory.filter(u => u.role !== 'dept_head')
+  const byDept = directory.filter(u => u.role === 'dept_head').reduce<Record<string, DirectoryUser[]>>((acc, u) => {
+    const key = u.dept_name || 'Unassigned'
+    ;(acc[key] ??= []).push(u)
+    return acc
+  }, {})
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -42,12 +50,12 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      await login(selected, pin)
-      // Auth stores role in localStorage; read it for redirect
+      await login(parseInt(selected, 10), pin)
       const stored = JSON.parse(localStorage.getItem('itsec_kpi_user') || '{}')
       const role = stored.role
       if (role === 'dept_head') router.push('/dept')
       else if (role === 'corp_planning') router.push('/admin')
+      else if (role === 'super_admin') router.push('/super-admin')
       else router.push('/board')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed')
@@ -73,28 +81,34 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="bg-white border border-[#EBEBEB] shadow-sm w-full max-w-sm p-8">
           <h1 className="font-semibold text-[#1A1A1A] text-xl mb-1">KPI Tracker</h1>
-          <p className="text-[#808080] text-sm font-normal mb-8">Sign in with your department and PIN</p>
+          <p className="text-[#808080] text-sm font-normal mb-8">Sign in with your name and PIN</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#595959] mb-1.5">Department / Role</label>
+              <label className="block text-xs font-medium text-[#595959] mb-1.5">Your Name</label>
               <Select value={selected} onValueChange={v => setSelected(v ?? '')}>
                 <SelectTrigger className="w-full text-sm">
-                  <SelectValue placeholder="Select your department or role" />
+                  <SelectValue placeholder="Select your name" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel className="text-[10px] text-[#AAAAAA] uppercase tracking-wider">Management</SelectLabel>
-                    {ROLE_ITEMS.map(r => (
-                      <SelectItem key={r.id} value={r.id} className="text-sm">{r.label}</SelectItem>
-                    ))}
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="text-[10px] text-[#AAAAAA] uppercase tracking-wider">Departments</SelectLabel>
-                    {DEPARTMENTS.map(d => (
-                      <SelectItem key={d.id} value={d.id} className="text-sm">{d.label}</SelectItem>
-                    ))}
-                  </SelectGroup>
+                  {management.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="text-[10px] text-[#AAAAAA] uppercase tracking-wider">Management</SelectLabel>
+                      {management.map(u => (
+                        <SelectItem key={u.id} value={String(u.id)} className="text-sm">
+                          {u.name} <span className="text-[#AAAAAA]">— {ROLE_LABELS[u.role]}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {Object.entries(byDept).map(([deptName, users]) => (
+                    <SelectGroup key={deptName}>
+                      <SelectLabel className="text-[10px] text-[#AAAAAA] uppercase tracking-wider">{deptName}</SelectLabel>
+                      {users.map(u => (
+                        <SelectItem key={u.id} value={String(u.id)} className="text-sm">{u.name}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

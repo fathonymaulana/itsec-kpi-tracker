@@ -6,18 +6,41 @@
 create extension if not exists "pgcrypto";
 
 create type verification_status as enum ('pending', 'verified', 'flagged');
+create type user_role as enum ('dept_head', 'corp_planning', 'board', 'super_admin');
 
 create table departments (
   id text primary key,
-  name text not null,
-  pin_hash text not null
+  name text not null
 );
 
-create table roles (
-  role_key text primary key,
+-- Per-person accounts. Replaces the old shared department/role PIN login: every person gets their
+-- own name, avatar, and PIN, and multiple people can belong to the same department.
+create table users (
+  id bigint generated always as identity primary key,
+  name text not null,
+  avatar_url text,
   pin_hash text not null,
-  display_name text
+  role user_role not null,
+  dept_id text references departments(id) on delete set null,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
 );
+create index on users (dept_id);
+
+-- Self-service PIN changes don't take effect immediately — they sit here until a Super Admin
+-- approves or rejects them; the old PIN keeps working in the meantime (see app/api/users/me/pin-request
+-- and app/api/super-admin/pin-requests).
+create table pin_change_requests (
+  id bigint generated always as identity primary key,
+  user_id bigint not null references users(id) on delete cascade,
+  new_pin_hash text not null,
+  status text not null default 'pending' check (status in ('pending','approved','rejected')),
+  requested_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  reviewed_by bigint references users(id),
+  review_note text
+);
+create index on pin_change_requests (status) where status = 'pending';
 
 create table kpis (
   id bigint generated always as identity primary key,
@@ -102,7 +125,8 @@ create index on anomalies (sub_metric_id, year, month) where not dismissed;
 create index on submissions (dept_id, year, month);
 
 alter table departments enable row level security;
-alter table roles enable row level security;
+alter table users enable row level security;
+alter table pin_change_requests enable row level security;
 alter table kpis enable row level security;
 alter table sub_metrics enable row level security;
 alter table actuals enable row level security;
@@ -112,3 +136,9 @@ alter table submissions enable row level security;
 -- No policies are defined: with RLS enabled and zero policies, every table denies all access to the
 -- anon/authenticated roles. The service-role key used by lib/supabase-server.ts bypasses RLS entirely,
 -- which is how the app's own auth layer (app/api/**, JWT-gated) stays the single source of truth.
+
+-- Public-read Storage bucket for profile avatars. Writes only ever go through the service-role-backed
+-- /api/users/me/avatar route (never a direct client upload), so no Storage RLS policies are needed.
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;

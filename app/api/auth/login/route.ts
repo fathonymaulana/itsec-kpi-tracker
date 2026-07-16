@@ -4,27 +4,30 @@ import { supabaseServer } from '@/lib/supabase-server'
 import { signToken } from '@/lib/auth-server'
 
 export async function POST(request: NextRequest) {
-  const { dept_id, pin } = await request.json().catch(() => ({}))
-  if (!pin) return NextResponse.json({ error: 'PIN required' }, { status: 400 })
+  const { user_id, pin } = await request.json().catch(() => ({}))
+  if (!user_id || !pin) return NextResponse.json({ error: 'user_id and PIN required' }, { status: 400 })
+
   const supabase = supabaseServer()
+  const { data: user } = await supabase
+    .from('users')
+    .select('id, name, avatar_url, pin_hash, role, dept_id, active, departments(name)')
+    .eq('id', user_id)
+    .maybeSingle()
 
-  // Try dept login first
-  if (dept_id && !String(dept_id).startsWith('__')) {
-    const { data: dept } = await supabase.from('departments').select('*').eq('id', dept_id).maybeSingle()
-    if (dept && bcrypt.compareSync(pin, dept.pin_hash as string)) {
-      const token = signToken({ role: 'dept_head', dept_id: dept.id as string })
-      return NextResponse.json({ token, role: 'dept_head', dept_id: dept.id, dept_name: dept.name })
-    }
+  if (!user || !user.active || !bcrypt.compareSync(pin, user.pin_hash as string)) {
+    return NextResponse.json({ error: 'Incorrect PIN. Please try again.' }, { status: 401 })
   }
 
-  // Try role login (corp_planning / board)
-  const { data: roles } = await supabase.from('roles').select('*')
-  for (const role of roles || []) {
-    if (bcrypt.compareSync(pin, role.pin_hash as string)) {
-      const token = signToken({ role: role.role_key as 'corp_planning' | 'board', dept_id: null })
-      return NextResponse.json({ token, role: role.role_key, dept_id: null, dept_name: role.display_name })
-    }
-  }
+  const token = signToken({ user_id: user.id as number, name: user.name as string, role: user.role as 'dept_head' | 'corp_planning' | 'board' | 'super_admin', dept_id: user.dept_id as string | null })
+  const deptName = (user.departments as unknown as { name: string } | null)?.name ?? user.name
 
-  return NextResponse.json({ error: 'Incorrect PIN. Please try again.' }, { status: 401 })
+  return NextResponse.json({
+    token,
+    user_id: user.id,
+    name: user.name,
+    avatar_url: user.avatar_url,
+    role: user.role,
+    dept_id: user.dept_id,
+    dept_name: deptName,
+  })
 }

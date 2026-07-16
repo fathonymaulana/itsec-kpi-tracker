@@ -3,7 +3,10 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 export interface AuthUser {
   token: string
-  role: 'dept_head' | 'corp_planning' | 'board'
+  user_id: number
+  name: string
+  avatar_url: string | null
+  role: 'dept_head' | 'corp_planning' | 'board' | 'super_admin'
   dept_id: string | null
   dept_name: string
 }
@@ -12,8 +15,9 @@ interface AuthContextType {
   user: AuthUser | null
   token: string | null
   ready: boolean   // true once localStorage has been checked
-  login: (dept_id: string, pin: string) => Promise<void>
+  login: (user_id: number, pin: string) => Promise<void>
   logout: () => void
+  refreshUser: (patch: Partial<AuthUser>) => void
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   ready: false,
   login: async () => {},
   logout: () => {},
+  refreshUser: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,11 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setReady(true)
   }, [])
 
-  const login = async (dept_id: string, pin: string) => {
+  const login = async (user_id: number, pin: string) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dept_id, pin }),
+      body: JSON.stringify({ user_id, pin }),
     })
     if (!res.ok) {
       const e = await res.json()
@@ -51,13 +56,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('itsec_kpi_user', JSON.stringify(data))
   }
 
+  // Updates the locally-cached profile fields (name/avatar) after a successful self-service edit,
+  // without requiring a full re-login.
+  const refreshUser = (patch: Partial<AuthUser>) => {
+    setUser(prev => {
+      if (!prev) return prev
+      const next = { ...prev, ...patch }
+      localStorage.setItem('itsec_kpi_user', JSON.stringify(next))
+      return next
+    })
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem('itsec_kpi_user')
   }
 
   return (
-    <AuthContext.Provider value={{ user, token: user?.token ?? null, ready, login, logout }}>
+    <AuthContext.Provider value={{ user, token: user?.token ?? null, ready, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )
