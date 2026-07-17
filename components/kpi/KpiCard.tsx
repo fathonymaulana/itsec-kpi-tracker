@@ -135,6 +135,19 @@ export function KpiCard({
               {dataSource?.url ? 'Source' : 'Add Source'}
             </button>
           )}
+          {readOnly && dataSource?.url && (
+            <a
+              href={dataSource.url}
+              target="_blank"
+              rel="noreferrer"
+              download
+              className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-soft border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors"
+              title="View or download the data source this department submitted"
+            >
+              <Link2 size={12} />
+              View Source
+            </a>
+          )}
           {readOnly && onRequestModify ? (
             modifyRequestStatus === 'pending' ? (
               <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-warning bg-warning-soft border border-warning-soft-border">

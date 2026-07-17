@@ -1,12 +1,12 @@
 'use client'
 import { useState, useEffect, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Image from 'next/image'
 import { useAuth } from '@/lib/auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
+import { ItsecLogo } from '@/components/layout/ItsecLogo'
 
 interface DirectoryUser {
   id: number
@@ -80,7 +80,7 @@ function LoginForm() {
     <div className="h-screen overflow-hidden bg-app flex flex-col">
       {/* Logo badge, top-left */}
       <div className="px-6 md:px-24 pt-4 pb-2 shrink-0">
-        <Image src="/login/itsec-logo-badge.svg" alt="ITSEC KPI Tracker" width={179} height={19} className="h-5 w-auto" priority />
+        <ItsecLogo className="h-5 w-auto text-ink" />
       </div>
 
       {/* Centered content */}

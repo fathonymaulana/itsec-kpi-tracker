@@ -164,7 +164,7 @@ export default function ProfilePage() {
 
               <div className="flex items-center gap-4 mb-5">
                 <div className="relative">
-                  <Avatar size="lg" className="size-16">
+                  <Avatar size="lg" className="size-24">
                     {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.name} />}
                     <AvatarFallback className="text-lg">{profile.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>

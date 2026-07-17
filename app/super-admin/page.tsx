@@ -10,6 +10,8 @@ import {
   CheckCircleLineDuotone as IconCheckCircle,
   CloseCircleLineDuotone as IconCloseCircle,
   ClockCircleLineDuotone as IconClock,
+  UsersGroupRoundedLineDuotone as UsersLine, UsersGroupRoundedBold as UsersBold,
+  KeyBold as KeyBold,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
@@ -134,8 +136,12 @@ export default function SuperAdminPage() {
 
             <Tabs value={tab} onValueChange={v => v && setTab(v as 'users' | 'requests')}>
               <TabsList className="mb-4">
-                <TabsTrigger value="users">Users</TabsTrigger>
+                <TabsTrigger value="users">
+                  {tab === 'users' ? <UsersBold data-icon="inline-start" size={14} /> : <UsersLine data-icon="inline-start" size={14} />}
+                  Users
+                </TabsTrigger>
                 <TabsTrigger value="requests">
+                  {tab === 'requests' ? <KeyBold data-icon="inline-start" size={14} /> : <IconKey data-icon="inline-start" size={14} />}
                   PIN Requests{pendingCount > 0 && <Badge className="ml-1.5 text-[10px] px-1.5">{pendingCount}</Badge>}
                 </TabsTrigger>
               </TabsList>

@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import Image from 'next/image'
 import {
   Home2LineDuotone as HomeLine, Home2Bold as HomeBold,
   ClipboardListLineDuotone as ClipboardListLine, ClipboardListBold as ClipboardListBold,
@@ -14,6 +13,7 @@ import { useAuth } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn, iconHoverClass } from '@/lib/utils'
+import { ItsecLogo } from '@/components/layout/ItsecLogo'
 
 type IconPair = { line: typeof HomeLine; bold: typeof HomeBold }
 
@@ -46,7 +46,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   return (
     <header className="bg-panel shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
       <div className="flex items-center gap-3.5 justify-self-start">
-        <Image src="/login/itsec-logo-badge.svg" alt="ITSEC KPI Tracker" width={179} height={19} className="h-5 w-auto" />
+        <ItsecLogo className="h-5 w-auto text-ink" />
       </div>
 
       <nav className="flex items-center h-full justify-self-center">
@@ -115,7 +115,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
 
         {user && (
           <button onClick={() => router.push('/profile')} title="Profile">
-            <Avatar size="sm" className="size-9 ring-1 ring-divider">
+            <Avatar size="sm" className="size-8 ring-1 ring-divider">
               {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
               <AvatarFallback className="text-[10px]">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>

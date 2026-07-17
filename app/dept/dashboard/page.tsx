@@ -6,6 +6,8 @@ import {
   EyeLineDuotone as Eye,
   GraphDownNewLineDuotone as TrendingDown,
   MinusCircleLineDuotone as CircleDashed,
+  ChartLineDuotone as ChartLine, ChartBold as ChartBold,
+  ListLineDuotone as ListLine, ListBold as ListBold,
 } from '@solar-icons/react-perf'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
@@ -189,8 +191,14 @@ export default function DeptDashboard() {
             ) : (
               <Tabs value={view} onValueChange={v => v && setView(v as 'charts' | 'table')}>
                 <TabsList className="mb-4">
-                  <TabsTrigger value="charts">Charts</TabsTrigger>
-                  <TabsTrigger value="table">Table</TabsTrigger>
+                  <TabsTrigger value="charts">
+                    {view === 'charts' ? <ChartBold data-icon="inline-start" size={14} /> : <ChartLine data-icon="inline-start" size={14} />}
+                    Charts
+                  </TabsTrigger>
+                  <TabsTrigger value="table">
+                    {view === 'table' ? <ListBold data-icon="inline-start" size={14} /> : <ListLine data-icon="inline-start" size={14} />}
+                    Table
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="charts" className="space-y-4">

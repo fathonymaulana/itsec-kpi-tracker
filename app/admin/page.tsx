@@ -4,13 +4,12 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   CheckCircleLineDuotone as CheckCircle2,
-  DangerTriangleLineDuotone as AlertTriangle,
-  SquareArrowRightUpLineDuotone as ExternalLink,
-  AltArrowRightLineDuotone as ChevronRight,
+  DangerTriangleLineDuotone as AlertTriangle, DangerTriangleBold as AlertTriangleBold,
+  AltArrowRightLineDuotone as ChevronRight, AltArrowRightBold as ChevronRightBold,
   BuildingsLineDuotone as Building2,
-  ShieldLineDuotone as Shield,
+  ShieldLineDuotone as Shield, ShieldBold as ShieldBold,
   ClockCircleLineDuotone as Clock,
-  LockUnlockedLineDuotone as LockUnlocked,
+  LockUnlockedLineDuotone as LockUnlocked, LockUnlockedBold as LockUnlockedBold,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
@@ -279,24 +278,27 @@ export default function AdminPage() {
             {/* Tabs — Modify Requests is global (any department), so it works with no department selected */}
             <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-2 flex gap-1 mb-4">
               {([
-                { key: 'data', label: 'Data Review', icon: ChevronRight },
-                { key: 'anomalies', label: `Anomalies${activeAnomalies > 0 ? ` (${activeAnomalies})` : ''}`, icon: AlertTriangle },
-                { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield },
-                { key: 'modify', label: `Modify Requests${modifyRequests.length > 0 ? ` (${modifyRequests.length})` : ''}`, icon: LockUnlocked },
-              ] as { key: TabKey; label: string; icon: React.ElementType }[]).map(t => (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 transition-colors ${
-                    tab === t.key
-                      ? 'border-[#CC1F1F] text-[#CC1F1F] font-medium'
-                      : 'border-transparent text-ink-muted hover:text-ink-soft'
-                  }`}
-                >
-                  <t.icon size={12} />
-                  {t.label}
-                </button>
-              ))}
+                { key: 'data', label: 'Data Review', icon: ChevronRight, boldIcon: ChevronRightBold },
+                { key: 'anomalies', label: `Anomalies${activeAnomalies > 0 ? ` (${activeAnomalies})` : ''}`, icon: AlertTriangle, boldIcon: AlertTriangleBold },
+                { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield, boldIcon: ShieldBold },
+                { key: 'modify', label: `Modify Requests${modifyRequests.length > 0 ? ` (${modifyRequests.length})` : ''}`, icon: LockUnlocked, boldIcon: LockUnlockedBold },
+              ] as { key: TabKey; label: string; icon: React.ElementType; boldIcon: React.ElementType }[]).map(t => {
+                const Icon = tab === t.key ? t.boldIcon : t.icon
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 transition-colors ${
+                      tab === t.key
+                        ? 'border-[#CC1F1F] text-[#CC1F1F] font-medium'
+                        : 'border-transparent text-ink-muted hover:text-ink-soft'
+                    }`}
+                  >
+                    <Icon size={12} />
+                    {t.label}
+                  </button>
+                )
+              })}
             </div>
 
             {/* MODIFY REQUESTS TAB */}
@@ -405,17 +407,6 @@ export default function AdminPage() {
                               </>
                             ) : (
                               <span className="text-[11px] text-ink-faint">Pending verification</span>
-                            )}
-                            {dataSources[kpi.id]?.url && (
-                              <a
-                                href={dataSources[kpi.id].url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex items-center gap-1 text-[11px] text-ink-muted hover:text-[#CC1F1F] ml-auto"
-                              >
-                                <ExternalLink size={10} />
-                                Source
-                              </a>
                             )}
                           </div>
                         </div>

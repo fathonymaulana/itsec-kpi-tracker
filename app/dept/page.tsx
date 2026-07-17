@@ -442,7 +442,7 @@ export default function DeptPage() {
           </div>
 
           {/* Save/Submit action bar — pinned flush to the bottom of the screen, not floating over content */}
-          <div className="shrink-0 border-t border-divider bg-panel px-6 py-4 flex justify-end gap-3">
+          <div className="shrink-0 border-t border-divider bg-app px-6 py-4 flex justify-end gap-3">
             <Button
               variant="outline"
               className={`h-12 px-5 rounded-2xl gap-2 border-divider bg-panel ${iconHoverClass}`}
