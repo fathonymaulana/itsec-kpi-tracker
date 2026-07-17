@@ -130,7 +130,9 @@ export default function DeptDashboard() {
   return (
     <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
       <DeptTopNav
+        leftPanelOpen={leftPanelOpen}
         onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        rightPanelOpen={rightPanelOpen}
         onToggleRightPanel={() => setRightPanelOpen(v => !v)}
       />
 
@@ -157,7 +159,7 @@ export default function DeptDashboard() {
             </div>
 
             {/* Stat summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+            <div className="grid grid-cols-2 gap-3 mb-8">
               {[
                 { label: 'On Track', value: onTrack, color: '#0d9488', Icon: TrendingUp, caption: 'performing at or above target' },
                 { label: 'Watch', value: watch, color: '#B45309', Icon: Eye, caption: 'trending toward target, worth watching' },

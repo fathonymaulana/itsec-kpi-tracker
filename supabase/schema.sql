@@ -121,12 +121,32 @@ create table submissions (
   unique (dept_id, year, month)
 );
 
+-- A dept_head can't edit a KPI once its month is submitted (locked). To fix a mistake after the
+-- fact, they file a modify_request explaining why; approving it deletes the submissions row for
+-- that dept/year/month (see app/api/modify-requests/[id]), which unlocks the whole month again.
+create table modify_requests (
+  id bigint generated always as identity primary key,
+  kpi_id bigint not null references kpis(id) on delete cascade,
+  dept_id text not null references departments(id) on delete cascade,
+  year integer not null,
+  month integer not null,
+  reason text not null,
+  status text not null default 'pending' check (status in ('pending','approved','rejected')),
+  requested_by bigint not null references users(id),
+  requested_at timestamptz not null default now(),
+  reviewed_by bigint references users(id),
+  reviewed_at timestamptz,
+  review_note text
+);
+
 create index on kpis (dept_id);
 create index on sub_metrics (kpi_id);
 create index on actuals (sub_metric_id, year, month);
 create index on verifications (dept_id, year, month);
 create index on anomalies (sub_metric_id, year, month) where not dismissed;
 create index on submissions (dept_id, year, month);
+create index on modify_requests (dept_id, year, month);
+create index on modify_requests (status);
 
 alter table departments enable row level security;
 alter table users enable row level security;
@@ -137,6 +157,7 @@ alter table actuals enable row level security;
 alter table verifications enable row level security;
 alter table anomalies enable row level security;
 alter table submissions enable row level security;
+alter table modify_requests enable row level security;
 -- No policies are defined: with RLS enabled and zero policies, every table denies all access to the
 -- anon/authenticated roles. The service-role key used by lib/supabase-server.ts bypasses RLS entirely,
 -- which is how the app's own auth layer (app/api/**, JWT-gated) stays the single source of truth.

@@ -1,10 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogoutLineDuotone as LogOut, TransferHorizontalLineDuotone as ArrowLeftRight } from '@solar-icons/react-perf'
+import { LogoutLineDuotone as LogOut } from '@solar-icons/react-perf'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
-import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
 import { Switch } from '@/components/ui/switch'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
@@ -57,18 +56,6 @@ export function AddOnsPanel() {
 
       <div className="flex flex-col gap-3 pb-6 pl-6 pr-12 pt-4 w-full">
         <div className="text-xs text-[#737373] uppercase tracking-wide">Others</div>
-
-        <SwitchAccountDialog
-          renderTrigger={(onClick) => (
-            <button
-              onClick={onClick}
-              className="bg-[#f5f5f5] border border-[#e5e5e5] rounded-xl px-4 py-3.5 w-full flex items-center justify-between hover:border-[#CC1F1F] transition-colors group"
-            >
-              <span className="text-base text-[#282828] tracking-[-0.192px]">Switch account</span>
-              <ArrowLeftRight size={20} className="text-[#282828] group-hover:scale-110 transition-transform" />
-            </button>
-          )}
-        />
 
         <button
           onClick={() => setConfirmLogout(true)}

@@ -132,7 +132,9 @@ export default function BoardPage() {
   return (
     <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
       <DeptTopNav
+        leftPanelOpen={leftPanelOpen}
         onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        rightPanelOpen={rightPanelOpen}
         onToggleRightPanel={() => setRightPanelOpen(v => !v)}
       />
 
@@ -188,7 +190,7 @@ export default function BoardPage() {
             )}
 
             {/* Summary stat cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 gap-3 mb-6">
               {[
                 { label: 'On Track', value: totals.on_track, pct: pct(totals.on_track), color: '#166534', border: '#BBF7D0', Icon: TrendingUp },
                 { label: 'Watch', value: totals.watch, pct: pct(totals.watch), color: '#92400E', border: '#FDE68A', Icon: Minus },

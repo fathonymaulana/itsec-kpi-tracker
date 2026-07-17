@@ -1,6 +1,5 @@
 'use client'
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { recordAccountUsage } from '@/lib/account-history'
 
 export interface AuthUser {
   token: string
@@ -55,14 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await res.json()
     setUser(data)
     localStorage.setItem('itsec_kpi_user', JSON.stringify(data))
-    recordAccountUsage({
-      user_id: data.user_id,
-      name: data.name,
-      avatar_url: data.avatar_url ?? null,
-      role: data.role,
-      dept_id: data.dept_id ?? null,
-      dept_name: data.dept_name,
-    })
   }
 
   // Updates the locally-cached profile fields (name/avatar) after a successful self-service edit,
@@ -72,14 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!prev) return prev
       const next = { ...prev, ...patch }
       localStorage.setItem('itsec_kpi_user', JSON.stringify(next))
-      recordAccountUsage({
-        user_id: next.user_id,
-        name: next.name,
-        avatar_url: next.avatar_url ?? null,
-        role: next.role,
-        dept_id: next.dept_id ?? null,
-        dept_name: next.dept_name,
-      })
       return next
     })
   }

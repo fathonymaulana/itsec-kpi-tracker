@@ -1,41 +1,47 @@
 'use client'
+import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import {
-  Home2LineDuotone as Home,
-  ClipboardListLineDuotone as ClipboardList,
-  ClipboardCheckLineDuotone as ClipboardCheck,
-  UsersGroupRoundedLineDuotone as Users,
-  SidebarMinimalisticLineDuotone as SidebarIcon,
-  BellLineDuotone as Bell,
+  Home2LineDuotone as HomeLine, Home2Bold as HomeBold,
+  ClipboardListLineDuotone as ClipboardListLine, ClipboardListBold as ClipboardListBold,
+  ClipboardCheckLineDuotone as ClipboardCheckLine, ClipboardCheckBold as ClipboardCheckBold,
+  UsersGroupRoundedLineDuotone as UsersLine, UsersGroupRoundedBold as UsersBold,
+  SidebarMinimalisticLineDuotone as SidebarLine, SidebarMinimalisticBold as SidebarBold,
+  BellLineDuotone as BellLine, BellBold as BellBold,
 } from '@solar-icons/react-perf'
 import { useAuth } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn, iconHoverClass } from '@/lib/utils'
 
-const NAV_ITEMS_BY_ROLE: Record<string, { href: string; label: string; Icon: typeof Home }[]> = {
+type IconPair = { line: typeof HomeLine; bold: typeof HomeBold }
+
+const NAV_ITEMS_BY_ROLE: Record<string, { href: string; label: string; icons: IconPair }[]> = {
   dept_head: [
-    { href: '/dept/dashboard', label: 'Dashboard', Icon: Home },
-    { href: '/dept', label: 'Data Entry', Icon: ClipboardList },
+    { href: '/dept/dashboard', label: 'Dashboard', icons: { line: HomeLine, bold: HomeBold } },
+    { href: '/dept', label: 'Data Entry', icons: { line: ClipboardListLine, bold: ClipboardListBold } },
   ],
   corp_planning: [
-    { href: '/board', label: 'Dashboard', Icon: Home },
-    { href: '/admin', label: 'Data Review', Icon: ClipboardCheck },
-    { href: '/super-admin', label: 'Users', Icon: Users },
+    { href: '/board', label: 'Dashboard', icons: { line: HomeLine, bold: HomeBold } },
+    { href: '/admin', label: 'Data Review', icons: { line: ClipboardCheckLine, bold: ClipboardCheckBold } },
+    { href: '/super-admin', label: 'Users', icons: { line: UsersLine, bold: UsersBold } },
   ],
 }
 
 interface DeptTopNavProps {
+  leftPanelOpen?: boolean
   onToggleLeftPanel?: () => void
+  rightPanelOpen?: boolean
   onToggleRightPanel?: () => void
 }
 
-export function DeptTopNav({ onToggleLeftPanel, onToggleRightPanel }: DeptTopNavProps) {
+export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, onToggleRightPanel }: DeptTopNavProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { user } = useAuth()
   const navItems = NAV_ITEMS_BY_ROLE[user?.role ?? ''] ?? []
+  const [notifOpen, setNotifOpen] = useState(false)
 
   return (
     <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
@@ -46,6 +52,7 @@ export function DeptTopNav({ onToggleLeftPanel, onToggleRightPanel }: DeptTopNav
       <nav className="flex items-center h-full justify-self-center">
         {navItems.map(item => {
           const active = pathname === item.href
+          const Icon = active ? item.icons.bold : item.icons.line
           return (
             <button
               key={item.href}
@@ -56,7 +63,7 @@ export function DeptTopNav({ onToggleLeftPanel, onToggleRightPanel }: DeptTopNav
               )}
               title={item.label}
             >
-              <item.Icon size={22} />
+              <Icon size={22} />
             </button>
           )
         })}
@@ -69,7 +76,9 @@ export function DeptTopNav({ onToggleLeftPanel, onToggleRightPanel }: DeptTopNav
             className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
             title="Toggle left panel"
           >
-            <SidebarIcon size={18} className="text-[#282828] -scale-x-100" />
+            {leftPanelOpen
+              ? <SidebarBold size={18} className="text-[#282828] -scale-x-100" />
+              : <SidebarLine size={18} className="text-[#282828] -scale-x-100" />}
           </button>
         )}
         {onToggleRightPanel && (
@@ -78,23 +87,25 @@ export function DeptTopNav({ onToggleLeftPanel, onToggleRightPanel }: DeptTopNav
             className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
             title="Toggle right panel"
           >
-            <SidebarIcon size={18} className="text-[#282828]" />
+            {rightPanelOpen
+              ? <SidebarBold size={18} className="text-[#282828]" />
+              : <SidebarLine size={18} className="text-[#282828]" />}
           </button>
         )}
 
-        <Popover>
+        <Popover open={notifOpen} onOpenChange={setNotifOpen}>
           <PopoverTrigger
             className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
             title="Notifications"
           >
-            <Bell size={18} className="text-[#282828]" />
+            {notifOpen ? <BellBold size={18} className="text-[#282828]" /> : <BellLine size={18} className="text-[#282828]" />}
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-[#e5e5e5]">
               <div className="text-sm font-semibold text-[#282828]">Notifications</div>
             </div>
             <div className="p-8 text-center flex flex-col items-center gap-2">
-              <Bell size={28} className="text-[#DDDDDD]" />
+              <BellLine size={28} className="text-[#DDDDDD]" />
               <p className="text-sm text-[#737373]">You&apos;re all caught up — no notifications yet.</p>
             </div>
           </PopoverContent>

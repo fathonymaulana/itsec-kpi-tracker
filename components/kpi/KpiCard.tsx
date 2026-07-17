@@ -1,11 +1,18 @@
 'use client'
 import { useState } from 'react'
-import { LinkMinimalisticLineDuotone as Link2, AltArrowDownLineDuotone as ChevronDown, AltArrowUpLineDuotone as ChevronUp } from '@solar-icons/react-perf'
+import {
+  LinkMinimalisticLineDuotone as Link2,
+  AltArrowDownLineDuotone as ChevronDown,
+  AltArrowUpLineDuotone as ChevronUp,
+  LockUnlockedLineDuotone as RequestModifyIcon,
+  ClockCircleLineDuotone as PendingIcon,
+} from '@solar-icons/react-perf'
 import { computeCalcValue } from '@/lib/calculations'
 import { getStatus, getStatusColors } from '@/lib/status'
 import { StatusBadge } from './StatusBadge'
 import { AnomalyBadge } from './AnomalyBadge'
 import { DataSourceModal } from './DataSourceModal'
+import { ModifyRequestModal } from './ModifyRequestModal'
 
 interface SubMetric {
   id: number
@@ -32,6 +39,11 @@ interface KpiCardProps {
   onValueChange?: (subMetricId: number, val: string) => void
   onDataSourceSave?: (kpiId: number, url: string, note: string) => void
   onAnomalyClick?: () => void
+  // When set, a locked (readOnly) card shows a "Request Modify" CTA instead of collapse/expand —
+  // only meaningful on the dept_head's own Data Entry page, not on Corporate Planning's read-only
+  // review view, so this is opt-in rather than inferred from readOnly alone.
+  modifyRequestStatus?: 'pending' | 'rejected' | null
+  onRequestModify?: (kpiId: number, reason: string) => void
 }
 
 export function KpiCard({
@@ -43,9 +55,12 @@ export function KpiCard({
   onValueChange,
   onDataSourceSave,
   onAnomalyClick,
+  modifyRequestStatus,
+  onRequestModify,
 }: KpiCardProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [dsOpen, setDsOpen] = useState(false)
+  const [modifyOpen, setModifyOpen] = useState(false)
 
   // Input sub-metrics in order (non-calc)
   const inputSMs = kpi.sub_metrics.filter(sm => !sm.is_calculated)
@@ -120,12 +135,30 @@ export function KpiCard({
               {dataSource?.url ? 'Source' : 'Add Source'}
             </button>
           )}
-          <button
-            onClick={() => setCollapsed(c => !c)}
-            className="text-[#AAAAAA] hover:text-[#595959] transition-colors"
-          >
-            {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-          </button>
+          {readOnly && onRequestModify ? (
+            modifyRequestStatus === 'pending' ? (
+              <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-[#B45309] bg-[#FFF8E6] border border-[#FDE68A]">
+                <PendingIcon size={12} />
+                Pending Review
+              </div>
+            ) : (
+              <button
+                onClick={() => setModifyOpen(true)}
+                className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-[#595959] border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors"
+                title="Request permission to modify this matrix"
+              >
+                <RequestModifyIcon size={12} />
+                {modifyRequestStatus === 'rejected' ? 'Request Again' : 'Request Modify'}
+              </button>
+            )
+          ) : (
+            <button
+              onClick={() => setCollapsed(c => !c)}
+              className="text-[#AAAAAA] hover:text-[#595959] transition-colors"
+            >
+              {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </button>
+          )}
         </div>
       </div>
 
@@ -201,6 +234,15 @@ export function KpiCard({
           onSave={(url, note) => onDataSourceSave?.(kpi.id, url, note)}
           initialUrl={dataSource?.url ?? ''}
           initialNote={dataSource?.note ?? ''}
+          kpiName={kpi.name}
+        />
+      )}
+
+      {readOnly && onRequestModify && (
+        <ModifyRequestModal
+          open={modifyOpen}
+          onClose={() => setModifyOpen(false)}
+          onSubmit={(reason) => { onRequestModify(kpi.id, reason); setModifyOpen(false) }}
           kpiName={kpi.name}
         />
       )}

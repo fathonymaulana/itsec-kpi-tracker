@@ -111,7 +111,7 @@ export default function SuperAdminPage() {
 
   return (
     <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
-      <DeptTopNav onToggleRightPanel={() => setRightPanelOpen(v => !v)} />
+      <DeptTopNav rightPanelOpen={rightPanelOpen} onToggleRightPanel={() => setRightPanelOpen(v => !v)} />
 
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">

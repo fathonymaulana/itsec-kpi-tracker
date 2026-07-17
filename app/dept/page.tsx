@@ -54,6 +54,14 @@ interface Anomaly {
   dismissed: number
 }
 
+interface ModifyRequest {
+  id: number
+  kpi_id: number
+  status: 'pending' | 'approved' | 'rejected'
+  reason: string
+  review_note: string | null
+}
+
 const CURRENT_YEAR = new Date().getFullYear()
 
 export default function DeptPage() {
@@ -69,6 +77,7 @@ export default function DeptPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [modifyRequests, setModifyRequests] = useState<ModifyRequest[]>([])
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [leftPanelOpen, setLeftPanelOpen] = useState(true)
@@ -136,13 +145,22 @@ export default function DeptPage() {
     } catch { /* non-fatal */ }
   }, [user, token, year, month])
 
+  const fetchModifyRequests = useCallback(async () => {
+    if (!user || !token) return
+    try {
+      const r = await fetch(`/api/modify-requests?year=${year}&month=${month}`, { headers: authHeaders(token) })
+      const data = await r.json()
+      setModifyRequests(data.requests || [])
+    } catch { /* non-fatal */ }
+  }, [user, token, year, month])
+
   useEffect(() => {
     if (!hasFetchedRef.current && user) { fetchKpis(); hasFetchedRef.current = true }
   }, [user, fetchKpis])
 
   useEffect(() => {
-    if (user) { fetchActuals(); fetchAnomalies(); checkSubmission() }
-  }, [user, fetchActuals, fetchAnomalies, checkSubmission])
+    if (user) { fetchActuals(); fetchAnomalies(); checkSubmission(); fetchModifyRequests() }
+  }, [user, fetchActuals, fetchAnomalies, checkSubmission, fetchModifyRequests])
 
   const handleValueChange = (subMetricId: number, val: string) => {
     setValues(prev => ({ ...prev, [subMetricId]: val }))
@@ -239,6 +257,32 @@ export default function DeptPage() {
 
   const getKpiAnomalyCount = (kpiId: number) => anomalies.filter(a => a.kpi_id === kpiId).length
 
+  // Most recent request per KPI — a fresh pending one always wins; an older rejected one only shows
+  // if there's nothing more recent, so a re-request cleanly replaces the "Request Again" state.
+  const getModifyStatus = (kpiId: number): 'pending' | 'rejected' | null => {
+    const forKpi = modifyRequests.filter(r => r.kpi_id === kpiId)
+    if (forKpi.some(r => r.status === 'pending')) return 'pending'
+    if (forKpi.some(r => r.status === 'rejected')) return 'rejected'
+    return null
+  }
+
+  const handleRequestModify = async (kpiId: number, reason: string) => {
+    if (!token) return
+    try {
+      const r = await fetch('/api/modify-requests', {
+        method: 'POST',
+        headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kpi_id: kpiId, year, month, reason }),
+      })
+      const data = await r.json()
+      if (!r.ok) throw new Error(data.error || 'Request failed')
+      await fetchModifyRequests()
+      toast.success('Request sent to Corporate Planning', { description: 'You’ll be able to edit this matrix again once it’s approved.' })
+    } catch (err) {
+      toast.error('Couldn’t send that request', { description: err instanceof Error ? err.message : 'Please try again.' })
+    }
+  }
+
   const runSearch = () => setAppliedSearch(searchInput.trim())
   const visibleKpis = appliedSearch
     ? kpis.filter(k => k.name.toLowerCase().includes(appliedSearch.toLowerCase()))
@@ -249,7 +293,9 @@ export default function DeptPage() {
   return (
     <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
       <DeptTopNav
+        leftPanelOpen={leftPanelOpen}
         onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        rightPanelOpen={rightPanelOpen}
         onToggleRightPanel={() => setRightPanelOpen(v => !v)}
       />
 
@@ -354,6 +400,8 @@ export default function DeptPage() {
                     onValueChange={handleValueChange}
                     onDataSourceSave={handleDataSourceSave}
                     readOnly={submitted}
+                    modifyRequestStatus={submitted ? getModifyStatus(kpi.id) : undefined}
+                    onRequestModify={submitted ? handleRequestModify : undefined}
                   />
                 ))}
               </div>

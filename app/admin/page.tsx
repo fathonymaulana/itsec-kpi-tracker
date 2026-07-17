@@ -10,15 +10,17 @@ import {
   BuildingsLineDuotone as Building2,
   ShieldLineDuotone as Shield,
   ClockCircleLineDuotone as Clock,
+  LockUnlockedLineDuotone as LockUnlocked,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { KpiCard } from '@/components/kpi/KpiCard'
-import { getDefaultMonth, getDefaultYear } from '@/lib/status'
+import { getDefaultMonth, getDefaultYear, MONTHS } from '@/lib/status'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -28,8 +30,13 @@ interface Kpi { id: number; name: string; target_text: string; numeric_target: n
 interface Actual { id: number; sub_metric_id: number; kpi_id: number; value: number; data_source_url?: string; data_source_note?: string }
 interface Anomaly { id: number; kpi_id: number; sub_metric_id: number; type: string; description: string; dismissed: number; created_at: string }
 interface Verification { id: number; kpi_id: number; status: 'pending' | 'verified' | 'flagged'; note: string; verified_at: string }
+interface ModifyRequest {
+  id: number; kpi_id: number; dept_id: string; year: number; month: number
+  reason: string; status: 'pending' | 'approved' | 'rejected'; requested_at: string
+  kpi_name: string | null; dept_name: string | null; requested_by_name: string | null
+}
 
-type TabKey = 'data' | 'anomalies' | 'verifications'
+type TabKey = 'data' | 'anomalies' | 'verifications' | 'modify'
 
 export default function AdminPage() {
   const { user, token, ready } = useAuth()
@@ -43,11 +50,14 @@ export default function AdminPage() {
   const [dataSources, setDataSources] = useState<Record<number, { url: string; note: string }>>({}) // kpi_id → ds
   const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [verifications, setVerifications] = useState<Verification[]>([])
+  const [modifyRequests, setModifyRequests] = useState<ModifyRequest[]>([])
   const [tab, setTab] = useState<TabKey>('data')
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
   const [leftPanelOpen, setLeftPanelOpen] = useState(true)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
+  const [rejectTarget, setRejectTarget] = useState<ModifyRequest | null>(null)
+  const [rejectNote, setRejectNote] = useState('')
 
   const canVerify = user?.role === 'corp_planning'
 
@@ -121,6 +131,43 @@ export default function AdminPage() {
 
   useEffect(() => { if (selectedDept) fetchDeptData() }, [selectedDept, fetchDeptData])
 
+  // Global — pending requests can come from any department, so this deliberately isn't scoped to
+  // selectedDept the way the tabs above are.
+  const fetchModifyRequests = useCallback(async () => {
+    if (!token) return
+    try {
+      const r = await fetch('/api/modify-requests?status=pending', { headers: authHeaders(token) })
+      const data = await r.json()
+      setModifyRequests(data.requests || [])
+    } catch { /* non-fatal */ }
+  }, [token])
+
+  useEffect(() => { if (user) fetchModifyRequests() }, [user, fetchModifyRequests])
+
+  const handleReviewModify = async (id: number, action: 'approve' | 'reject', note = '') => {
+    if (!token) return
+    setActionLoading(id)
+    try {
+      const r = await fetch(`/api/modify-requests/${id}`, {
+        method: 'PATCH',
+        headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, note }),
+      })
+      const data = await r.json()
+      if (!r.ok) throw new Error(data.error || 'Failed')
+      await fetchModifyRequests()
+      if (selectedDept) await fetchDeptData()
+      toast.success(
+        action === 'approve' ? 'Month unlocked' : 'Request rejected',
+        { description: action === 'approve' ? 'The department can edit and resubmit that month now.' : 'The department will see why this was declined.' }
+      )
+    } catch (err) {
+      toast.error('That action didn’t go through', { description: err instanceof Error ? err.message : 'Please try again.' })
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const handleVerify = async (kpiId: number, status: 'verified' | 'flagged', note = '') => {
     if (!token || !selectedDept) return
     setActionLoading(kpiId)
@@ -178,7 +225,9 @@ export default function AdminPage() {
   return (
     <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
       <DeptTopNav
+        leftPanelOpen={leftPanelOpen}
         onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        rightPanelOpen={rightPanelOpen}
         onToggleRightPanel={() => setRightPanelOpen(v => !v)}
       />
 
@@ -227,35 +276,78 @@ export default function AdminPage() {
               )}
             </div>
 
-            {!selectedDept ? (
+            {/* Tabs — Modify Requests is global (any department), so it works with no department selected */}
+            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-2 flex gap-1 mb-4">
+              {([
+                { key: 'data', label: 'Data Review', icon: ChevronRight },
+                { key: 'anomalies', label: `Anomalies${activeAnomalies > 0 ? ` (${activeAnomalies})` : ''}`, icon: AlertTriangle },
+                { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield },
+                { key: 'modify', label: `Modify Requests${modifyRequests.length > 0 ? ` (${modifyRequests.length})` : ''}`, icon: LockUnlocked },
+              ] as { key: TabKey; label: string; icon: React.ElementType }[]).map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 transition-colors ${
+                    tab === t.key
+                      ? 'border-[#CC1F1F] text-[#CC1F1F] font-medium'
+                      : 'border-transparent text-[#737373] hover:text-[#595959]'
+                  }`}
+                >
+                  <t.icon size={12} />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* MODIFY REQUESTS TAB */}
+            {tab === 'modify' && (
+              <div className="space-y-2">
+                {modifyRequests.length === 0 ? (
+                  <div className="text-center py-16 text-[#AAAAAA] text-sm">No pending modify requests.</div>
+                ) : modifyRequests.map(r => (
+                  <div key={r.id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-[#282828]">{r.kpi_name || 'Unknown KPI'}</div>
+                        <div className="text-xs text-[#737373] mt-0.5">
+                          {r.dept_name} · {MONTHS[r.month - 1]} {r.year} · requested by {r.requested_by_name || 'Unknown'}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-[11px] gap-1 text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]"
+                          disabled={actionLoading === r.id}
+                          onClick={() => handleReviewModify(r.id, 'approve')}
+                        >
+                          <CheckCircle2 size={10} />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-[11px] gap-1 text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]"
+                          disabled={actionLoading === r.id}
+                          onClick={() => { setRejectTarget(r); setRejectNote('') }}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-[#595959] mt-2 bg-[#f5f5f5] rounded-lg p-3">{r.reason}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {tab !== 'modify' && !selectedDept ? (
               <div className="flex flex-col items-center justify-center py-32 text-center">
                 <Building2 size={32} className="text-[#DDDDDD] mb-4" />
                 <div className="text-[#AAAAAA] text-sm">Select a department to review</div>
               </div>
-            ) : (
+            ) : tab !== 'modify' && (
               <>
-                {/* Tabs */}
-                <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-2 flex gap-1 mb-4">
-                  {([
-                    { key: 'data', label: 'Data Review', icon: ChevronRight },
-                    { key: 'anomalies', label: `Anomalies${activeAnomalies > 0 ? ` (${activeAnomalies})` : ''}`, icon: AlertTriangle },
-                    { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield },
-                  ] as { key: TabKey; label: string; icon: React.ElementType }[]).map(t => (
-                    <button
-                      key={t.key}
-                      onClick={() => setTab(t.key)}
-                      className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 transition-colors ${
-                        tab === t.key
-                          ? 'border-[#CC1F1F] text-[#CC1F1F] font-medium'
-                          : 'border-transparent text-[#737373] hover:text-[#595959]'
-                      }`}
-                    >
-                      <t.icon size={12} />
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-
                 {/* DATA TAB */}
                 {tab === 'data' && (
                   <div className="space-y-3">
@@ -419,6 +511,35 @@ export default function AdminPage() {
           </aside>
         )}
       </div>
+
+      <Dialog open={!!rejectTarget} onOpenChange={o => !o && setRejectTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject — {rejectTarget?.kpi_name}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-xs text-[#808080] mb-3">Let {rejectTarget?.dept_name} know why this month stays locked.</p>
+            <label className="block text-xs font-medium text-[#595959] mb-1.5">Reason</label>
+            <textarea
+              value={rejectNote}
+              onChange={e => setRejectNote(e.target.value)}
+              placeholder="e.g. The current figures already match the source — no change needed."
+              rows={3}
+              className="w-full rounded-lg border border-[#e5e5e5] text-sm p-3 resize-none focus:outline-none focus:border-[#CC1F1F]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectTarget(null)}>Cancel</Button>
+            <Button
+              disabled={!rejectNote.trim() || actionLoading === rejectTarget?.id}
+              onClick={() => { if (rejectTarget) { handleReviewModify(rejectTarget.id, 'reject', rejectNote.trim()); setRejectTarget(null) } }}
+              className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white"
+            >
+              Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
