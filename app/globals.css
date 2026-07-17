@@ -81,6 +81,11 @@
     --review-text: #595959;
     --review-bg: #ebebeb;
     --review-border: #cccccc;
+
+    /* Dialog/Popover/DropdownMenu ring color — kept distinct from --divider since these overlay
+       surfaces are meant to read as a hairline outline against a backdrop/blurred page, not a
+       content-area separator. */
+    --modal-border: #e5e5e5;
   }
   .dark {
     --background: oklch(0.145 0 0);
@@ -140,6 +145,8 @@
     --review-text: #b3b3b3;
     --review-bg: rgba(255, 255, 255, 0.08);
     --review-border: rgba(255, 255, 255, 0.18);
+
+    --modal-border: rgba(255, 255, 255, 0.1);
   }
   * {
     @apply border-border;

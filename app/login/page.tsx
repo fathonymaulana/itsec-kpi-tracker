@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { useAuth } from '@/lib/auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
+import { ItsecLogo } from '@/components/layout/ItsecLogo'
 
 interface DirectoryUser {
   id: number
@@ -77,22 +79,10 @@ function LoginForm() {
 
   return (
     <div className="h-screen overflow-hidden bg-app flex flex-col relative">
-      {/* Decorative wordmark ribbon, bleeding off both edges — echoes the woven brand band on
-          Instagram/Threads' sign-in screen, re-lettered for this product. Purely visual, so it
-          sits absolutely positioned above the flow and never affects the no-scroll layout below. */}
-      <div className="absolute -top-8 md:-top-10 left-0 right-0 h-32 md:h-40 overflow-hidden pointer-events-none select-none -rotate-3 opacity-[0.07]">
-        <div className="flex whitespace-nowrap text-ink font-extrabold text-4xl md:text-6xl tracking-tight leading-none">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <span key={i} className="mx-8 shrink-0">KPI TRACKER · </span>
-          ))}
-        </div>
-      </div>
-      <div className="absolute top-2 md:top-4 left-0 right-0 h-32 md:h-40 overflow-hidden pointer-events-none select-none rotate-2 opacity-[0.05]">
-        <div className="flex whitespace-nowrap text-ink font-extrabold text-4xl md:text-6xl tracking-tight leading-none">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <span key={i} className="mx-8 shrink-0">KPI TRACKER · </span>
-          ))}
-        </div>
+      {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
+          element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive. */}
+      <div className="absolute inset-x-0 top-0 h-40 md:h-56 -z-10 overflow-hidden pointer-events-none select-none">
+        <Image src="/login-wordmark.png" alt="" fill priority className="object-cover object-top" />
       </div>
 
       {/* Centered content */}
@@ -100,6 +90,7 @@ function LoginForm() {
         {/* Form card, standalone — no headline above it, per the whitespace-first layout */}
         <div className="flex flex-col gap-6 items-start w-full max-w-[373px] shrink-0">
           <div className="bg-panel border border-divider shadow-2xl rounded-3xl w-full p-8 flex flex-col gap-6">
+            <ItsecLogo className="h-5 w-auto text-ink self-center" />
             <form onSubmit={handleSubmit} className="contents">
               {preselectedUser && (
                 <p className="text-ink-muted text-sm leading-6 tracking-[-0.192px] text-center w-full -mb-2">
@@ -141,7 +132,7 @@ function LoginForm() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-ink-muted leading-5">Choose the department or role that best fits your position.</p>
+                <p className="text-[12.8px] text-ink-muted leading-5">Choose the department or role that best fits your position.</p>
               </div>
 
               <div className="flex flex-col gap-2 w-full">
