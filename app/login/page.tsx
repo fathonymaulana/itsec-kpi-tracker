@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
-import { ItsecLogo } from '@/components/layout/ItsecLogo'
 
 interface DirectoryUser {
   id: number
@@ -77,27 +76,37 @@ function LoginForm() {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-app flex flex-col">
-      {/* Logo badge, top-left */}
-      <div className="px-6 md:px-24 pt-4 pb-2 shrink-0">
-        <ItsecLogo className="h-5 w-auto text-ink" />
+    <div className="h-screen overflow-hidden bg-app flex flex-col relative">
+      {/* Decorative wordmark ribbon, bleeding off both edges — echoes the woven brand band on
+          Instagram/Threads' sign-in screen, re-lettered for this product. Purely visual, so it
+          sits absolutely positioned above the flow and never affects the no-scroll layout below. */}
+      <div className="absolute -top-8 md:-top-10 left-0 right-0 h-32 md:h-40 overflow-hidden pointer-events-none select-none -rotate-3 opacity-[0.07]">
+        <div className="flex whitespace-nowrap text-ink font-extrabold text-4xl md:text-6xl tracking-tight leading-none">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span key={i} className="mx-8 shrink-0">KPI TRACKER · </span>
+          ))}
+        </div>
+      </div>
+      <div className="absolute top-2 md:top-4 left-0 right-0 h-32 md:h-40 overflow-hidden pointer-events-none select-none rotate-2 opacity-[0.05]">
+        <div className="flex whitespace-nowrap text-ink font-extrabold text-4xl md:text-6xl tracking-tight leading-none">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span key={i} className="mx-8 shrink-0">KPI TRACKER · </span>
+          ))}
+        </div>
       </div>
 
       {/* Centered content */}
-      <div className="flex-1 min-h-0 flex items-center justify-center gap-10 lg:gap-[120px] px-6 pb-6 overflow-y-auto">
-        {/* Left: heading + form */}
+      <div className="flex-1 min-h-0 flex items-center justify-center gap-10 lg:gap-[120px] px-6 py-6 overflow-y-auto relative">
+        {/* Form card, standalone — no headline above it, per the whitespace-first layout */}
         <div className="flex flex-col gap-6 items-start w-full max-w-[373px] shrink-0">
-          <h1 className="text-ink text-4xl lg:text-[60px] leading-[1.1] lg:leading-[76px] tracking-[-0.72px] text-center w-full font-normal">
-            Performance Highlights
-          </h1>
-          <p className="text-ink-muted text-base leading-6 tracking-[-0.192px] text-center w-full">
-            {preselectedUser
-              ? <>Switching to <span className="font-medium text-ink">{preselectedUser.name}</span> — enter their PIN to continue.</>
-              : 'Track your IT security goals with precision'}
-          </p>
-
           <div className="bg-panel border border-divider shadow-2xl rounded-3xl w-full p-8 flex flex-col gap-6">
             <form onSubmit={handleSubmit} className="contents">
+              {preselectedUser && (
+                <p className="text-ink-muted text-sm leading-6 tracking-[-0.192px] text-center w-full -mb-2">
+                  Switching to <span className="font-medium text-ink">{preselectedUser.name}</span> — enter their PIN to continue.
+                </p>
+              )}
+
               <div className="flex flex-col gap-2 w-full">
                 <label className="text-sm font-medium text-ink">Department / Role</label>
                 <Select value={selected} onValueChange={v => setSelected(v ?? '')}>
@@ -169,6 +178,19 @@ function LoginForm() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="shrink-0 pb-5 flex items-center justify-center gap-2 text-xs text-ink-faint relative">
+        <span>© {new Date().getFullYear()} ITSEC KPI Tracker</span>
+        <span aria-hidden>·</span>
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-ink-muted transition-colors">
+          Privacy Policy
+        </a>
+        <span aria-hidden>·</span>
+        <a href="/cookies" target="_blank" rel="noopener noreferrer" className="hover:text-ink-muted transition-colors">
+          Cookie Policy
+        </a>
       </div>
     </div>
   )

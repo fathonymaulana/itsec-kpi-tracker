@@ -16,6 +16,7 @@ import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
+import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { MonthRangePicker, type MonthPeriod } from '@/components/kpi/MonthRangePicker'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -181,7 +182,7 @@ export default function BoardPage() {
     })
   }
 
-  if (!ready || !user) return null
+  if (!ready || !user) return <PageSkeleton />
 
   // Totals across all depts
   const totals = summaries.reduce((acc, d) => ({
@@ -213,7 +214,7 @@ export default function BoardPage() {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block p-12 overflow-y-auto">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block" contentClassName="p-12 overflow-y-auto">
           <DateSidebar
             year={year}
             onYearChange={setYear}
@@ -357,7 +358,48 @@ export default function BoardPage() {
               </TabsContent>
 
               <TabsContent value="table">
-                <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden mb-6">
+                {/* Mobile/tablet: one card per department — 8 columns doesn't fit a phone screen
+                    without truncating every value, so this is a stacked equivalent instead. */}
+                <div className="flex md:hidden flex-col gap-3 mb-6">
+                  {summaries.map(dept => {
+                    const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
+                    return (
+                      <div key={dept.dept_id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-4 flex flex-col gap-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium text-ink">{dept.department_name}</span>
+                          <span className="text-sm font-medium text-ink">{onPct}% on track</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          <div className="bg-panel-soft rounded-xl py-2">
+                            <div className="text-base font-semibold" style={{ color: STATUS_COLORS.on_track }}>{dept.on_track}</div>
+                            <div className="text-[10px] text-ink-faint mt-0.5">On Track</div>
+                          </div>
+                          <div className="bg-panel-soft rounded-xl py-2">
+                            <div className="text-base font-semibold" style={{ color: STATUS_COLORS.watch }}>{dept.watch}</div>
+                            <div className="text-[10px] text-ink-faint mt-0.5">Watch</div>
+                          </div>
+                          <div className="bg-panel-soft rounded-xl py-2">
+                            <div className="text-base font-semibold" style={{ color: STATUS_COLORS.off_track }}>{dept.off_track}</div>
+                            <div className="text-[10px] text-ink-faint mt-0.5">Off Track</div>
+                          </div>
+                          <div className="bg-panel-soft rounded-xl py-2">
+                            <div className="text-base font-semibold text-ink-muted">{dept.no_data}</div>
+                            <div className="text-[10px] text-ink-faint mt-0.5">No Data</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
+                          className="inline-flex items-center justify-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors border-t border-divider pt-3"
+                        >
+                          <FileSearch size={11} />
+                          View details & sources
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="hidden md:block bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden mb-6">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -449,7 +491,7 @@ export default function BoardPage() {
           </div>
         </main>
 
-        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block" contentClassName="overflow-y-auto">
           <AddOnsPanel />
         </AnimatedAside>
       </div>

@@ -150,4 +150,35 @@
   html {
     @apply font-sans;
   }
+
+  /* Thin, trackless scrollbars — only the thumb grows on hover (via animating its transparent
+     border down, not its box width, since Webkit won't smoothly transition scrollbar box sizes).
+     Track/gutter stays fully transparent in every state, matching the "no track bg/border, ever"
+     requirement; Firefox gets the closest equivalent it supports (thin width, no hover-grow). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ink-faint) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    border: none;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--ink-faint);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    transition: border-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    border-width: 1px;
+    background-color: var(--ink-muted);
+  }
 }

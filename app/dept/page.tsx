@@ -13,6 +13,7 @@ import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
+import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
@@ -300,7 +301,7 @@ export default function DeptPage() {
     ? kpis.filter(k => k.name.toLowerCase().includes(appliedSearch.toLowerCase()))
     : kpis
 
-  if (!ready || !user) return null
+  if (!ready || !user) return <PageSkeleton />
 
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
@@ -313,7 +314,7 @@ export default function DeptPage() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left: clock + date picker */}
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block p-12 overflow-y-auto">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block" contentClassName="p-12 overflow-y-auto">
           <DateSidebar
             year={year}
             onYearChange={setYear}
@@ -441,7 +442,7 @@ export default function DeptPage() {
         </main>
 
         {/* Right: add-ons */}
-        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block" contentClassName="overflow-y-auto">
           <AddOnsPanel />
         </AnimatedAside>
       </div>

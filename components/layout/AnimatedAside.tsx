@@ -9,11 +9,17 @@ interface AnimatedAsideProps {
   open: boolean
   width: number
   side: 'left' | 'right'
+  /** Display/visibility classes only (e.g. `hidden md:block`) — applied to the clipping outer box. */
   className?: string
+  /** Padding/scroll/etc. classes for the content itself — applied to the fixed-width inner box, so
+   *  padding is baked into the same `width` the outer box animates to and clips against. Applying
+   *  padding on the outer box instead would shrink its content area below `width` while the inner
+   *  box still rendered at the full `width`, clipping real content off the trailing edge. */
+  contentClassName?: string
   children: React.ReactNode
 }
 
-export function AnimatedAside({ open, width, side, className, children }: AnimatedAsideProps) {
+export function AnimatedAside({ open, width, side, className, contentClassName, children }: AnimatedAsideProps) {
   return (
     <AnimatePresence initial={false}>
       {open && (
@@ -25,7 +31,7 @@ export function AnimatedAside({ open, width, side, className, children }: Animat
           className={`shrink-0 overflow-hidden ${className ?? ''}`}
           style={{ [side === 'left' ? 'marginRight' : 'marginLeft']: 0 }}
         >
-          <div style={{ width }} className="h-full">
+          <div style={{ width }} className={`h-full ${contentClassName ?? ''}`}>
             {children}
           </div>
         </motion.aside>

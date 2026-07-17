@@ -15,6 +15,7 @@ import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
+import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { getDefaultMonth, getDefaultYear, MONTHS } from '@/lib/status'
 import { Button } from '@/components/ui/button'
@@ -207,7 +208,7 @@ export default function AdminPage() {
   const selectedDeptObj = depts.find(d => d.id === selectedDept)
   const pendingVerifications = kpis.filter(k => !getKpiVerification(k.id)).length
 
-  if (!ready || !user) return null
+  if (!ready || !user) return <PageSkeleton />
 
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
@@ -219,7 +220,7 @@ export default function AdminPage() {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block p-12 overflow-y-auto">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block" contentClassName="p-12 overflow-y-auto">
           <DateSidebar
             year={year}
             onYearChange={setYear}
@@ -439,7 +440,7 @@ export default function AdminPage() {
           </div>
         </main>
 
-        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block" contentClassName="overflow-y-auto">
           <AddOnsPanel />
         </AnimatedAside>
       </div>

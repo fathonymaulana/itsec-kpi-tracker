@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 import {
   Home2LineDuotone as HomeLine, Home2Bold as HomeBold,
   ClipboardListLineDuotone as ClipboardListLine, ClipboardListBold as ClipboardListBold,
@@ -8,12 +9,14 @@ import {
   UsersGroupRoundedLineDuotone as UsersLine, UsersGroupRoundedBold as UsersBold,
   SidebarMinimalisticLineDuotone as SidebarLine, SidebarMinimalisticBold as SidebarBold,
   BellLineDuotone as BellLine, BellBold as BellBold,
+  HamburgerMenuLineDuotone as HamburgerMenu,
 } from '@solar-icons/react-perf'
 import { useAuth } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn, iconHoverClass } from '@/lib/utils'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
+import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 
 type IconPair = { line: typeof HomeLine; bold: typeof HomeBold }
 
@@ -42,6 +45,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   const { user } = useAuth()
   const navItems = NAV_ITEMS_BY_ROLE[user?.role ?? ''] ?? []
   const [notifOpen, setNotifOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
     <header className="bg-panel shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
@@ -49,7 +53,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
         <ItsecLogo className="h-5 w-auto text-ink" />
       </div>
 
-      <nav className="flex items-center h-full justify-self-center">
+      <nav className="hidden md:flex items-center h-full justify-self-center">
         {navItems.map(item => {
           const active = pathname === item.href
           const Icon = active ? item.icons.bold : item.icons.line
@@ -58,18 +62,26 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
               key={item.href}
               onClick={() => router.push(item.href)}
               className={cn(
-                'flex flex-col items-center justify-center h-full w-32 border-b-[3px] transition-colors',
-                active ? 'border-ink text-ink' : 'border-transparent text-ink-faint hover:text-ink-soft'
+                'relative flex flex-col items-center justify-center h-full w-32 transition-colors',
+                active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft',
+                iconHoverClass
               )}
               title={item.label}
             >
               <Icon size={22} />
+              {active && (
+                <motion.div
+                  layoutId="dept-top-nav-underline"
+                  className="absolute bottom-0 left-0 right-0 h-[3px] bg-ink"
+                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                />
+              )}
             </button>
           )
         })}
       </nav>
 
-      <div className="flex items-center gap-2 justify-self-end">
+      <div className="hidden md:flex items-center gap-2 justify-self-end">
         {onToggleLeftPanel && (
           <button
             onClick={onToggleLeftPanel}
@@ -122,6 +134,29 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           </button>
         )}
       </div>
+
+      {/* Small screens: nav links + panel toggles + notifications + add-ons all collapse behind
+          this single CTA — the AnimatedAside hosting AddOnsPanel is `hidden lg:block`, so without
+          this drawer dark mode/sign out would be unreachable below that breakpoint. */}
+      <button
+        onClick={() => setDrawerOpen(true)}
+        className={cn('flex md:hidden col-start-3 size-9 rounded-full bg-panel-soft items-center justify-center justify-self-end', iconHoverClass)}
+        title="Menu"
+      >
+        <HamburgerMenu size={18} className="text-ink" />
+      </button>
+
+      <MobileNavDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onNavigate={router.push}
+        navItems={navItems.map(item => ({
+          href: item.href,
+          label: item.label,
+          active: pathname === item.href,
+          Icon: pathname === item.href ? item.icons.bold : item.icons.line,
+        }))}
+      />
     </header>
   )
 }

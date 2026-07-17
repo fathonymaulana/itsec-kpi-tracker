@@ -54,7 +54,7 @@ export function AddOnsPanel() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 pb-6 pl-6 pr-12 pt-4 w-full">
+      <div className="flex flex-col gap-3 pb-6 pl-6 pr-12 pt-0 w-full">
         <div className="text-xs text-ink-muted uppercase tracking-wide">Others</div>
 
         <button

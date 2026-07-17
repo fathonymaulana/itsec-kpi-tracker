@@ -73,6 +73,26 @@ const config: Config = {
         sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-geist-mono)', 'monospace'],
       },
+      // Every `text-*` utility in the scale becomes fluid (clamp between a small-viewport floor and
+      // a large-viewport ceiling, scaling with 100vw in between) instead of a fixed px/rem value —
+      // this makes the entire app's typography respond to viewport size with zero per-component
+      // changes, since every existing `text-sm`/`text-2xl`/etc. class already resolves through this
+      // scale. Line-heights are carried over unchanged from Tailwind's own defaults. Deliberately
+      // hand-tuned arbitrary sizes (e.g. `text-[12.8px]` on dense table headers) bypass this scale
+      // entirely and are left fixed on purpose — that's compact UI chrome, not reading content.
+      fontSize: {
+        xs:   ['clamp(0.75rem, 0.734rem + 0.08vw, 0.8125rem)', { lineHeight: '1rem' }],
+        sm:   ['clamp(0.8125rem, 0.796rem + 0.08vw, 0.875rem)', { lineHeight: '1.25rem' }],
+        base: ['clamp(0.9375rem, 0.921rem + 0.08vw, 1rem)', { lineHeight: '1.5rem' }],
+        lg:   ['clamp(1rem, 0.967rem + 0.16vw, 1.125rem)', { lineHeight: '1.75rem' }],
+        xl:   ['clamp(1.0625rem, 1.013rem + 0.25vw, 1.25rem)', { lineHeight: '1.75rem' }],
+        '2xl': ['clamp(1.25rem, 1.184rem + 0.33vw, 1.5rem)', { lineHeight: '2rem' }],
+        '3xl': ['clamp(1.5rem, 1.401rem + 0.49vw, 1.875rem)', { lineHeight: '2.25rem' }],
+        '4xl': ['clamp(1.75rem, 1.618rem + 0.66vw, 2.25rem)', { lineHeight: '2.5rem' }],
+        '5xl': ['clamp(2.125rem, 1.895rem + 1.15vw, 3rem)', { lineHeight: '1' }],
+        '6xl': ['clamp(2.5rem, 2.171rem + 1.64vw, 3.75rem)', { lineHeight: '1' }],
+        '7xl': ['clamp(3rem, 2.605rem + 1.97vw, 4.5rem)', { lineHeight: '1' }],
+      },
       screens: {
         sm:    '640px',
         md:    '768px',

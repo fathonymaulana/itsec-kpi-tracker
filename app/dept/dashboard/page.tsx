@@ -15,6 +15,7 @@ import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
+import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -136,7 +137,7 @@ export default function DeptDashboard() {
     return { kpi, unit, monthValues, monthStatuses, hasData, currentV, period }
   })
 
-  if (!ready || !user) return null
+  if (!ready || !user) return <PageSkeleton />
 
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
@@ -149,7 +150,7 @@ export default function DeptDashboard() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left: clock + year picker */}
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block p-12 overflow-y-auto">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block" contentClassName="p-12 overflow-y-auto">
           <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
         </AnimatedAside>
 
@@ -313,7 +314,7 @@ export default function DeptDashboard() {
         </main>
 
         {/* Right: add-ons */}
-        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block" contentClassName="overflow-y-auto">
           <AddOnsPanel />
         </AnimatedAside>
       </div>

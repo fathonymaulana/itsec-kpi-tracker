@@ -21,6 +21,7 @@ import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
+import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -115,7 +116,7 @@ export default function SuperAdminPage() {
     !search.trim() || u.name.toLowerCase().includes(search.toLowerCase()) || (u.dept_name || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  if (!ready || !user || user.role !== 'corp_planning') return null
+  if (!ready || !user || user.role !== 'corp_planning') return <PageSkeleton leftAside={false} />
 
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
@@ -157,7 +158,53 @@ export default function SuperAdminPage() {
               ) : (
                 <>
                   <TabsContent value="users">
-                    <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
+                    {/* Mobile/tablet: one card per user — the 5-column table below is desktop-only,
+                        since squeezing role/department/status/actions into a table row at narrow
+                        widths reads far worse than a stacked card. */}
+                    <div className="flex md:hidden flex-col gap-3">
+                      {filteredUsers.map(u => (
+                        <div key={u.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex flex-col gap-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Avatar size="sm">
+                                {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.name} />}
+                                <AvatarFallback className="text-[10px]">{u.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-ink truncate">{u.name}</div>
+                                <div className="text-xs text-ink-muted truncate">{ROLE_LABELS[u.role]}{u.dept_name ? ` · ${u.dept_name}` : ''}</div>
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
+                                className={`inline-flex size-7 shrink-0 items-center justify-center rounded-md hover:bg-muted transition-colors ${iconHoverClass}`}
+                                title="Actions"
+                              >
+                                <IconMenuDots size={16} className="text-ink-muted" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setDialogUser(u)}>
+                                  <IconPen size={14} /> Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setResetPinFor(u)}>
+                                  <IconKeyBold size={14} /> Reset PIN
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem variant={u.active ? 'destructive' : 'default'} onClick={() => handleToggleActive(u)}>
+                                  {u.active ? <IconUserCross size={14} /> : <IconUserCheck size={14} />}
+                                  {u.active ? 'Deactivate' : 'Reactivate'}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <Badge variant={u.active ? 'default' : 'destructive'} className="text-[10px] self-start">
+                            {u.active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="hidden md:block bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -218,7 +265,35 @@ export default function SuperAdminPage() {
                   </TabsContent>
 
                   <TabsContent value="requests">
-                    <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
+                    {requests.length > 0 && (
+                      <div className="flex md:hidden flex-col gap-3 mb-3">
+                        {requests.map(r => (
+                          <div key={r.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex flex-col gap-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-ink truncate">{r.user?.name || 'Unknown'}</div>
+                                <div className="text-xs text-ink-muted mt-0.5">{new Date(r.requested_at).toLocaleString()}</div>
+                              </div>
+                              {r.status === 'pending' && <Badge className="text-[10px] gap-1 shrink-0"><IconClock size={10} /> Pending</Badge>}
+                              {r.status === 'approved' && <Badge variant="default" className="text-[10px] gap-1 shrink-0"><IconCheckCircle size={10} /> Approved</Badge>}
+                              {r.status === 'rejected' && <Badge variant="destructive" className="text-[10px] gap-1 shrink-0"><IconCloseCircle size={10} /> Rejected</Badge>}
+                            </div>
+                            {r.status === 'pending' && (
+                              <div className="flex items-center gap-1.5">
+                                <Button size="sm" variant="outline" className="h-7 flex-1 text-[11px] text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
+                                  <IconShieldCheck size={11} className="mr-1" /> Approve
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 flex-1 text-[11px] text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
+                                  Reject
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="hidden md:block bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
                       {requests.length === 0 ? (
                         <div className="text-center py-16 text-ink-faint text-sm">No PIN change requests.</div>
                       ) : (
@@ -266,7 +341,7 @@ export default function SuperAdminPage() {
           </div>
         </main>
 
-        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block" contentClassName="overflow-y-auto">
           <AddOnsPanel />
         </AnimatedAside>
       </div>

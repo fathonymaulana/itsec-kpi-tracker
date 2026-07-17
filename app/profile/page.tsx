@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { CameraLineDuotone as Camera, ClockCircleLineDuotone as Clock, ShieldCheckLineDuotone as ShieldCheck, AltArrowRightLineDuotone as ChevronRight } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
+import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -122,7 +123,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (!ready || !user) return null
+  if (!ready || !user) return <PageSkeleton leftAside={false} rightAside={false} />
 
   const homeHref = user.role === 'dept_head' ? '/dept/dashboard' : '/board'
 
