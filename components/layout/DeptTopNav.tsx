@@ -1,7 +1,7 @@
 'use client'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { Home, ClipboardList } from 'lucide-react'
+import { Home2Linear as Home, ClipboardListLinear as ClipboardList } from '@solar-icons/react-perf'
 import { useAuth } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'

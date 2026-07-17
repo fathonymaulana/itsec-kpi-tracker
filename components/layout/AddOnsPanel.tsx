@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, ArrowLeftRight } from 'lucide-react'
+import { LogoutLinear as LogOut, TransferHorizontalLinear as ArrowLeftRight } from '@solar-icons/react-perf'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
 import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'

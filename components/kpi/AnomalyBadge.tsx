@@ -1,5 +1,5 @@
 'use client'
-import { AlertTriangle } from 'lucide-react'
+import { DangerTriangleLinear as AlertTriangle } from '@solar-icons/react-perf'
 
 interface AnomalyBadgeProps {
   count: number

@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
-import { LogOut } from 'lucide-react'
+import { LogoutLinear as LogOut } from '@solar-icons/react-perf'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { iconHoverClass } from '@/lib/utils'
 import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'

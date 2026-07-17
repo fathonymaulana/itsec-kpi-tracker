@@ -1,7 +1,16 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus, LogOut, FileSearch } from 'lucide-react'
+import {
+  DangerTriangleLinear as AlertTriangle,
+  AltArrowDownLinear as ChevronDown,
+  AltArrowUpLinear as ChevronUp,
+  GraphNewUpLinear as TrendingUp,
+  GraphDownNewLinear as TrendingDown,
+  MinusCircleLinear as Minus,
+  LogoutLinear as LogOut,
+  ClipboardCheckLinear as FileSearch,
+} from '@solar-icons/react-perf'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { toast } from 'sonner'
 import { useAuth, authHeaders } from '@/lib/auth'

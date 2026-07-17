@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Link2, ChevronDown, ChevronUp } from 'lucide-react'
+import { LinkMinimalisticLinear as Link2, AltArrowDownLinear as ChevronDown, AltArrowUpLinear as ChevronUp } from '@solar-icons/react-perf'
 import { computeCalcValue } from '@/lib/calculations'
 import { getStatus, getStatusColors } from '@/lib/status'
 import { StatusBadge } from './StatusBadge'

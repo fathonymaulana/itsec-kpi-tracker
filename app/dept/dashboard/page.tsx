@@ -1,7 +1,12 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Eye, TrendingDown, CircleDashed } from 'lucide-react'
+import {
+  GraphNewUpLinear as TrendingUp,
+  EyeLinear as Eye,
+  GraphDownNewLinear as TrendingDown,
+  MinusCircleLinear as CircleDashed,
+} from '@solar-icons/react-perf'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'

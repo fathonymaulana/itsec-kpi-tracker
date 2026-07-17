@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { AltArrowLeftLinear as ChevronLeft, AltArrowRightLinear as ChevronRight } from '@solar-icons/react-perf'
 import { MONTHS } from '@/lib/status'
 
 interface DateSidebarProps {

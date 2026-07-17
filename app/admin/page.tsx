@@ -2,7 +2,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CheckCircle2, AlertTriangle, ExternalLink, ChevronRight, Building2, Shield, Clock, BarChart3 } from 'lucide-react'
+import {
+  CheckCircleLinear as CheckCircle2,
+  DangerTriangleLinear as AlertTriangle,
+  SquareArrowRightUpLinear as ExternalLink,
+  AltArrowRightLinear as ChevronRight,
+  BuildingsLinear as Building2,
+  ShieldLinear as Shield,
+  ClockCircleLinear as Clock,
+  ChartSquareLinear as BarChart3,
+} from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { AppNav } from '@/components/layout/AppNav'
 import { KpiCard } from '@/components/kpi/KpiCard'

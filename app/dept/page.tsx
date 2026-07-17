@@ -2,7 +2,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Save, Send, AlertTriangle, CheckCircle2, Search } from 'lucide-react'
+import {
+  DisketteLinear as Save,
+  PlainLinear as Send,
+  DangerTriangleLinear as AlertTriangle,
+  CheckCircleLinear as CheckCircle2,
+  MagnifierLinear as Search,
+} from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'

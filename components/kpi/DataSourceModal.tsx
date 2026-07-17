@@ -4,7 +4,12 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Link2, Info, X, Save } from 'lucide-react'
+import {
+  LinkMinimalisticLinear as Link2,
+  InfoCircleLinear as Info,
+  CloseSquareLinear as X,
+  DisketteLinear as Save,
+} from '@solar-icons/react-perf'
 
 interface DataSourceModalProps {
   open: boolean
