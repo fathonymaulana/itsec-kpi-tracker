@@ -244,7 +244,7 @@ export default function AdminPage() {
 
             <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 mb-6 flex items-center gap-3 flex-wrap">
               <Select value={selectedDept || ''} onValueChange={v => { if (v) { setSelectedDept(v); setTab('data') } }}>
-                <SelectTrigger className="w-full sm:w-[240px] !h-9 rounded-lg border-divider">
+                <SelectTrigger className="w-full sm:w-[240px] !h-9 rounded-lg border-divider text-ink data-placeholder:text-muted-foreground">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>

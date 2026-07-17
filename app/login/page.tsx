@@ -6,8 +6,10 @@ import { useAuth } from '@/lib/auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Spinner } from '@/components/ui/spinner'
 import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
+import { cn } from '@/lib/utils'
 
 interface DirectoryUser {
   id: number
@@ -77,8 +79,13 @@ function LoginForm() {
     }
   }
 
+  const formFilled = !!selected && pin.length === 4
+
   return (
-    <div className="h-screen overflow-hidden bg-app flex flex-col relative">
+    // `relative z-0` (not just `relative`) is required here: without an explicit z-index, this div
+    // never becomes a stacking context of its own, so the -z-10 wordmark image below escapes to the
+    // page's root stacking context instead and paints behind the <body> background — invisible.
+    <div className="h-screen overflow-hidden bg-app flex flex-col relative z-0">
       {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
           element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive. */}
       <div className="absolute inset-x-0 top-0 h-40 md:h-56 -z-10 overflow-hidden pointer-events-none select-none">
@@ -158,8 +165,16 @@ function LoginForm() {
               <Button
                 type="submit"
                 disabled={!selected || pin.length !== 4 || loading}
-                className="w-full h-12 rounded-2xl bg-[#282828] hover:bg-[#171717] text-white font-medium"
+                className={cn(
+                  // bg-[#282828] is a fixed dark fill, not theme-reactive, so its paired text can't
+                  // be the (theme-reactive) --primary-foreground token either — that flips to
+                  // near-black in dark mode and would vanish against this same always-dark button.
+                  // text-white is the correctly-paired "foreground for a fixed dark surface" here.
+                  'w-full h-12 rounded-2xl bg-[#282828] hover:bg-[#171717] font-medium gap-2 disabled:opacity-100 disabled:bg-[#282828]',
+                  formFilled ? 'text-white' : 'text-muted-foreground'
+                )}
               >
+                {loading && <Spinner className="size-4" />}
                 {loading ? 'Signing in…' : 'Sign in'}
               </Button>
             </form>

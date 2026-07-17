@@ -17,6 +17,7 @@ const dataAttributeVariants = plugin(({ addVariant }) => {
   addVariant('data-unchecked', ['&[data-state="unchecked"]', '&[data-unchecked]:not([data-unchecked="false"])'])
   addVariant('data-selected', '&[data-selected="true"]')
   addVariant('data-disabled', ['&[data-disabled="true"]', '&[data-disabled]:not([data-disabled="false"])'])
+  addVariant('data-placeholder', ['&[data-placeholder="true"]', '&[data-placeholder]:not([data-placeholder="false"])'])
   addVariant('data-active', ['&[data-state="active"]', '&[data-active]:not([data-active="false"])'])
   addVariant('data-horizontal', '&[data-orientation="horizontal"]')
   addVariant('data-vertical', '&[data-orientation="vertical"]')
