@@ -91,20 +91,20 @@ function LoginForm() {
     <div className="h-screen overflow-hidden bg-white dark:bg-[#141414] flex flex-col relative z-0">
       {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
           element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive.
-          h-[45vh] matches the reference design: the band covers roughly the top ~45% of the
-          viewport, with the form card's (vertically-centered) top edge overlapping into its lower
-          portion rather than sitting entirely below it — a viewport-relative unit, not a fixed px
-          step per breakpoint, so the proportion holds at any screen size. object-contain (not
-          object-cover) keeps it "never cropped" per the standing requirement: cover always fills the
-          box by slicing off whatever overflows; contain scales the whole image to fit within the box
-          instead — on a box narrower than the image's own 3.5:1 ratio that leaves transparent
-          letterboxing on the sides, invisible against the page's own matching background, so there's
-          no visible cost to guaranteeing the full graphic stays intact. object-top keeps it flush
-          against the very top of the page on box ratios where the letterboxing lands top/bottom
-          instead. dark:invert flips the artwork's black strokes to white (and vice versa) for dark
-          mode — the source PNG has no separate dark variant, so this is a CSS filter instead;
-          invert() only touches RGB channels, so the transparent background is unaffected. */}
-      <div className="absolute inset-x-0 top-0 h-[45vh] -z-10 overflow-hidden pointer-events-none select-none">
+          Sized bigger on mobile (h-[58vh]) than desktop (md:h-[52vh]) per explicit feedback that the
+          mobile band specifically needed to read larger — a viewport-relative unit at every
+          breakpoint, not a fixed px step, so the proportion holds within each size class.
+          object-contain (not object-cover) keeps it "never cropped" per the standing requirement:
+          cover always fills the box by slicing off whatever overflows; contain scales the whole
+          image to fit within the box instead — on a box narrower than the image's own 3.5:1 ratio
+          that leaves transparent letterboxing on the sides, invisible against the page's own
+          matching background, so there's no visible cost to guaranteeing the full graphic stays
+          intact at this larger size, top or bottom included. object-top keeps it flush against the
+          very top of the page on box ratios where the letterboxing lands top/bottom instead.
+          dark:invert flips the artwork's black strokes to white (and vice versa) for dark mode — the
+          source PNG has no separate dark variant, so this is a CSS filter instead; invert() only
+          touches RGB channels, so the transparent background is unaffected. */}
+      <div className="absolute inset-x-0 top-0 h-[58vh] md:h-[52vh] -z-10 overflow-hidden pointer-events-none select-none">
         <Image
           src="/login-wordmark.png"
           alt=""

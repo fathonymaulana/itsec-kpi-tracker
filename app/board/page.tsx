@@ -376,7 +376,7 @@ export default function BoardPage() {
                       <div key={dept.dept_id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
                         <div className="bg-panel-soft flex items-center justify-between px-6 py-4">
                           <div className="flex flex-col gap-1.5">
-                            <span className="text-[10px] text-ink-faint">Department</span>
+                            <span className="text-[10px] leading-[14px] text-ink-faint">Department</span>
                             <span className="text-sm font-medium text-ink">{dept.department_name}</span>
                           </div>
                           <button
