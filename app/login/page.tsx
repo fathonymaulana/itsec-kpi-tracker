@@ -97,30 +97,29 @@ function LoginForm() {
           Next/Image has no single-tag way to pick a different src per breakpoint, so this is two
           <Image> instances toggled via md:hidden/hidden md:block, matching every other responsive
           swap in this app. Sized bigger on mobile (h-[58vh]) than desktop (md:h-[52vh]) per earlier
-          feedback that the mobile band specifically needed to read larger. object-contain (not
-          object-cover) keeps it "never cropped" per the standing requirement: cover always fills the
-          box by slicing off whatever overflows; contain scales the whole image to fit within the box
-          instead — on a box narrower than the image's own ratio that leaves transparent letterboxing
-          on the sides, invisible against the page's own matching background, so there's no visible
-          cost to guaranteeing the full graphic stays intact, top or bottom included. object-top keeps
-          it flush against the very top of the page on box ratios where the letterboxing lands
-          top/bottom instead. dark:invert flips the artwork's black strokes to white (and vice versa)
-          for dark mode — neither source PNG has a separate dark variant, so this is a CSS filter
-          instead; invert() only touches RGB channels, so the transparent background is unaffected. */}
+          feedback that the mobile band specifically needed to read larger. object-cover fills the
+          band edge-to-edge with no side letterboxing — object-contain was tried first to guarantee
+          the graphic was never cropped, but that traded cropping for visible empty margins on the
+          sides at wide viewport ratios, which reads worse than the graphic being cropped top/bottom
+          the way the reference design itself shows it. object-top keeps the crop anchored to the top
+          of the artwork (matching that reference) rather than centering it vertically. dark:invert
+          flips the artwork's black strokes to white (and vice versa) for dark mode — neither source
+          PNG has a separate dark variant, so this is a CSS filter instead; invert() only touches RGB
+          channels, so the transparent background is unaffected. */}
       <div className="absolute inset-x-0 top-0 h-[58vh] md:h-[52vh] -z-10 overflow-hidden pointer-events-none select-none">
         <Image
           src="/login-wordmark-mobile.png"
           alt=""
           fill
           priority
-          className="object-contain object-top dark:invert md:hidden"
+          className="object-cover object-top dark:invert md:hidden"
         />
         <Image
           src="/login-wordmark-desktop.png"
           alt=""
           fill
           priority
-          className="object-contain object-top dark:invert hidden md:block"
+          className="object-cover object-top dark:invert hidden md:block"
         />
       </div>
 
