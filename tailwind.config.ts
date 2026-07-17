@@ -1,4 +1,31 @@
 import type { Config } from "tailwindcss"
+import plugin from "tailwindcss/plugin"
+import animate from "tailwindcss-animate"
+
+// The shadcn components in this project were generated against Tailwind v4's CSS-first
+// `@custom-variant` syntax (see node_modules/shadcn/dist/tailwind.css, imported from
+// app/globals.css) — but this project runs Tailwind v3, which doesn't understand
+// `@custom-variant`/`@slot` at all, so PostCSS silently drops those blocks and every
+// `data-open:`/`data-active:`/`data-horizontal:` etc. class in dialog.tsx, tabs.tsx,
+// select.tsx, switch.tsx, checkbox.tsx, and popover.tsx compiled to nothing. Re-registering
+// the same variants here via v3's `addVariant` API (matching the exact selectors from that
+// v4 CSS) is far lower-risk than upgrading the whole project to Tailwind v4 mid-session.
+const dataAttributeVariants = plugin(({ addVariant }) => {
+  addVariant('data-open', ['&[data-state="open"]', '&[data-open]:not([data-open="false"])'])
+  addVariant('data-closed', ['&[data-state="closed"]', '&[data-closed]:not([data-closed="false"])'])
+  addVariant('data-checked', ['&[data-state="checked"]', '&[data-checked]:not([data-checked="false"])'])
+  addVariant('data-unchecked', ['&[data-state="unchecked"]', '&[data-unchecked]:not([data-unchecked="false"])'])
+  addVariant('data-selected', '&[data-selected="true"]')
+  addVariant('data-disabled', ['&[data-disabled="true"]', '&[data-disabled]:not([data-disabled="false"])'])
+  addVariant('data-active', ['&[data-state="active"]', '&[data-active]:not([data-active="false"])'])
+  addVariant('data-horizontal', '&[data-orientation="horizontal"]')
+  addVariant('data-vertical', '&[data-orientation="vertical"]')
+  // Grouped forms (group-data-horizontal/tabs:h-8 etc.) — the only named group these appear
+  // on in this codebase is `group/tabs` (components/ui/tabs.tsx), so the group class is
+  // hardcoded here rather than reimplementing Tailwind's generic `/name` modifier resolution.
+  addVariant('group-data-horizontal', '.group\\/tabs[data-orientation="horizontal"] &')
+  addVariant('group-data-vertical', '.group\\/tabs[data-orientation="vertical"] &')
+})
 
 const config: Config = {
   darkMode: ['class'],
@@ -54,7 +81,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [dataAttributeVariants, animate],
 }
 
 export default config
