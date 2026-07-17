@@ -79,14 +79,14 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] relative">
+    <div className="h-screen overflow-hidden bg-[#fafafa] flex flex-col">
       {/* Logo badge, top-left */}
-      <div className="absolute left-6 top-4 md:left-24 md:top-4 z-10">
+      <div className="px-6 md:px-24 pt-4 pb-2 shrink-0">
         <Image src="/login/itsec-logo-badge.svg" alt="ITSEC KPI Tracker" width={179} height={19} className="h-5 w-auto" priority />
       </div>
 
       {/* Centered content */}
-      <div className="min-h-screen flex items-center justify-center gap-10 lg:gap-[120px] px-6 py-24">
+      <div className="flex-1 min-h-0 flex items-center justify-center gap-10 lg:gap-[120px] px-6 pb-6 overflow-y-auto">
         {/* Left: heading + form */}
         <div className="flex flex-col gap-6 items-start w-full max-w-[373px] shrink-0">
           <h1 className="text-[#282828] text-4xl lg:text-[60px] leading-[1.1] lg:leading-[76px] tracking-[-0.72px] text-center w-full font-normal">
@@ -166,7 +166,7 @@ function LoginForm() {
         </div>
 
         {/* Right: photo panel */}
-        <div className="hidden lg:flex relative w-[648px] h-[810px] rounded-[32px] overflow-hidden items-start justify-end p-8 shrink-0">
+        <div className="hidden lg:flex relative w-[648px] h-full max-h-[810px] rounded-[32px] overflow-hidden items-start justify-end p-8 shrink-0">
           <Image src="/login/office-photo.png" alt="" fill priority className="object-cover pointer-events-none" />
           <Image src="/login/itsec-logo-white.svg" alt="ITSEC" width={87} height={19} className="relative h-5 w-auto" />
         </div>

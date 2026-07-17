@@ -2,13 +2,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Save, Send, AlertTriangle, CheckCircle2, LayoutDashboard, Search } from 'lucide-react'
+import { Save, Send, AlertTriangle, CheckCircle2, Search } from 'lucide-react'
 import { useAuth, authHeaders } from '@/lib/auth'
-import { AppNav } from '@/components/layout/AppNav'
+import { DeptTopNav } from '@/components/layout/DeptTopNav'
+import { DateSidebar } from '@/components/kpi/DateSidebar'
+import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { KpiCard } from '@/components/kpi/KpiCard'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { iconHoverClass } from '@/lib/utils'
 
 interface SubMetric {
@@ -47,7 +49,6 @@ interface Anomaly {
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
-const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1]
 
 export default function DeptPage() {
   const { user, token, ready } = useAuth()
@@ -238,153 +239,140 @@ export default function DeptPage() {
   if (!ready || !user) return null
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F4F4]">
-      <AppNav
-        title={user.dept_name}
-        subtitle="Data Entry"
-        actions={
-          <button
-            onClick={() => router.push('/dept/dashboard')}
-            className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"
-          >
-            <LayoutDashboard size={13} />
-            <span className="hidden sm:inline">Dashboard</span>
-          </button>
-        }
-      />
+    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+      <DeptTopNav />
 
-      {/* Controls bar */}
-      <div className="bg-white border-b border-[#e5e5e5] px-6 md:px-8 py-3 flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Select value={String(month)} onValueChange={v => v && setMonth(parseInt(v))}>
-            <SelectTrigger className="w-[130px] !h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS.map((m, i) => (
-                <SelectItem key={i + 1} value={String(i + 1)} className="text-xs">{m}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
-            <SelectTrigger className="w-[90px] !h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {YEARS.map(y => (
-                <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left: clock + date picker */}
+        <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
+          <DateSidebar
+            year={year}
+            onYearChange={setYear}
+            month={month}
+            onMonthChange={setMonth}
+            minYear={CURRENT_YEAR - 1}
+            maxYear={CURRENT_YEAR + 1}
+          />
+        </aside>
 
-        <div className="flex-1" />
-
-        {submitted && (
-          <div className="flex items-center gap-1.5 text-xs text-[#166534] bg-[#DCFCE7] border border-[#BBF7D0] px-3 py-1 rounded-full">
-            <CheckCircle2 size={12} />
-            Submitted
-          </div>
-        )}
-
-        {anomalies.length > 0 && (
-          <div className="flex items-center gap-1.5 text-xs text-[#B45309] bg-[#FFF8E6] border border-[#FDE68A] px-3 py-1 rounded-full">
-            <AlertTriangle size={12} />
-            {anomalies.length} anomaly{anomalies.length > 1 ? 'ies' : ''} flagged
-          </div>
-        )}
-
-        <Button
-          size="sm"
-          variant="outline"
-          className={`h-9 rounded-lg text-xs gap-1.5 ${iconHoverClass}`}
-          onClick={handleSave}
-          disabled={saving || submitted}
-        >
-          <Save size={13} />
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
-        <Button
-          size="sm"
-          className={`h-9 rounded-lg text-xs gap-1.5 bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`}
-          onClick={handleSubmit}
-          disabled={saving || submitted}
-        >
-          <Send size={13} />
-          {submitted ? 'Submitted' : 'Submit Month'}
-        </Button>
-      </div>
-
-      {/* Main content */}
-      <main className="flex-1 px-6 md:px-8 py-8 max-w-5xl mx-auto w-full">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Data Entry</h1>
-          <p className="text-sm text-[#737373] mt-1">
-            Enter this month&apos;s actuals for every KPI in {user.dept_name}. Save as you go, then Submit Month once everything looks right — submitted data locks and moves to Corporate Planning for review.
-          </p>
-        </div>
-
-        {/* Quick search — jumps to a matrix by name, doesn't hide the full entry form for anything else */}
-        {kpis.length > 0 && (
-          <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl flex items-center gap-4 px-4 py-3.5 mb-6">
-            <div className="size-10 rounded-full bg-[#f5f5f5] flex items-center justify-center shrink-0">
-              <Search size={16} className="text-[#737373]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <input
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && runSearch()}
-                placeholder="Search matrix name..."
-                className="w-full bg-[#f5f5f5] border border-[#e5e5e5] rounded-2xl px-4 py-2.5 text-base text-[#282828] placeholder:text-[#737373] focus:outline-none focus:border-[#CC1F1F]"
-              />
-            </div>
-            <button
-              onClick={runSearch}
-              className={`h-12 px-5 rounded-2xl bg-[#282828] hover:bg-[#171717] text-white text-sm font-medium flex items-center gap-2 shrink-0 transition-colors ${iconHoverClass}`}
-            >
-              Start Search
-              <Search size={16} />
-            </button>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
-            ))}
-          </div>
-        ) : kpis.length === 0 ? (
-          <div className="text-center py-20 text-[#AAAAAA] text-sm">No KPIs configured for this department.</div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-medium text-[#282828] text-sm">{MONTHS[month - 1]} {year}</h2>
-              <span className="text-xs text-[#737373] font-normal">
-                {appliedSearch ? `${visibleKpis.length} of ${kpis.length} KPIs` : `${kpis.length} KPI${kpis.length > 1 ? 's' : ''}`}
-              </span>
-            </div>
-            {visibleKpis.length === 0 ? (
-              <div className="text-center py-16 text-[#AAAAAA] text-sm">
-                No KPI matches &quot;{appliedSearch}&quot;.{' '}
-                <button onClick={() => { setSearchInput(''); setAppliedSearch('') }} className="text-[#CC1F1F] hover:underline">Clear search</button>
+        {/* Center: data entry */}
+        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Data Entry Section</h1>
+                <p className="text-sm text-[#737373] mt-1 max-w-xl">
+                  Enter this month&apos;s actuals for every KPI in {user.dept_name}. Save as you go, then Submit Month once everything looks right — submitted data locks and moves to Corporate Planning for review.
+                </p>
               </div>
-            ) : visibleKpis.map(kpi => (
-              <KpiCard
-                key={kpi.id}
-                kpi={kpi}
-                values={values}
-                dataSource={dataSources[kpi.id]}
-                anomalyCount={getKpiAnomalyCount(kpi.id)}
-                onValueChange={handleValueChange}
-                onDataSourceSave={handleDataSourceSave}
-                readOnly={submitted}
-              />
-            ))}
+              <div className="flex items-center gap-2 shrink-0">
+                {submitted && (
+                  <div className="flex items-center gap-1.5 text-xs text-[#166534] bg-[#DCFCE7] border border-[#BBF7D0] px-3 py-1 rounded-full">
+                    <CheckCircle2 size={12} />
+                    Submitted
+                  </div>
+                )}
+                {anomalies.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-[#B45309] bg-[#FFF8E6] border border-[#FDE68A] px-3 py-1 rounded-full">
+                    <AlertTriangle size={12} />
+                    {anomalies.length} anomaly{anomalies.length > 1 ? 'ies' : ''} flagged
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick search — jumps to a matrix by name, doesn't hide the full entry form for anything else */}
+            {kpis.length > 0 && (
+              <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl flex items-center gap-4 px-4 py-3.5 mb-6">
+                <button onClick={() => router.push('/profile')} title="Profile" className="shrink-0">
+                  <Avatar size="lg" className="size-10 ring-1 ring-[#e5e5e5]">
+                    {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
+                    <AvatarFallback className="text-xs">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </button>
+                <div className="flex-1 min-w-0">
+                  <input
+                    value={searchInput}
+                    onChange={e => setSearchInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && runSearch()}
+                    placeholder="Search matrix name..."
+                    className="w-full bg-[#f5f5f5] border border-[#e5e5e5] rounded-2xl px-4 py-2.5 text-base text-[#282828] placeholder:text-[#737373] focus:outline-none focus:border-[#CC1F1F]"
+                  />
+                </div>
+                <button
+                  onClick={runSearch}
+                  className={`h-12 px-5 rounded-2xl bg-[#282828] hover:bg-[#171717] text-white text-sm font-medium flex items-center gap-2 shrink-0 transition-colors ${iconHoverClass}`}
+                >
+                  Start Search
+                  <Search size={16} />
+                </button>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-24 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
+                ))}
+              </div>
+            ) : kpis.length === 0 ? (
+              <div className="text-center py-20 text-[#AAAAAA] text-sm">No KPIs configured for this department.</div>
+            ) : (
+              <div className="space-y-3 pb-28">
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="font-medium text-[#282828] text-sm">{MONTHS[month - 1]} {year}</h2>
+                  <span className="text-xs text-[#737373] font-normal">
+                    {appliedSearch ? `${visibleKpis.length} of ${kpis.length} KPIs` : `${kpis.length} KPI${kpis.length > 1 ? 's' : ''}`}
+                  </span>
+                </div>
+                {visibleKpis.length === 0 ? (
+                  <div className="text-center py-16 text-[#AAAAAA] text-sm">
+                    No KPI matches &quot;{appliedSearch}&quot;.{' '}
+                    <button onClick={() => { setSearchInput(''); setAppliedSearch('') }} className="text-[#CC1F1F] hover:underline">Clear search</button>
+                  </div>
+                ) : visibleKpis.map(kpi => (
+                  <KpiCard
+                    key={kpi.id}
+                    kpi={kpi}
+                    values={values}
+                    dataSource={dataSources[kpi.id]}
+                    anomalyCount={getKpiAnomalyCount(kpi.id)}
+                    onValueChange={handleValueChange}
+                    onDataSourceSave={handleDataSourceSave}
+                    readOnly={submitted}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </main>
+
+          {/* Sticky Save/Submit bar */}
+          <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-gradient-to-t from-[#fafafa] via-[#fafafa] to-transparent flex justify-end gap-3">
+            <Button
+              variant="outline"
+              className={`h-12 px-5 rounded-2xl gap-2 border-[#e5e5e5] bg-white ${iconHoverClass}`}
+              onClick={handleSave}
+              disabled={saving || submitted}
+            >
+              <Save size={16} />
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+            <Button
+              className={`h-12 px-5 rounded-2xl gap-2 bg-[#282828] hover:bg-[#171717] text-white ${iconHoverClass}`}
+              onClick={handleSubmit}
+              disabled={saving || submitted}
+            >
+              {submitted ? 'Submitted' : 'Submit Month'}
+              <Send size={16} />
+            </Button>
+          </div>
+        </main>
+
+        {/* Right: add-ons */}
+        <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
+          <AddOnsPanel />
+        </aside>
+      </div>
     </div>
   )
 }

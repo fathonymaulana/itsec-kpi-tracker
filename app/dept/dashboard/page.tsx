@@ -1,19 +1,19 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, TrendingUp, Eye, TrendingDown, CircleDashed } from 'lucide-react'
+import { TrendingUp, Eye, TrendingDown, CircleDashed } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
-import { AppNav } from '@/components/layout/AppNav'
+import { DeptTopNav } from '@/components/layout/DeptTopNav'
+import { DateSidebar } from '@/components/kpi/DateSidebar'
+import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { getStatus, MONTHS, type KpiStatus } from '@/lib/status'
 import { getPrimarySubMetric, resolvePrimaryValue } from '@/lib/kpi-primary'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 
 const CURRENT_YEAR = new Date().getFullYear()
-const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR]
 
 interface SubMetric {
   id: number; name: string; unit: string;
@@ -86,41 +86,28 @@ export default function DeptDashboard() {
   if (!ready || !user) return null
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F4F4]">
-      <AppNav
-        title={user.dept_name}
-        subtitle="Dashboard"
-        actions={
-          <button
-            onClick={() => router.push('/dept')}
-            className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors"
-          >
-            <ArrowLeft size={13} />
-            <span className="hidden sm:inline">Data Entry</span>
-          </button>
-        }
-      />
+    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+      <DeptTopNav />
 
-      <div className="bg-white border-b border-[#e5e5e5] px-6 md:px-8 py-3 flex items-center gap-3">
-        <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
-          <SelectTrigger className="w-[90px] !h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {YEARS.map(y => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <div className="flex-1" />
-        <span className="text-xs text-[#737373]">{kpis.length} KPIs</span>
-      </div>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left: clock + year picker */}
+        <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
+          <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
+        </aside>
 
-      <main className="flex-1 px-6 md:px-8 py-8 max-w-6xl mx-auto w-full">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Dashboard</h1>
-          <p className="text-sm text-[#737373] mt-1">
-            {kpis.length > 0
-              ? `A month-by-month view of every KPI ${user.dept_name} tracks, so you can spot trends before they become problems.`
-              : 'Once KPIs are configured for your department, their trends will show up here.'}
-          </p>
-        </div>
+        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Dashboard</h1>
+                <p className="text-sm text-[#737373] mt-1 max-w-xl">
+                  {kpis.length > 0
+                    ? `A month-by-month view of every KPI ${user.dept_name} tracks, so you can spot trends before they become problems.`
+                    : 'Once KPIs are configured for your department, their trends will show up here.'}
+                </p>
+              </div>
+              <span className="text-xs text-[#737373] shrink-0 mt-1">{kpis.length} KPIs</span>
+            </div>
 
         {/* Stat summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
@@ -240,7 +227,14 @@ export default function DeptDashboard() {
             })}
           </div>
         )}
-      </main>
+          </div>
+        </main>
+
+        {/* Right: add-ons */}
+        <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
+          <AddOnsPanel />
+        </aside>
+      </div>
     </div>
   )
 }
