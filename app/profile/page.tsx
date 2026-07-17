@@ -2,12 +2,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CameraLineDuotone as Camera, ClockCircleLineDuotone as Clock, ShieldCheckLineDuotone as ShieldCheck } from '@solar-icons/react-perf'
+import { CameraLineDuotone as Camera, ClockCircleLineDuotone as Clock, ShieldCheckLineDuotone as ShieldCheck, AltArrowRightLineDuotone as ChevronRight } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
-import { AppNav } from '@/components/layout/AppNav'
+import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 
 interface Profile {
   id: number
@@ -123,21 +124,43 @@ export default function ProfilePage() {
 
   if (!ready || !user) return null
 
-  return (
-    <div className="min-h-screen flex flex-col bg-[#F4F4F4]">
-      <AppNav title={user.dept_name} subtitle="Profile" />
+  const homeHref = user.role === 'dept_head' ? '/dept/dashboard' : '/board'
 
-      <main className="flex-1 px-6 md:px-8 py-8 max-w-xl mx-auto w-full space-y-4">
+  return (
+    <div className="h-screen flex flex-col bg-app overflow-hidden">
+      <DeptTopNav />
+
+      <main className="flex-1 overflow-y-auto px-6 py-8">
+        <div className="max-w-xl mx-auto w-full space-y-4">
+        <Breadcrumb className="mb-2">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={homeHref} className="text-ink-muted hover:text-ink">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <ChevronRight size={14} className="text-ink-faint" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbPage className="text-ink">Profile</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        <div className="mb-2">
+          <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Profile</h1>
+          <p className="text-sm text-ink-muted mt-1">Manage your display name, avatar, and PIN.</p>
+        </div>
+
         {loading ? (
           <div className="space-y-4">
-            <div className="h-40 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
-            <div className="h-40 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
+            <div className="h-40 bg-panel border border-divider rounded-3xl animate-pulse" />
+            <div className="h-40 bg-panel border border-divider rounded-3xl animate-pulse" />
           </div>
         ) : profile && (
           <>
             {/* Profile card */}
-            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
-              <h2 className="font-medium text-[#1A1A1A] text-sm mb-4">Profile</h2>
+            <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
+              <h2 className="font-medium text-ink text-sm mb-4">Profile</h2>
 
               <div className="flex items-center gap-4 mb-5">
                 <div className="relative">
@@ -156,13 +179,13 @@ export default function ProfilePage() {
                   <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleAvatarChange} />
                 </div>
                 <div>
-                  <div className="text-xs text-[#808080]">{ROLE_LABELS[profile.role] || profile.role}</div>
-                  {profile.dept_name && <div className="text-xs text-[#AAAAAA]">{profile.dept_name}</div>}
-                  {uploadingAvatar && <div className="text-[11px] text-[#AAAAAA] mt-1">Uploading…</div>}
+                  <div className="text-xs text-ink-muted">{ROLE_LABELS[profile.role] || profile.role}</div>
+                  {profile.dept_name && <div className="text-xs text-ink-faint">{profile.dept_name}</div>}
+                  {uploadingAvatar && <div className="text-[11px] text-ink-faint mt-1">Uploading…</div>}
                 </div>
               </div>
 
-              <label className="block text-xs font-medium text-[#595959] mb-1.5">Display Name</label>
+              <label className="block text-xs font-medium text-ink-soft mb-1.5">Display Name</label>
               <div className="flex gap-2">
                 <Input value={name} onChange={e => setName(e.target.value)} className="flex-1" />
                 <Button
@@ -177,18 +200,18 @@ export default function ProfilePage() {
             </div>
 
             {/* Password card */}
-            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
-              <h2 className="font-medium text-[#1A1A1A] text-sm mb-1">Password</h2>
-              <p className="text-xs text-[#808080] mb-4">Changing your PIN requires Corporate Planning&apos;s approval — your current PIN keeps working until then.</p>
+            <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
+              <h2 className="font-medium text-ink text-sm mb-1">Password</h2>
+              <p className="text-xs text-ink-muted mb-4">Changing your PIN requires Corporate Planning&apos;s approval — your current PIN keeps working until then.</p>
 
               {profile.pending_pin_request ? (
-                <div className="flex items-center gap-2 text-xs text-[#B45309] bg-[#FFF8E6] border border-[#FDE68A] px-3 py-2.5 rounded">
+                <div className="flex items-center gap-2 text-xs text-warning bg-warning-soft border border-warning-soft-border px-3 py-2.5 rounded">
                   <Clock size={13} className="shrink-0" />
                   Waiting on Corporate Planning&apos;s approval — requested {new Date(profile.pending_pin_request.requested_at).toLocaleString()}
                 </div>
               ) : (
                 <div>
-                  <label className="block text-xs font-medium text-[#595959] mb-1.5">New 4-Digit PIN</label>
+                  <label className="block text-xs font-medium text-ink-soft mb-1.5">New 4-Digit PIN</label>
                   <div className="flex gap-2">
                     <Input
                       type="password"
@@ -214,6 +237,7 @@ export default function ProfilePage() {
             </div>
           </>
         )}
+        </div>
       </main>
     </div>
   )

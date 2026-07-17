@@ -43,22 +43,22 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
       </div>
 
       {/* Year / month picker */}
-      <div className="bg-white border border-[#e5e5e5] rounded-3xl overflow-hidden">
-        <div className="bg-[#f5f5f5] p-6 flex items-center justify-between">
+      <div className="bg-panel border border-divider rounded-3xl overflow-hidden">
+        <div className="bg-panel-soft p-6 flex items-center justify-between">
           <button
             onClick={() => onYearChange(year - 1)}
             disabled={minYear !== undefined && year <= minYear}
-            className="size-8 rounded-lg bg-white border border-[#ddd] flex items-center justify-center hover:border-[#CC1F1F] transition-colors disabled:opacity-40 disabled:hover:border-[#ddd]"
+            className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors disabled:opacity-40 disabled:hover:border-divider"
           >
-            <ChevronLeft size={16} className="text-[#282828]" />
+            <ChevronLeft size={16} className="text-ink" />
           </button>
-          <span className="text-xl font-semibold text-[#282828] tracking-[-0.1px]">{year}</span>
+          <span className="text-xl font-semibold text-ink tracking-[-0.1px]">{year}</span>
           <button
             onClick={() => onYearChange(year + 1)}
             disabled={maxYear !== undefined && year >= maxYear}
-            className="size-8 rounded-lg bg-white border border-[#ddd] flex items-center justify-center hover:border-[#CC1F1F] transition-colors disabled:opacity-40 disabled:hover:border-[#ddd]"
+            className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors disabled:opacity-40 disabled:hover:border-divider"
           >
-            <ChevronRight size={16} className="text-[#282828]" />
+            <ChevronRight size={16} className="text-ink" />
           </button>
         </div>
 
@@ -67,16 +67,16 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
             <div className="flex items-center justify-between">
               <button
                 onClick={() => onMonthChange(month === 1 ? 12 : month - 1)}
-                className="size-8 rounded-lg bg-white border border-[#ddd] flex items-center justify-center hover:border-[#CC1F1F] transition-colors"
+                className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors"
               >
-                <ChevronLeft size={16} className="text-[#282828]" />
+                <ChevronLeft size={16} className="text-ink" />
               </button>
-              <span className="text-base font-medium text-[#282828] tracking-[-0.192px]">{MONTHS[month - 1]}</span>
+              <span className="text-base font-medium text-ink tracking-[-0.192px]">{MONTHS[month - 1]}</span>
               <button
                 onClick={() => onMonthChange(month === 12 ? 1 : month + 1)}
-                className="size-8 rounded-lg bg-white border border-[#ddd] flex items-center justify-center hover:border-[#CC1F1F] transition-colors"
+                className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors"
               >
-                <ChevronRight size={16} className="text-[#282828]" />
+                <ChevronRight size={16} className="text-ink" />
               </button>
             </div>
           </div>

@@ -291,7 +291,7 @@ export default function DeptPage() {
   if (!ready || !user) return null
 
   return (
-    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+    <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
         leftPanelOpen={leftPanelOpen}
         onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
@@ -320,20 +320,20 @@ export default function DeptPage() {
           <div className="max-w-3xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Data Entry Section</h1>
-                <p className="text-sm text-[#737373] mt-1 max-w-xl">
+                <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Data Entry Section</h1>
+                <p className="text-sm text-ink-muted mt-1 max-w-xl">
                   Enter this month&apos;s actuals for every KPI in {user.dept_name}. Save as you go, then Submit Month once everything looks right — submitted data locks and moves to Corporate Planning for review.
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {submitted && (
-                  <div className="flex items-center gap-1.5 text-xs text-[#166534] bg-[#DCFCE7] border border-[#BBF7D0] px-3 py-1 rounded-full">
+                  <div className="flex items-center gap-1.5 text-xs text-success bg-success-soft border border-success-soft-border px-3 py-1 rounded-full">
                     <CheckCircle2 size={12} />
                     Submitted
                   </div>
                 )}
                 {anomalies.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-xs text-[#B45309] bg-[#FFF8E6] border border-[#FDE68A] px-3 py-1 rounded-full">
+                  <div className="flex items-center gap-1.5 text-xs text-warning bg-warning-soft border border-warning-soft-border px-3 py-1 rounded-full">
                     <AlertTriangle size={12} />
                     {anomalies.length} anomaly{anomalies.length > 1 ? 'ies' : ''} flagged
                   </div>
@@ -343,7 +343,7 @@ export default function DeptPage() {
 
             {/* Quick search — jumps to a matrix by name, doesn't hide the full entry form for anything else */}
             {kpis.length > 0 && (
-              <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl flex items-center gap-4 px-4 py-3.5 mb-6">
+              <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl flex items-center gap-4 px-4 py-3.5 mb-6">
                 <button onClick={() => router.push('/profile')} title="Profile" className="shrink-0">
                   <Avatar size="lg" className="size-10 ring-1 ring-[#e5e5e5]">
                     {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
@@ -356,7 +356,7 @@ export default function DeptPage() {
                     onChange={e => setSearchInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && runSearch()}
                     placeholder="Search matrix name..."
-                    className="w-full bg-[#f5f5f5] border border-[#e5e5e5] rounded-2xl px-4 py-2.5 text-base text-[#282828] placeholder:text-[#737373] focus:outline-none focus:border-[#CC1F1F]"
+                    className="w-full bg-panel-soft border border-divider rounded-2xl px-4 py-2.5 text-base text-ink placeholder:text-ink-muted focus:outline-none focus:border-[#CC1F1F]"
                   />
                 </div>
                 <button
@@ -372,21 +372,21 @@ export default function DeptPage() {
             {loading ? (
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-24 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
+                  <div key={i} className="h-24 bg-panel border border-divider rounded-3xl animate-pulse" />
                 ))}
               </div>
             ) : kpis.length === 0 ? (
-              <div className="text-center py-20 text-[#AAAAAA] text-sm">No KPIs configured for this department.</div>
+              <div className="text-center py-20 text-ink-faint text-sm">No KPIs configured for this department.</div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className="font-medium text-[#282828] text-sm">{MONTHS[month - 1]} {year}</h2>
-                  <span className="text-xs text-[#737373] font-normal">
+                  <h2 className="font-medium text-ink text-sm">{MONTHS[month - 1]} {year}</h2>
+                  <span className="text-xs text-ink-muted font-normal">
                     {appliedSearch ? `${visibleKpis.length} of ${kpis.length} KPIs` : `${kpis.length} KPI${kpis.length > 1 ? 's' : ''}`}
                   </span>
                 </div>
                 {visibleKpis.length === 0 ? (
-                  <div className="text-center py-16 text-[#AAAAAA] text-sm">
+                  <div className="text-center py-16 text-ink-faint text-sm">
                     No KPI matches &quot;{appliedSearch}&quot;.{' '}
                     <button onClick={() => { setSearchInput(''); setAppliedSearch('') }} className="text-[#CC1F1F] hover:underline">Clear search</button>
                   </div>
@@ -410,10 +410,10 @@ export default function DeptPage() {
           </div>
 
           {/* Save/Submit action bar — pinned flush to the bottom of the screen, not floating over content */}
-          <div className="shrink-0 border-t border-[#e5e5e5] bg-white px-6 py-4 flex justify-end gap-3">
+          <div className="shrink-0 border-t border-divider bg-panel px-6 py-4 flex justify-end gap-3">
             <Button
               variant="outline"
-              className={`h-12 px-5 rounded-2xl gap-2 border-[#e5e5e5] bg-white ${iconHoverClass}`}
+              className={`h-12 px-5 rounded-2xl gap-2 border-divider bg-panel ${iconHoverClass}`}
               onClick={handleSave}
               disabled={saving || submitted}
             >

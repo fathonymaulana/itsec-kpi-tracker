@@ -44,7 +44,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   const [notifOpen, setNotifOpen] = useState(false)
 
   return (
-    <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
+    <header className="bg-panel shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
       <div className="flex items-center gap-3.5 justify-self-start">
         <Image src="/login/itsec-logo-badge.svg" alt="ITSEC KPI Tracker" width={179} height={19} className="h-5 w-auto" />
       </div>
@@ -59,7 +59,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
               onClick={() => router.push(item.href)}
               className={cn(
                 'flex flex-col items-center justify-center h-full w-32 border-b-[3px] transition-colors',
-                active ? 'border-[#282828] text-[#282828]' : 'border-transparent text-[#AAAAAA] hover:text-[#595959]'
+                active ? 'border-ink text-ink' : 'border-transparent text-ink-faint hover:text-ink-soft'
               )}
               title={item.label}
             >
@@ -73,49 +73,49 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
         {onToggleLeftPanel && (
           <button
             onClick={onToggleLeftPanel}
-            className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
+            className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
             title="Toggle left panel"
           >
             {leftPanelOpen
-              ? <SidebarBold size={18} className="text-[#282828] -scale-x-100" />
-              : <SidebarLine size={18} className="text-[#282828] -scale-x-100" />}
+              ? <SidebarBold size={18} className="text-ink -scale-x-100" />
+              : <SidebarLine size={18} className="text-ink -scale-x-100" />}
           </button>
         )}
         {onToggleRightPanel && (
           <button
             onClick={onToggleRightPanel}
-            className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
+            className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
             title="Toggle right panel"
           >
             {rightPanelOpen
-              ? <SidebarBold size={18} className="text-[#282828]" />
-              : <SidebarLine size={18} className="text-[#282828]" />}
+              ? <SidebarBold size={18} className="text-ink" />
+              : <SidebarLine size={18} className="text-ink" />}
           </button>
         )}
 
         <Popover open={notifOpen} onOpenChange={setNotifOpen}>
           <PopoverTrigger
-            className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
+            className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
             title="Notifications"
           >
-            {notifOpen ? <BellBold size={18} className="text-[#282828]" /> : <BellLine size={18} className="text-[#282828]" />}
+            {notifOpen ? <BellBold size={18} className="text-ink" /> : <BellLine size={18} className="text-ink" />}
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#e5e5e5]">
-              <div className="text-sm font-semibold text-[#282828]">Notifications</div>
+            <div className="px-4 py-3 border-b border-divider">
+              <div className="text-sm font-semibold text-ink">Notifications</div>
             </div>
             <div className="p-8 text-center flex flex-col items-center gap-2">
-              <BellLine size={28} className="text-[#DDDDDD]" />
-              <p className="text-sm text-[#737373]">You&apos;re all caught up — no notifications yet.</p>
+              <BellLine size={28} className="text-ink-faint" />
+              <p className="text-sm text-ink-muted">You&apos;re all caught up — no notifications yet.</p>
             </div>
           </PopoverContent>
         </Popover>
 
-        <div className="w-px h-6 bg-[#e5e5e5] mx-1" />
+        <div className="w-px h-6 bg-divider mx-1" />
 
         {user && (
           <button onClick={() => router.push('/profile')} title="Profile">
-            <Avatar size="sm" className="ring-1 ring-[#e5e5e5]">
+            <Avatar size="sm" className="size-9 ring-1 ring-divider">
               {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
               <AvatarFallback className="text-[10px]">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>

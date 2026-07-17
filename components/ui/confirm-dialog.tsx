@@ -29,17 +29,17 @@ export function ConfirmDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm rounded-3xl p-6 gap-5">
         <DialogHeader>
-          <div className={cn('size-10 rounded-full flex items-center justify-center mb-1', destructive ? 'bg-[#FDECEA]' : 'bg-[#f5f5f5]')}>
-            <DangerTriangleLineDuotone size={20} className={destructive ? 'text-[#CC1F1F]' : 'text-[#282828]'} />
+          <div className={cn('size-10 rounded-full flex items-center justify-center mb-1', destructive ? 'bg-danger-soft' : 'bg-panel-soft')}>
+            <DangerTriangleLineDuotone size={20} className={destructive ? 'text-[#CC1F1F]' : 'text-ink'} />
           </div>
-          <DialogTitle className="text-lg font-semibold text-[#282828]">{title}</DialogTitle>
-          <DialogDescription className="text-sm text-[#737373]">{description}</DialogDescription>
+          <DialogTitle className="text-lg font-semibold text-ink">{title}</DialogTitle>
+          <DialogDescription className="text-sm text-ink-muted">{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="!mx-0 !mb-0 !bg-transparent !border-0 !p-0 flex gap-3 sm:justify-end">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className={cn('h-11 px-5 rounded-2xl border-[#e5e5e5]', iconHoverClass)}
+            className={cn('h-11 px-5 rounded-2xl border-divider', iconHoverClass)}
           >
             {cancelLabel}
           </Button>

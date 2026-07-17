@@ -50,14 +50,14 @@ export function CookieConsent() {
         entered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
       )}
     >
-      <div className="w-full max-w-2xl bg-white border border-[#e5e5e5] shadow-2xl rounded-3xl p-5">
+      <div className="w-full max-w-2xl bg-panel border border-divider shadow-2xl rounded-3xl p-5">
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#FDECEA] flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-danger-soft flex items-center justify-center shrink-0">
             <Cookie size={16} className="text-[#CC1F1F]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[#282828]">A quick word on cookies</p>
-            <p className="text-sm text-[#595959] font-normal mt-1 leading-relaxed">
+            <p className="text-sm font-medium text-ink">A quick word on cookies</p>
+            <p className="text-sm text-ink-soft font-normal mt-1 leading-relaxed">
               KPI Tracker is an internal ITSEC tool, and it keeps its footprint just as internal: the only cookies and
               local storage we use are the ones that keep you signed in, remember your interface preferences, and
               speed up switching between your own accounts. Nothing here tracks you, profiles you, or gets shared
@@ -73,10 +73,10 @@ export function CookieConsent() {
             </button>
 
             {expanded && (
-              <ul className="mt-3 space-y-2 border-t border-[#e5e5e5] pt-3">
+              <ul className="mt-3 space-y-2 border-t border-divider pt-3">
                 {STORAGE_ITEMS.map(item => (
-                  <li key={item.label} className="text-xs text-[#595959] font-normal">
-                    <span className="font-medium text-[#282828]">{item.label}.</span> {item.detail}
+                  <li key={item.label} className="text-xs text-ink-soft font-normal">
+                    <span className="font-medium text-ink">{item.label}.</span> {item.detail}
                   </li>
                 ))}
               </ul>
@@ -89,12 +89,12 @@ export function CookieConsent() {
               >
                 Understood
               </Button>
-              <span className="text-[10px] text-[#AAAAAA] font-normal">Essential only — nothing to opt out of.</span>
+              <span className="text-[10px] text-ink-faint font-normal">Essential only — nothing to opt out of.</span>
             </div>
           </div>
           <button
             onClick={dismiss}
-            className={cn('shrink-0 text-[#AAAAAA] hover:text-[#595959] p-1', iconHoverClass)}
+            className={cn('shrink-0 text-ink-faint hover:text-ink-soft p-1', iconHoverClass)}
             title="Dismiss"
           >
             <X size={14} />

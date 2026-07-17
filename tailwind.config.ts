@@ -60,6 +60,13 @@ const config: Config = {
         muted: { DEFAULT: 'var(--muted)', foreground: 'var(--muted-foreground)' },
         accent: { DEFAULT: 'var(--accent)', foreground: 'var(--accent-foreground)' },
         destructive: { DEFAULT: 'var(--destructive)', foreground: 'var(--destructive-foreground)' },
+        app: 'var(--app-bg)',
+        panel: { DEFAULT: 'var(--panel-bg)', soft: 'var(--panel-soft-bg)' },
+        divider: 'var(--divider)',
+        ink: { DEFAULT: 'var(--ink)', soft: 'var(--ink-soft)', muted: 'var(--ink-muted)', faint: 'var(--ink-faint)' },
+        success: { DEFAULT: 'var(--success-text)', soft: 'var(--success-soft-bg)', 'soft-border': 'var(--success-soft-border)' },
+        danger: { DEFAULT: 'var(--danger-text)', soft: 'var(--danger-soft-bg)', 'soft-border': 'var(--danger-soft-border)' },
+        warning: { DEFAULT: 'var(--warning-text)', soft: 'var(--warning-soft-bg)', 'soft-border': 'var(--warning-soft-border)' },
       },
       fontFamily: {
         sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],

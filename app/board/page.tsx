@@ -130,7 +130,7 @@ export default function BoardPage() {
   const pct = (n: number) => totals.total > 0 ? Math.round(n / totals.total * 100) : 0
 
   return (
-    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+    <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
         leftPanelOpen={leftPanelOpen}
         onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
@@ -155,8 +155,8 @@ export default function BoardPage() {
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
           <div className="max-w-5xl mx-auto">
             <div className="mb-6">
-              <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Dashboard</h1>
-              <p className="text-sm text-[#737373] mt-1">
+              <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Dashboard</h1>
+              <p className="text-sm text-ink-muted mt-1">
                 Every department&apos;s KPI status for {MONTHS[month - 1]} {year}, at a glance.
               </p>
             </div>
@@ -165,24 +165,24 @@ export default function BoardPage() {
             {anomalies.length > 0 && (
               <button
                 onClick={() => setShowAnomalies(s => !s)}
-                className="w-full mb-6 flex items-center gap-3 bg-[#FFF8E6] border border-[#FDE68A] px-4 py-3 rounded-2xl text-left hover:bg-[#FFF3CC] transition-colors"
+                className="w-full mb-6 flex items-center gap-3 bg-warning-soft border border-warning-soft-border px-4 py-3 rounded-2xl text-left hover:bg-[#FFF3CC] transition-colors"
               >
-                <AlertTriangle size={15} className="text-[#B45309] shrink-0" />
-                <span className="text-sm font-medium text-[#B45309] flex-1">
+                <AlertTriangle size={15} className="text-warning shrink-0" />
+                <span className="text-sm font-medium text-warning flex-1">
                   {anomalies.length} unresolved anomaly{anomalies.length > 1 ? 'ies' : ''} across departments
                 </span>
-                {showAnomalies ? <ChevronUp size={14} className="text-[#B45309]" /> : <ChevronDown size={14} className="text-[#B45309]" />}
+                {showAnomalies ? <ChevronUp size={14} className="text-warning" /> : <ChevronDown size={14} className="text-warning" />}
               </button>
             )}
 
             {showAnomalies && (
-              <div className="mb-6 bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+              <div className="mb-6 bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
                 {anomalies.map((a, i) => (
-                  <div key={i} className={`px-4 py-3 flex items-start gap-3 ${i > 0 ? 'border-t border-[#e5e5e5]' : ''}`}>
+                  <div key={i} className={`px-4 py-3 flex items-start gap-3 ${i > 0 ? 'border-t border-divider' : ''}`}>
                     <AlertTriangle size={13} className="text-[#F59E0B] shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-xs font-medium text-[#282828]">{a.department_name} — {a.kpi_name}</div>
-                      <div className="text-xs text-[#737373] mt-0.5 font-normal">{a.description}</div>
+                      <div className="text-xs font-medium text-ink">{a.department_name} — {a.kpi_name}</div>
+                      <div className="text-xs text-ink-muted mt-0.5 font-normal">{a.description}</div>
                     </div>
                   </div>
                 ))}
@@ -197,11 +197,11 @@ export default function BoardPage() {
                 { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: '#991B1B', border: '#FECACA', Icon: Minus },
                 { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: '#6B7280', border: '#E5E7EB', Icon: Minus },
               ].map(s => (
-                <div key={s.label} className="bg-white border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
+                <div key={s.label} className="bg-panel border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
                   <s.Icon size={16} style={{ color: s.color }} className="mt-0.5 shrink-0" />
                   <div>
                     <div className="text-2xl font-semibold" style={{ color: s.color }}>{s.value}</div>
-                    <div className="text-xs text-[#737373] font-normal">{s.label}</div>
+                    <div className="text-xs text-ink-muted font-normal">{s.label}</div>
                     <div className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }}>{s.pct}%</div>
                   </div>
                 </div>
@@ -217,8 +217,8 @@ export default function BoardPage() {
               <TabsContent value="charts">
                 {/* Stacked bar chart */}
                 {!loading && chartData.length > 0 && (
-                  <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
-                    <h3 className="font-medium text-[#282828] text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
+                  <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
+                    <h3 className="font-medium text-ink text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
                     <ChartContainer config={chartConfig} className="h-[220px] w-full aspect-auto">
                       <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
                         <CartesianGrid horizontal={false} stroke="#F2F2F2" />
@@ -237,23 +237,23 @@ export default function BoardPage() {
 
                 {/* Department accordion */}
                 <div className="space-y-2">
-                  <h3 className="font-medium text-[#282828] text-sm mb-3">Department Breakdown</h3>
+                  <h3 className="font-medium text-ink text-sm mb-3">Department Breakdown</h3>
                   {loading ? (
                     <div className="space-y-2">
-                      {[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />)}
+                      {[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-panel border border-divider rounded-3xl animate-pulse" />)}
                     </div>
                   ) : summaries.map(dept => {
                     const expanded = expandedDepts.has(dept.dept_id)
                     const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
                     return (
-                      <div key={dept.dept_id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                      <div key={dept.dept_id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
                         <button
                           onClick={() => toggleDept(dept.dept_id)}
-                          className="w-full px-5 py-3.5 flex items-center gap-4 hover:bg-[#FAFAFA] transition-colors"
+                          className="w-full px-5 py-3.5 flex items-center gap-4 hover:bg-app transition-colors"
                         >
                           <div className="flex-1 text-left">
-                            <div className="text-sm font-medium text-[#282828]">{dept.department_name}</div>
-                            <div className="text-xs text-[#AAAAAA] mt-0.5 font-normal">{dept.total} KPIs · {onPct}% on track</div>
+                            <div className="text-sm font-medium text-ink">{dept.department_name}</div>
+                            <div className="text-xs text-ink-faint mt-0.5 font-normal">{dept.total} KPIs · {onPct}% on track</div>
                           </div>
                           <div className="flex items-center gap-3 shrink-0">
                             <div className="flex gap-1.5">
@@ -268,11 +268,11 @@ export default function BoardPage() {
                                 </span>
                               ))}
                             </div>
-                            {expanded ? <ChevronUp size={14} className="text-[#AAAAAA]" /> : <ChevronDown size={14} className="text-[#AAAAAA]" />}
+                            {expanded ? <ChevronUp size={14} className="text-ink-faint" /> : <ChevronDown size={14} className="text-ink-faint" />}
                           </div>
                         </button>
                         {expanded && (
-                          <div className="border-t border-[#F2F2F2] px-5 py-3 space-y-3">
+                          <div className="border-t border-divider px-5 py-3 space-y-3">
                             <MonthGrid data={dept.month_statuses} compact />
                             <button
                               onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
@@ -290,7 +290,7 @@ export default function BoardPage() {
               </TabsContent>
 
               <TabsContent value="table">
-                <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -308,13 +308,13 @@ export default function BoardPage() {
                         const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
                         return (
                           <TableRow key={dept.dept_id}>
-                            <TableCell className="font-medium text-[#282828]">{dept.department_name}</TableCell>
+                            <TableCell className="font-medium text-ink">{dept.department_name}</TableCell>
                             <TableCell className="text-right">{dept.total}</TableCell>
                             <TableCell className="text-right" style={{ color: STATUS_COLORS.on_track }}>{dept.on_track}</TableCell>
                             <TableCell className="text-right" style={{ color: STATUS_COLORS.watch }}>{dept.watch}</TableCell>
                             <TableCell className="text-right" style={{ color: STATUS_COLORS.off_track }}>{dept.off_track}</TableCell>
-                            <TableCell className="text-right text-[#737373]">{dept.no_data}</TableCell>
-                            <TableCell className="text-right font-medium text-[#282828]">{onPct}%</TableCell>
+                            <TableCell className="text-right text-ink-muted">{dept.no_data}</TableCell>
+                            <TableCell className="text-right font-medium text-ink">{onPct}%</TableCell>
                           </TableRow>
                         )
                       })}

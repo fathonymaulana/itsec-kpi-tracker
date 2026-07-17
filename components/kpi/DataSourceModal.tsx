@@ -43,10 +43,10 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
       <DialogContent showCloseButton={false} className="max-w-[549px] rounded-[32px] p-6 gap-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="size-10 rounded-lg bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0">
+            <div className="size-10 rounded-lg bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0">
               <Link2 size={18} className="text-[#EF3224]" />
             </div>
-            <h2 className="text-xl font-semibold text-[#282828] tracking-[-0.1px] leading-7 min-w-0">
+            <h2 className="text-xl font-semibold text-ink tracking-[-0.1px] leading-7 min-w-0">
               Data Source — {kpiName}
             </h2>
           </div>
@@ -58,42 +58,42 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
           </button>
         </div>
 
-        <div className="bg-[#f5f5f5] rounded-[20px] p-6 flex gap-3 items-start">
-          <Info size={24} className="shrink-0 text-[#737373]" />
-          <p className="text-xs text-[#737373] leading-4 text-justify">
+        <div className="bg-panel-soft rounded-[20px] p-6 flex gap-3 items-start">
+          <Info size={24} className="shrink-0 text-ink-muted" />
+          <p className="text-xs text-ink-muted leading-4 text-justify">
             Provide a link to the source data (Google Drive, internal system, or website). Ensure Corporate Planning, HR, and the President Office have viewing access before submitting.
           </p>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-[#0a0a0a]">Source Link</label>
+            <label className="block text-sm font-medium text-ink">Source Link</label>
             <Input
               type="url"
               value={url}
               onChange={e => setUrl(e.target.value)}
               placeholder="Please enter your source link"
-              className="h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm"
+              className="h-9 rounded-lg border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm"
             />
-            <p className="text-xs text-[#737373] leading-4">Please provide a brief description of the source link you are entering.</p>
+            <p className="text-xs text-ink-muted leading-4">Please provide a brief description of the source link you are entering.</p>
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-[#0a0a0a]">
-              Notes <span className="text-[#737373] font-normal">(sheet name, export date, etc.)</span>
+            <label className="block text-sm font-medium text-ink">
+              Notes <span className="text-ink-muted font-normal">(sheet name, export date, etc.)</span>
             </label>
             <Input
               value={note}
               onChange={e => setNote(e.target.value)}
               placeholder="e.g. Tab 'May 2026', exported 2026-06-01"
-              className="h-9 rounded-lg border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm"
+              className="h-9 rounded-lg border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm"
             />
-            <p className="text-xs text-[#737373] leading-4">Please provide a concise overview of the source link you are submitting.</p>
+            <p className="text-xs text-ink-muted leading-4">Please provide a concise overview of the source link you are submitting.</p>
           </div>
 
           <label className="flex items-start gap-2 cursor-pointer">
             <Checkbox checked={confirmed} onCheckedChange={v => setConfirmed(v === true)} className="mt-0.5" />
-            <span className="text-sm text-[#0a0a0a] leading-[18px]">
+            <span className="text-sm text-ink leading-[18px]">
               I confirm that Corporate Planning, HR, and the President Office have viewing access to this link.
             </span>
           </label>
@@ -103,7 +103,7 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
           <Button
             variant="outline"
             onClick={handleCancel}
-            className="h-12 px-5 rounded-2xl border-[#e5e5e5] text-[#595959] font-medium"
+            className="h-12 px-5 rounded-2xl border-divider text-ink-soft font-medium"
           >
             Cancel
           </Button>

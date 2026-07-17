@@ -110,7 +110,7 @@ export default function SuperAdminPage() {
   if (!ready || !user || user.role !== 'corp_planning') return null
 
   return (
-    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+    <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav rightPanelOpen={rightPanelOpen} onToggleRightPanel={() => setRightPanelOpen(v => !v)} />
 
       <div className="flex-1 flex overflow-hidden">
@@ -118,12 +118,12 @@ export default function SuperAdminPage() {
           <div className="max-w-5xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Users</h1>
-                <p className="text-sm text-[#737373] mt-1">Manage every account across departments, and review PIN change requests.</p>
+                <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Users</h1>
+                <p className="text-sm text-ink-muted mt-1">Manage every account across departments, and review PIN change requests.</p>
               </div>
               {tab === 'users' && (
                 <div className="flex items-center gap-2 shrink-0">
-                  <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="h-9 w-56 rounded-lg border-[#e5e5e5]" />
+                  <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="h-9 w-56 rounded-lg border-divider" />
                   <Button size="sm" className={`h-9 rounded-lg bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`} onClick={() => setDialogUser('new')}>
                     <IconUserPlus size={14} className="mr-1" />
                     Add User
@@ -141,11 +141,11 @@ export default function SuperAdminPage() {
               </TabsList>
 
               {loading ? (
-                <div className="h-64 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
+                <div className="h-64 bg-panel border border-divider rounded-3xl animate-pulse" />
               ) : (
                 <>
                   <TabsContent value="users">
-                    <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
+                    <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -185,7 +185,7 @@ export default function SuperAdminPage() {
                                   </Button>
                                   <Button
                                     size="sm" variant="outline"
-                                    className={`h-6 text-[11px] ${u.active ? 'text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]' : 'text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]'}`}
+                                    className={`h-6 text-[11px] ${u.active ? 'text-danger border-danger-soft-border hover:bg-danger-soft' : 'text-success border-success-soft-border hover:bg-success-soft'}`}
                                     onClick={() => handleToggleActive(u)}
                                   >
                                     {u.active ? 'Deactivate' : 'Reactivate'}
@@ -200,9 +200,9 @@ export default function SuperAdminPage() {
                   </TabsContent>
 
                   <TabsContent value="requests">
-                    <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
+                    <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
                       {requests.length === 0 ? (
-                        <div className="text-center py-16 text-[#AAAAAA] text-sm">No PIN change requests.</div>
+                        <div className="text-center py-16 text-ink-faint text-sm">No PIN change requests.</div>
                       ) : (
                         <Table>
                           <TableHeader>
@@ -226,10 +226,10 @@ export default function SuperAdminPage() {
                                 <TableCell className="text-right">
                                   {r.status === 'pending' && (
                                     <div className="flex items-center justify-end gap-1.5">
-                                      <Button size="sm" variant="outline" className="h-6 text-[11px] text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]" onClick={() => handleReview(r.id, 'approve')}>
+                                      <Button size="sm" variant="outline" className="h-6 text-[11px] text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
                                         <IconShieldCheck size={11} className="mr-1" /> Approve
                                       </Button>
-                                      <Button size="sm" variant="outline" className="h-6 text-[11px] text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]" onClick={() => handleReview(r.id, 'reject')}>
+                                      <Button size="sm" variant="outline" className="h-6 text-[11px] text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
                                         Reject
                                       </Button>
                                     </div>
@@ -329,11 +329,11 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div>
-            <label className="block text-xs font-medium text-[#595959] mb-1.5">Name</label>
+            <label className="block text-xs font-medium text-ink-soft mb-1.5">Name</label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#595959] mb-1.5">Role</label>
+            <label className="block text-xs font-medium text-ink-soft mb-1.5">Role</label>
             <Select value={role} onValueChange={v => v && setRole(v as Role)}>
               <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -345,7 +345,7 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
           </div>
           {role === 'dept_head' && (
             <div>
-              <label className="block text-xs font-medium text-[#595959] mb-1.5">Department</label>
+              <label className="block text-xs font-medium text-ink-soft mb-1.5">Department</label>
               <Select value={deptId} onValueChange={v => v && setDeptId(v)}>
                 <SelectTrigger className="w-full"><SelectValue placeholder="Select department" /></SelectTrigger>
                 <SelectContent>
@@ -356,7 +356,7 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
           )}
           {!initial && (
             <div>
-              <label className="block text-xs font-medium text-[#595959] mb-1.5">Initial 4-Digit PIN</label>
+              <label className="block text-xs font-medium text-ink-soft mb-1.5">Initial 4-Digit PIN</label>
               <Input
                 type="password" inputMode="numeric" maxLength={4}
                 value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
@@ -422,8 +422,8 @@ function ResetPinDialog({ targetUser, token, onClose, onSaved }: {
           <DialogTitle>Reset PIN — {targetUser.name}</DialogTitle>
         </DialogHeader>
         <div className="py-2">
-          <p className="text-xs text-[#808080] mb-3">This takes effect immediately, bypassing the approval flow — use it when a user is locked out.</p>
-          <label className="block text-xs font-medium text-[#595959] mb-1.5">New 4-Digit PIN</label>
+          <p className="text-xs text-ink-muted mb-3">This takes effect immediately, bypassing the approval flow — use it when a user is locked out.</p>
+          <label className="block text-xs font-medium text-ink-soft mb-1.5">New 4-Digit PIN</label>
           <Input
             type="password" inputMode="numeric" maxLength={4}
             value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}

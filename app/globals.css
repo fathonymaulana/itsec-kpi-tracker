@@ -47,6 +47,31 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+
+    /* App-specific surface/text tokens — the Figma-matched grey palette used throughout
+       app/** and components/** as hardcoded hex. Kept as separate vars (not reusing the
+       generic shadcn tokens above) so light mode stays pixel-identical to the existing
+       design while dark mode gets real, deliberate values. */
+    --app-bg: #fafafa;
+    --panel-bg: #ffffff;
+    --panel-soft-bg: #f5f5f5;
+    --divider: #e5e5e5;
+    --ink: #282828;
+    --ink-soft: #595959;
+    --ink-muted: #737373;
+    --ink-faint: #aaaaaa;
+
+    /* Status badge triples (success/danger/warning) — repeated bg/text/border combos used for
+       verification badges, anomaly pills, and KPI status chips across admin/dept/board/profile. */
+    --success-soft-bg: #dcfce7;
+    --success-text: #166534;
+    --success-soft-border: #bbf7d0;
+    --danger-soft-bg: #fee2e2;
+    --danger-text: #991b1b;
+    --danger-soft-border: #fecaca;
+    --warning-soft-bg: #fff8e6;
+    --warning-text: #b45309;
+    --warning-soft-border: #fde68a;
   }
   .dark {
     --background: oklch(0.145 0 0);
@@ -80,6 +105,25 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+
+    --app-bg: #141414;
+    --panel-bg: #1e1e1e;
+    --panel-soft-bg: #262626;
+    --divider: #333333;
+    --ink: #f5f5f5;
+    --ink-soft: #d4d4d4;
+    --ink-muted: #a3a3a3;
+    --ink-faint: #737373;
+
+    --success-soft-bg: rgba(34, 197, 94, 0.15);
+    --success-text: #4ade80;
+    --success-soft-border: rgba(34, 197, 94, 0.3);
+    --danger-soft-bg: rgba(239, 68, 68, 0.15);
+    --danger-text: #f87171;
+    --danger-soft-border: rgba(239, 68, 68, 0.3);
+    --warning-soft-bg: rgba(245, 158, 11, 0.15);
+    --warning-text: #fbbf24;
+    --warning-soft-border: rgba(245, 158, 11, 0.3);
   }
   * {
     @apply border-border;

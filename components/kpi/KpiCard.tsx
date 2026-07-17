@@ -109,26 +109,26 @@ export function KpiCard({
 
   return (
     <div
-      className="bg-white border border-[#e5e5e5] rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] overflow-hidden"
+      className="bg-panel border border-divider rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] overflow-hidden"
       style={{ borderLeftWidth: 3, borderLeftColor: statusColors.border }}
     >
       {/* Header */}
       <div className="px-6 py-4 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-[#282828] text-sm">{kpi.name}</span>
+            <span className="font-medium text-ink text-sm">{kpi.name}</span>
             <StatusBadge status={status} />
             {anomalyCount > 0 && (
               <AnomalyBadge count={anomalyCount} onClick={onAnomalyClick} />
             )}
           </div>
-          <div className="text-[#737373] text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>
+          <div className="text-ink-muted text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!readOnly && (
             <button
               onClick={() => setDsOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-[#595959] border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors"
+              className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-soft border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors"
               title="Data source"
             >
               <Link2 size={12} />
@@ -137,14 +137,14 @@ export function KpiCard({
           )}
           {readOnly && onRequestModify ? (
             modifyRequestStatus === 'pending' ? (
-              <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-[#B45309] bg-[#FFF8E6] border border-[#FDE68A]">
+              <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-warning bg-warning-soft border border-warning-soft-border">
                 <PendingIcon size={12} />
                 Pending Review
               </div>
             ) : (
               <button
                 onClick={() => setModifyOpen(true)}
-                className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-[#595959] border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors"
+                className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-soft border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors"
                 title="Request permission to modify this matrix"
               >
                 <RequestModifyIcon size={12} />
@@ -154,7 +154,7 @@ export function KpiCard({
           ) : (
             <button
               onClick={() => setCollapsed(c => !c)}
-              className="text-[#AAAAAA] hover:text-[#595959] transition-colors"
+              className="text-ink-faint hover:text-ink-soft transition-colors"
             >
               {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
             </button>
@@ -164,13 +164,13 @@ export function KpiCard({
 
       {/* Sub-metrics */}
       {!collapsed && (
-        <div className="border-t border-[#e5e5e5]">
+        <div className="border-t border-divider">
           {inputSMs.map((sm, idx) => (
-            <div key={sm.id} className={`flex items-center gap-4 px-6 py-2.5 ${idx % 2 === 0 ? 'bg-[#f5f5f5]' : 'bg-white'}`}>
-              <div className="flex-1 text-xs text-[#595959] font-normal">{sm.name}</div>
-              <div className="text-[10px] text-[#737373] w-8 text-right shrink-0">{sm.unit}</div>
+            <div key={sm.id} className={`flex items-center gap-4 px-6 py-2.5 ${idx % 2 === 0 ? 'bg-panel-soft' : 'bg-panel'}`}>
+              <div className="flex-1 text-xs text-ink-soft font-normal">{sm.name}</div>
+              <div className="text-[10px] text-ink-muted w-8 text-right shrink-0">{sm.unit}</div>
               {readOnly ? (
-                <div className="w-28 text-right text-sm font-normal text-[#282828]">
+                <div className="w-28 text-right text-sm font-normal text-ink">
                   {values[sm.id] ? parseFloat(values[sm.id]).toLocaleString() : '—'}
                 </div>
               ) : (
@@ -180,7 +180,7 @@ export function KpiCard({
                   value={values[sm.id] ?? ''}
                   onChange={e => onValueChange?.(sm.id, e.target.value)}
                   placeholder="—"
-                  className="w-28 text-right text-sm border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-lg px-2 py-1 focus:outline-none focus:border-[#CC1F1F] bg-white font-normal text-[#282828] placeholder:text-[#CCCCCC]"
+                  className="w-28 text-right text-sm border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-lg px-2 py-1 focus:outline-none focus:border-[#CC1F1F] bg-panel font-normal text-ink placeholder:text-ink-faint"
                 />
               )}
             </div>
@@ -191,13 +191,13 @@ export function KpiCard({
             return (
               <div
                 key={sm.id}
-                className={`flex items-center gap-4 px-6 py-2.5 ${(inputSMs.length + idx) % 2 === 0 ? 'bg-[#f5f5f5]' : 'bg-white'}`}
+                className={`flex items-center gap-4 px-6 py-2.5 ${(inputSMs.length + idx) % 2 === 0 ? 'bg-panel-soft' : 'bg-panel'}`}
               >
-                <div className="flex-1 text-xs text-[#595959] font-normal">
+                <div className="flex-1 text-xs text-ink-soft font-normal">
                   {sm.name}
-                  <span className="ml-1.5 text-[10px] text-[#737373]">(calculated)</span>
+                  <span className="ml-1.5 text-[10px] text-ink-muted">(calculated)</span>
                 </div>
-                <div className="text-[10px] text-[#737373] w-8 text-right shrink-0">{sm.unit}</div>
+                <div className="text-[10px] text-ink-muted w-8 text-right shrink-0">{sm.unit}</div>
                 <div
                   className="w-28 text-right text-sm font-medium"
                   style={{ color: val !== null ? statusColors.text : '#737373' }}
@@ -209,18 +209,18 @@ export function KpiCard({
           })}
 
           {dataSource?.url && (
-            <div className="px-6 py-2.5 bg-[#f5f5f5] border-t border-[#e5e5e5] flex items-center gap-2">
-              <Link2 size={11} className="text-[#737373] shrink-0" />
+            <div className="px-6 py-2.5 bg-panel-soft border-t border-divider flex items-center gap-2">
+              <Link2 size={11} className="text-ink-muted shrink-0" />
               <a
                 href={dataSource.url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11px] text-[#595959] hover:text-[#CC1F1F] truncate"
+                className="text-[11px] text-ink-soft hover:text-[#CC1F1F] truncate"
               >
                 {dataSource.url}
               </a>
               {dataSource.note && (
-                <span className="text-[11px] text-[#737373] shrink-0">— {dataSource.note}</span>
+                <span className="text-[11px] text-ink-muted shrink-0">— {dataSource.note}</span>
               )}
             </div>
           )}

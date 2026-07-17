@@ -128,7 +128,7 @@ export default function DeptDashboard() {
   if (!ready || !user) return null
 
   return (
-    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+    <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
         leftPanelOpen={leftPanelOpen}
         onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
@@ -148,14 +148,14 @@ export default function DeptDashboard() {
           <div className="max-w-4xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Dashboard</h1>
-                <p className="text-sm text-[#737373] mt-1 max-w-xl">
+                <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Dashboard</h1>
+                <p className="text-sm text-ink-muted mt-1 max-w-xl">
                   {kpis.length > 0
                     ? `A month-by-month view of every KPI ${user.dept_name} tracks, so you can spot trends before they become problems.`
                     : 'Once KPIs are configured for your department, their trends will show up here.'}
                 </p>
               </div>
-              <span className="text-xs text-[#737373] shrink-0 mt-1">{kpis.length} KPIs</span>
+              <span className="text-xs text-ink-muted shrink-0 mt-1">{kpis.length} KPIs</span>
             </div>
 
             {/* Stat summary */}
@@ -168,15 +168,15 @@ export default function DeptDashboard() {
               ].map(s => {
                 const pct = kpis.length > 0 ? Math.round((s.value / kpis.length) * 100) : 0
                 return (
-                  <div key={s.label} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
-                    <div className="text-sm text-[#737373]">{s.label}</div>
-                    <div className="text-[40px] leading-[48px] font-medium text-[#282828] tracking-[-0.5px]">{s.value}</div>
+                  <div key={s.label} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
+                    <div className="text-sm text-ink-muted">{s.label}</div>
+                    <div className="text-[40px] leading-[48px] font-medium text-ink tracking-[-0.5px]">{s.value}</div>
                     <div className="flex items-center gap-1">
                       <s.Icon size={14} style={{ color: s.color }} />
                       <span className="text-base font-semibold" style={{ color: s.color }}>{pct}%</span>
-                      <span className="text-xs text-[#737373]">of {kpis.length || 0}</span>
+                      <span className="text-xs text-ink-muted">of {kpis.length || 0}</span>
                     </div>
-                    <div className="text-xs text-[#737373] mt-1">{s.caption}</div>
+                    <div className="text-xs text-ink-muted mt-1">{s.caption}</div>
                   </div>
                 )
               })}
@@ -184,7 +184,7 @@ export default function DeptDashboard() {
 
             {loading ? (
               <div className="space-y-4">
-                {[...Array(4)].map((_, i) => <div key={i} className="h-48 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />)}
+                {[...Array(4)].map((_, i) => <div key={i} className="h-48 bg-panel border border-divider rounded-3xl animate-pulse" />)}
               </div>
             ) : (
               <Tabs value={view} onValueChange={v => v && setView(v as 'charts' | 'table')}>
@@ -197,19 +197,19 @@ export default function DeptDashboard() {
                   {kpisWithData.map(({ kpi, unit, monthValues, monthStatuses, hasData, currentV, currentStatus }) => {
                     const chartConfig: ChartConfig = { value: { label: kpi.name, color: CHART_COLOR } }
                     return (
-                      <div key={kpi.id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                      <div key={kpi.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
                         <div className="px-6 pt-4 pb-3 flex items-start justify-between gap-4">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-[#282828] text-sm">{kpi.name}</span>
+                              <span className="font-medium text-ink text-sm">{kpi.name}</span>
                               <StatusBadge status={currentStatus} />
                             </div>
-                            <div className="text-[#737373] text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>
+                            <div className="text-ink-muted text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>
                           </div>
                           {currentV !== null && (
                             <div className="text-right shrink-0">
-                              <div className="text-lg font-medium text-[#282828]">{formatValue(currentV, unit)}</div>
-                              <div className="text-[10px] text-[#737373]">{MONTHS[currentMonth - 1]}</div>
+                              <div className="text-lg font-medium text-ink">{formatValue(currentV, unit)}</div>
+                              <div className="text-[10px] text-ink-muted">{MONTHS[currentMonth - 1]}</div>
                             </div>
                           )}
                         </div>
@@ -250,7 +250,7 @@ export default function DeptDashboard() {
                           </div>
                         )}
 
-                        <div className="px-5 py-3 border-t border-[#e5e5e5]">
+                        <div className="px-5 py-3 border-t border-divider">
                           <MonthGrid data={monthStatuses} compact />
                         </div>
                       </div>
@@ -259,26 +259,26 @@ export default function DeptDashboard() {
                 </TabsContent>
 
                 <TabsContent value="table">
-                  <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden overflow-x-auto">
+                  <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="sticky left-0 bg-white">KPI</TableHead>
+                          <TableHead className="sticky left-0 bg-panel">KPI</TableHead>
                           {MONTHS.map(m => <TableHead key={m} className="text-right">{m.slice(0, 3)}</TableHead>)}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {kpisWithData.map(({ kpi, unit, monthValues, currentStatus }) => (
                           <TableRow key={kpi.id}>
-                            <TableCell className="sticky left-0 bg-white font-medium text-[#282828]">
+                            <TableCell className="sticky left-0 bg-panel font-medium text-ink">
                               <div className="flex items-center gap-2">
                                 {kpi.name}
                                 <StatusBadge status={currentStatus} />
                               </div>
-                              <div className="text-xs text-[#737373] font-normal mt-0.5">Target: {kpi.target_text}</div>
+                              <div className="text-xs text-ink-muted font-normal mt-0.5">Target: {kpi.target_text}</div>
                             </TableCell>
                             {monthValues.map((mv, i) => (
-                              <TableCell key={i} className="text-right text-[#282828] whitespace-nowrap">
+                              <TableCell key={i} className="text-right text-ink whitespace-nowrap">
                                 {formatValue(mv.raw, unit)}
                               </TableCell>
                             ))}

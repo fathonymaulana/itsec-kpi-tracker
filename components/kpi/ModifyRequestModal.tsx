@@ -39,10 +39,10 @@ export function ModifyRequestModal({ open, onClose, onSubmit, kpiName, submittin
       <DialogContent showCloseButton={false} className="max-w-[520px] rounded-[32px] p-6 gap-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="size-10 rounded-lg bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0">
+            <div className="size-10 rounded-lg bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0">
               <LockUnlockedLineDuotone size={18} className="text-[#EF3224]" />
             </div>
-            <h2 className="text-xl font-semibold text-[#282828] tracking-[-0.1px] leading-7 min-w-0">
+            <h2 className="text-xl font-semibold text-ink tracking-[-0.1px] leading-7 min-w-0">
               Request to Modify — {kpiName}
             </h2>
           </div>
@@ -54,30 +54,30 @@ export function ModifyRequestModal({ open, onClose, onSubmit, kpiName, submittin
           </button>
         </div>
 
-        <div className="bg-[#f5f5f5] rounded-[20px] p-6 flex gap-3 items-start">
-          <p className="text-xs text-[#737373] leading-4 text-justify">
+        <div className="bg-panel-soft rounded-[20px] p-6 flex gap-3 items-start">
+          <p className="text-xs text-ink-muted leading-4 text-justify">
             This month has already been submitted, so this matrix is locked. Explain why you need to change it —
             Corporate Planning will review your reason and either unlock the month or ask you to leave it as is.
           </p>
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-[#0a0a0a]">Reason for the change</label>
+          <label className="block text-sm font-medium text-ink">Reason for the change</label>
           <textarea
             value={reason}
             onChange={e => setReason(e.target.value)}
             placeholder="e.g. The source spreadsheet had a typo in the marketing spend figure — corrected value attached."
             rows={4}
-            className="w-full rounded-lg border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm p-3 resize-none focus:outline-none focus:border-[#CC1F1F]"
+            className="w-full rounded-lg border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm p-3 resize-none focus:outline-none focus:border-[#CC1F1F]"
           />
-          <p className="text-xs text-[#737373] leading-4">Be specific — this is what Corporate Planning sees when deciding whether to unlock the month.</p>
+          <p className="text-xs text-ink-muted leading-4">Be specific — this is what Corporate Planning sees when deciding whether to unlock the month.</p>
         </div>
 
         <div className="flex gap-4 justify-end">
           <Button
             variant="outline"
             onClick={handleCancel}
-            className="h-12 px-5 rounded-2xl border-[#e5e5e5] text-[#595959] font-medium"
+            className="h-12 px-5 rounded-2xl border-divider text-ink-soft font-medium"
           >
             Cancel
           </Button>

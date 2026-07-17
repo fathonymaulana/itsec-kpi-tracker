@@ -36,17 +36,17 @@ export function AddOnsPanel() {
 
   return (
     <div className="flex flex-col w-full">
-      <div className="pb-6 pl-6 pr-12 pt-12 w-full">
-        <div className="pt-3">
+      <div className="pb-6 pl-6 pr-12 pt-8 w-full">
+        <div className="pt-0">
           <div className="pb-3">
-            <div className="text-base font-semibold text-[#282828] tracking-[-0.192px]">ADD-ONS</div>
-            <p className="text-sm text-[#737373] mt-1.5">Customize your experience with optional add-ons.</p>
+            <div className="text-base font-semibold text-ink tracking-[-0.192px]">ADD-ONS</div>
+            <p className="text-sm text-ink-muted mt-1.5">Customize your experience with optional add-ons.</p>
           </div>
           <div className="py-1.5">
-            <div className="bg-[#f5f5f5] border border-[#e5e5e5] rounded-[10px] px-4 py-3.5 flex items-center justify-between gap-3">
+            <div className="bg-panel-soft border border-divider rounded-[10px] px-4 py-3.5 flex items-center justify-between gap-3">
               <div>
-                <div className="text-sm font-medium text-[#282828]">Dark mode</div>
-                <div className="text-xs text-[#737373] mt-0.5">Switch display theme</div>
+                <div className="text-sm font-medium text-ink">Dark mode</div>
+                <div className="text-xs text-ink-muted mt-0.5">Switch display theme</div>
               </div>
               <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
             </div>
@@ -55,13 +55,13 @@ export function AddOnsPanel() {
       </div>
 
       <div className="flex flex-col gap-3 pb-6 pl-6 pr-12 pt-4 w-full">
-        <div className="text-xs text-[#737373] uppercase tracking-wide">Others</div>
+        <div className="text-xs text-ink-muted uppercase tracking-wide">Others</div>
 
         <button
           onClick={() => setConfirmLogout(true)}
-          className="bg-[#f5f5f5] border border-[#e5e5e5] rounded-xl px-4 py-3.5 w-full flex items-center justify-between hover:border-[#CC1F1F] transition-colors group"
+          className="bg-panel-soft border border-divider rounded-xl px-4 py-3.5 w-full flex items-center justify-between hover:border-[#CC1F1F] transition-colors group"
         >
-          <span className="text-base text-[#dc2626] tracking-[-0.192px]">Log out</span>
+          <span className="text-[12.8px] text-[#dc2626] tracking-[-0.192px]">Sign Out</span>
           <LogOut size={20} className="text-[#dc2626] group-hover:scale-110 transition-transform" />
         </button>
       </div>

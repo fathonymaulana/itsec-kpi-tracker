@@ -223,7 +223,7 @@ export default function AdminPage() {
   if (!ready || !user) return null
 
   return (
-    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+    <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
         leftPanelOpen={leftPanelOpen}
         onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
@@ -248,17 +248,17 @@ export default function AdminPage() {
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6">
-              <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">
+              <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">
                 {canVerify ? 'Data Verification' : 'Data Review'}
               </h1>
-              <p className="text-sm text-[#737373] mt-1">
+              <p className="text-sm text-ink-muted mt-1">
                 Pick a department to review its submitted KPIs, flag anomalies, and verify entries for the period.
               </p>
             </div>
 
-            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 mb-6 flex items-center gap-3 flex-wrap">
+            <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 mb-6 flex items-center gap-3 flex-wrap">
               <Select value={selectedDept || ''} onValueChange={v => { if (v) { setSelectedDept(v); setTab('data') } }}>
-                <SelectTrigger className="w-full sm:w-[240px] !h-9 rounded-lg border-[#e5e5e5]">
+                <SelectTrigger className="w-full sm:w-[240px] !h-9 rounded-lg border-divider">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -270,14 +270,14 @@ export default function AdminPage() {
                 </SelectContent>
               </Select>
               {selectedDeptObj?.submitted && (
-                <span className="flex items-center gap-1 text-xs text-[#166534] bg-[#DCFCE7] border border-[#BBF7D0] px-2.5 py-1 rounded-full">
+                <span className="flex items-center gap-1 text-xs text-success bg-success-soft border border-success-soft-border px-2.5 py-1 rounded-full">
                   <CheckCircle2 size={11} /> Submitted
                 </span>
               )}
             </div>
 
             {/* Tabs — Modify Requests is global (any department), so it works with no department selected */}
-            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-2 flex gap-1 mb-4">
+            <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-2 flex gap-1 mb-4">
               {([
                 { key: 'data', label: 'Data Review', icon: ChevronRight },
                 { key: 'anomalies', label: `Anomalies${activeAnomalies > 0 ? ` (${activeAnomalies})` : ''}`, icon: AlertTriangle },
@@ -290,7 +290,7 @@ export default function AdminPage() {
                   className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 transition-colors ${
                     tab === t.key
                       ? 'border-[#CC1F1F] text-[#CC1F1F] font-medium'
-                      : 'border-transparent text-[#737373] hover:text-[#595959]'
+                      : 'border-transparent text-ink-muted hover:text-ink-soft'
                   }`}
                 >
                   <t.icon size={12} />
@@ -303,13 +303,13 @@ export default function AdminPage() {
             {tab === 'modify' && (
               <div className="space-y-2">
                 {modifyRequests.length === 0 ? (
-                  <div className="text-center py-16 text-[#AAAAAA] text-sm">No pending modify requests.</div>
+                  <div className="text-center py-16 text-ink-faint text-sm">No pending modify requests.</div>
                 ) : modifyRequests.map(r => (
-                  <div key={r.id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4">
+                  <div key={r.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-[#282828]">{r.kpi_name || 'Unknown KPI'}</div>
-                        <div className="text-xs text-[#737373] mt-0.5">
+                        <div className="text-sm font-medium text-ink">{r.kpi_name || 'Unknown KPI'}</div>
+                        <div className="text-xs text-ink-muted mt-0.5">
                           {r.dept_name} · {MONTHS[r.month - 1]} {r.year} · requested by {r.requested_by_name || 'Unknown'}
                         </div>
                       </div>
@@ -317,7 +317,7 @@ export default function AdminPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-6 text-[11px] gap-1 text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]"
+                          className="h-6 text-[11px] gap-1 text-success border-success-soft-border hover:bg-success-soft"
                           disabled={actionLoading === r.id}
                           onClick={() => handleReviewModify(r.id, 'approve')}
                         >
@@ -327,7 +327,7 @@ export default function AdminPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-6 text-[11px] gap-1 text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]"
+                          className="h-6 text-[11px] gap-1 text-danger border-danger-soft-border hover:bg-danger-soft"
                           disabled={actionLoading === r.id}
                           onClick={() => { setRejectTarget(r); setRejectNote('') }}
                         >
@@ -335,7 +335,7 @@ export default function AdminPage() {
                         </Button>
                       </div>
                     </div>
-                    <p className="text-xs text-[#595959] mt-2 bg-[#f5f5f5] rounded-lg p-3">{r.reason}</p>
+                    <p className="text-xs text-ink-soft mt-2 bg-panel-soft rounded-lg p-3">{r.reason}</p>
                   </div>
                 ))}
               </div>
@@ -343,8 +343,8 @@ export default function AdminPage() {
 
             {tab !== 'modify' && !selectedDept ? (
               <div className="flex flex-col items-center justify-center py-32 text-center">
-                <Building2 size={32} className="text-[#DDDDDD] mb-4" />
-                <div className="text-[#AAAAAA] text-sm">Select a department to review</div>
+                <Building2 size={32} className="text-ink-faint mb-4" />
+                <div className="text-ink-faint text-sm">Select a department to review</div>
               </div>
             ) : tab !== 'modify' && (
               <>
@@ -352,9 +352,9 @@ export default function AdminPage() {
                 {tab === 'data' && (
                   <div className="space-y-3">
                     {loading ? (
-                      [...Array(4)].map((_, i) => <div key={i} className="h-24 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />)
+                      [...Array(4)].map((_, i) => <div key={i} className="h-24 bg-panel border border-divider rounded-3xl animate-pulse" />)
                     ) : kpis.length === 0 ? (
-                      <div className="text-center py-16 text-[#AAAAAA] text-sm">No data for this period.</div>
+                      <div className="text-center py-16 text-ink-faint text-sm">No data for this period.</div>
                     ) : kpis.map(kpi => {
                       const verification = getKpiVerification(kpi.id)
                       const kpiAnomalies = getKpiAnomalies(kpi.id)
@@ -372,8 +372,8 @@ export default function AdminPage() {
                             {verification ? (
                               <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
                                 verification.status === 'verified'
-                                  ? 'text-[#166534] bg-[#DCFCE7] border border-[#BBF7D0]'
-                                  : 'text-[#991B1B] bg-[#FEE2E2] border border-[#FECACA]'
+                                  ? 'text-success bg-success-soft border border-success-soft-border'
+                                  : 'text-danger bg-danger-soft border border-danger-soft-border'
                               }`}>
                                 {verification.status === 'verified'
                                   ? <><CheckCircle2 size={10} /> Verified</>
@@ -385,7 +385,7 @@ export default function AdminPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-6 text-[11px] gap-1 text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]"
+                                  className="h-6 text-[11px] gap-1 text-success border-success-soft-border hover:bg-success-soft"
                                   disabled={actionLoading === kpi.id}
                                   onClick={() => handleVerify(kpi.id, 'verified')}
                                 >
@@ -395,7 +395,7 @@ export default function AdminPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-6 text-[11px] gap-1 text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]"
+                                  className="h-6 text-[11px] gap-1 text-danger border-danger-soft-border hover:bg-danger-soft"
                                   disabled={actionLoading === kpi.id}
                                   onClick={() => handleVerify(kpi.id, 'flagged', 'Needs correction')}
                                 >
@@ -404,14 +404,14 @@ export default function AdminPage() {
                                 </Button>
                               </>
                             ) : (
-                              <span className="text-[11px] text-[#AAAAAA]">Pending verification</span>
+                              <span className="text-[11px] text-ink-faint">Pending verification</span>
                             )}
                             {dataSources[kpi.id]?.url && (
                               <a
                                 href={dataSources[kpi.id].url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="flex items-center gap-1 text-[11px] text-[#737373] hover:text-[#CC1F1F] ml-auto"
+                                className="flex items-center gap-1 text-[11px] text-ink-muted hover:text-[#CC1F1F] ml-auto"
                               >
                                 <ExternalLink size={10} />
                                 Source
@@ -428,19 +428,19 @@ export default function AdminPage() {
                 {tab === 'anomalies' && (
                   <div>
                     {anomalies.length === 0 ? (
-                      <div className="text-center py-16 text-[#AAAAAA] text-sm">No anomalies for this period.</div>
+                      <div className="text-center py-16 text-ink-faint text-sm">No anomalies for this period.</div>
                     ) : (
                       <div className="space-y-2">
                         {anomalies.map(a => (
                           <div
                             key={a.id}
-                            className={`bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3 ${a.dismissed ? 'opacity-50' : ''}`}
+                            className={`bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3 ${a.dismissed ? 'opacity-50' : ''}`}
                           >
-                            <AlertTriangle size={14} className={a.dismissed ? 'text-[#DDDDDD]' : 'text-[#F59E0B]'} />
+                            <AlertTriangle size={14} className={a.dismissed ? 'text-ink-faint' : 'text-[#F59E0B]'} />
                             <div className="flex-1">
-                              <div className="text-xs font-medium text-[#282828]">{kpis.find(k => k.id === a.kpi_id)?.name || 'Unknown KPI'}</div>
-                              <div className="text-xs text-[#737373] mt-0.5 font-normal">{a.description}</div>
-                              <div className="text-[10px] text-[#AAAAAA] mt-1 flex items-center gap-1">
+                              <div className="text-xs font-medium text-ink">{kpis.find(k => k.id === a.kpi_id)?.name || 'Unknown KPI'}</div>
+                              <div className="text-xs text-ink-muted mt-0.5 font-normal">{a.description}</div>
+                              <div className="text-[10px] text-ink-faint mt-1 flex items-center gap-1">
                                 <Clock size={9} />
                                 {new Date(a.created_at).toLocaleDateString()}
                               </div>
@@ -457,7 +457,7 @@ export default function AdminPage() {
                               </Button>
                             )}
                             {a.dismissed && (
-                              <span className="text-[10px] text-[#AAAAAA] shrink-0">Dismissed</span>
+                              <span className="text-[10px] text-ink-faint shrink-0">Dismissed</span>
                             )}
                           </div>
                         ))}
@@ -470,28 +470,28 @@ export default function AdminPage() {
                 {tab === 'verifications' && (
                   <div>
                     {kpis.length === 0 ? (
-                      <div className="text-center py-16 text-[#AAAAAA] text-sm">No KPIs loaded.</div>
+                      <div className="text-center py-16 text-ink-faint text-sm">No KPIs loaded.</div>
                     ) : (
                       <div className="space-y-2">
                         {kpis.map(kpi => {
                           const v = getKpiVerification(kpi.id)
                           return (
-                            <div key={kpi.id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-4 py-3 flex items-center gap-3">
+                            <div key={kpi.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-4 py-3 flex items-center gap-3">
                               <div className="flex-1">
-                                <div className="text-xs font-medium text-[#282828]">{kpi.name}</div>
-                                <div className="text-[11px] text-[#AAAAAA] mt-0.5 font-normal">{kpi.target_text}</div>
+                                <div className="text-xs font-medium text-ink">{kpi.name}</div>
+                                <div className="text-[11px] text-ink-faint mt-0.5 font-normal">{kpi.target_text}</div>
                               </div>
                               {v ? (
                                 <div className={`flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full ${
                                   v.status === 'verified'
-                                    ? 'text-[#166534] bg-[#DCFCE7]'
-                                    : 'text-[#991B1B] bg-[#FEE2E2]'
+                                    ? 'text-success bg-success-soft'
+                                    : 'text-danger bg-danger-soft'
                                 }`}>
                                   {v.status === 'verified' ? <CheckCircle2 size={10} /> : <AlertTriangle size={10} />}
                                   <span className="capitalize">{v.status}</span>
                                 </div>
                               ) : (
-                                <span className="text-[11px] text-[#AAAAAA]">Pending</span>
+                                <span className="text-[11px] text-ink-faint">Pending</span>
                               )}
                             </div>
                           )
@@ -518,14 +518,14 @@ export default function AdminPage() {
             <DialogTitle>Reject — {rejectTarget?.kpi_name}</DialogTitle>
           </DialogHeader>
           <div className="py-2">
-            <p className="text-xs text-[#808080] mb-3">Let {rejectTarget?.dept_name} know why this month stays locked.</p>
-            <label className="block text-xs font-medium text-[#595959] mb-1.5">Reason</label>
+            <p className="text-xs text-ink-muted mb-3">Let {rejectTarget?.dept_name} know why this month stays locked.</p>
+            <label className="block text-xs font-medium text-ink-soft mb-1.5">Reason</label>
             <textarea
               value={rejectNote}
               onChange={e => setRejectNote(e.target.value)}
               placeholder="e.g. The current figures already match the source — no change needed."
               rows={3}
-              className="w-full rounded-lg border border-[#e5e5e5] text-sm p-3 resize-none focus:outline-none focus:border-[#CC1F1F]"
+              className="w-full rounded-lg border border-divider text-sm p-3 resize-none focus:outline-none focus:border-[#CC1F1F]"
             />
           </div>
           <DialogFooter>
