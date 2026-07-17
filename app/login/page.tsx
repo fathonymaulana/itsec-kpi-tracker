@@ -91,18 +91,23 @@ function LoginForm() {
     <div className="h-screen overflow-hidden bg-white dark:bg-[#141414] flex flex-col relative z-0">
       {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
           element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive.
-          scale-125 zooms the artwork in (so it reads bolder/bigger instead of a thin cropped sliver)
-          while object-cover keeps it filling the band with no empty gaps. dark:invert flips the
-          artwork's black strokes to white (and vice versa) for dark mode — the source PNG is a fixed
-          black-on-transparent asset with no separate dark variant, so this is done with a CSS filter
-          instead; invert() only touches RGB channels, so the transparent background is unaffected. */}
-      <div className="absolute inset-x-0 top-0 h-56 md:h-80 -z-10 overflow-hidden pointer-events-none select-none">
+          object-contain (not object-cover) is required for "never cropped": cover always fills the
+          box by slicing off whatever overflows, which at every viewport ratio was cutting real
+          artwork off at the top edge. contain scales the whole image to fit within the box — on any
+          box narrower than the image's own 3.5:1 ratio that leaves transparent letterboxing on the
+          sides instead, which is invisible against the page's own background, so there's no visible
+          cost to guaranteeing the full graphic is always shown intact. object-top keeps it flush
+          against the very top of the page on box ratios where the letterboxing lands top/bottom
+          instead. dark:invert flips the artwork's black strokes to white (and vice versa) for dark
+          mode — the source PNG has no separate dark variant, so this is a CSS filter instead;
+          invert() only touches RGB channels, so the transparent background is unaffected. */}
+      <div className="absolute inset-x-0 top-0 h-32 sm:h-40 md:h-56 lg:h-64 -z-10 overflow-hidden pointer-events-none select-none">
         <Image
           src="/login-wordmark.png"
           alt=""
           fill
           priority
-          className="object-cover object-top scale-125 dark:invert"
+          className="object-contain object-top dark:invert"
         />
       </div>
 
@@ -171,7 +176,7 @@ function LoginForm() {
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 text-[#CC1F1F] text-sm bg-danger-soft border border-[#F5A8A8] px-3 py-2 rounded-lg w-full">
+                <div className="flex items-center gap-2 text-[#CC1F1F] text-sm bg-danger-soft border border-danger-soft-border px-3 py-2 rounded-lg w-full">
                   <AlertCircle size={14} className="shrink-0" />
                   {error}
                 </div>
@@ -181,12 +186,13 @@ function LoginForm() {
                 type="submit"
                 disabled={!selected || pin.length !== 4 || loading}
                 className={cn(
-                  // bg-[#282828] is a fixed dark fill, not theme-reactive, so its paired text can't
-                  // be the (theme-reactive) --primary-foreground token either — that flips to
-                  // near-black in dark mode and would vanish against this same always-dark button.
-                  // text-white is the correctly-paired "foreground for a fixed dark surface" here.
-                  'w-full h-12 rounded-2xl bg-[#282828] hover:bg-[#171717] font-medium gap-2 disabled:opacity-100 disabled:bg-[#282828]',
-                  formFilled ? 'text-white' : 'text-muted-foreground'
+                  // bg-primary (not a fixed hex) so this correctly inverts in dark mode — near-black
+                  // fill/near-white text in light mode, near-white fill/near-black text in dark mode.
+                  // disabled:bg-primary keeps the fill solid either way; only the text swaps between
+                  // muted-foreground and primary-foreground, both of which stay correctly paired with
+                  // whichever fill color --primary resolves to in the current theme.
+                  'w-full h-12 rounded-2xl bg-primary hover:bg-primary/80 font-medium gap-2 disabled:opacity-100 disabled:bg-primary',
+                  formFilled ? 'text-primary-foreground' : 'text-muted-foreground'
                 )}
               >
                 {loading && <Spinner className="size-4" />}

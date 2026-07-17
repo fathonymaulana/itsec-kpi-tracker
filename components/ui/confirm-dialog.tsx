@@ -47,7 +47,7 @@ export function ConfirmDialog({
             onClick={() => { onConfirm(); onOpenChange(false) }}
             className={cn(
               'h-11 px-5 rounded-2xl',
-              destructive ? 'bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white' : 'bg-[#282828] hover:bg-[#171717] text-white',
+              destructive ? 'bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white' : 'bg-primary hover:bg-primary/80 text-primary-foreground',
               iconHoverClass
             )}
           >

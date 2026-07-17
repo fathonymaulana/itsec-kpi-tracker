@@ -25,7 +25,9 @@ import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 
 const CURRENT_YEAR = new Date().getFullYear()
-const CHART_COLOR = '#171717' // shadcn's default neutral/black chart color
+// var(--foreground), not a literal hex — the fixed '#171717' this used to be stayed black in dark
+// mode too, so the line and its gradient fill went nearly invisible against a dark panel.
+const CHART_COLOR = 'var(--foreground)'
 
 interface SubMetric {
   id: number; name: string; unit: string;
@@ -242,9 +244,9 @@ export default function DeptDashboard() {
                                     <stop offset="95%" stopColor={CHART_COLOR} stopOpacity={0} />
                                   </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#F2F2F2" vertical={false} />
-                                <XAxis dataKey="month" tick={{ fontSize: 9, fill: '#AAAAAA' }} tickLine={false} axisLine={false} />
-                                <YAxis tick={{ fontSize: 9, fill: '#AAAAAA' }} tickLine={false} axisLine={false} width={36} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
+                                <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} />
+                                <YAxis tick={{ fontSize: 9, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} width={36} />
                                 <ChartTooltip
                                   content={
                                     <ChartTooltipContent

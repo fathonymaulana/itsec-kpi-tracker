@@ -26,7 +26,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="font-sans bg-itsec-grey-8 text-itsec-black antialiased">
+      {/* bg-app/text-ink (not the old bg-itsec-grey-8/text-itsec-black) — those were fixed hex
+          swatches that never responded to the .dark class, so any content relying on inherited
+          body color/background (rather than its own explicit override) stayed light-themed
+          everywhere in dark mode. */}
+      <body className="font-sans bg-app text-ink antialiased">
         <AuthProvider>
           {children}
           <CookieConsent />

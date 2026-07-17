@@ -52,9 +52,9 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
           </div>
           <button
             onClick={handleCancel}
-            className="size-10 rounded-full bg-[#282828] hover:bg-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0 transition-colors"
+            className="size-10 rounded-full bg-primary hover:bg-primary/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0 transition-colors"
           >
-            <X size={16} className="text-white" />
+            <X size={16} className="text-primary-foreground" />
           </button>
         </div>
 
@@ -110,7 +110,7 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
           <Button
             disabled={!url || !confirmed}
             onClick={handleSave}
-            className="h-12 px-5 rounded-2xl bg-[#282828] hover:bg-[#171717] text-white font-medium gap-2"
+            className="h-12 px-5 rounded-2xl bg-primary hover:bg-primary/80 text-primary-foreground font-medium gap-2"
           >
             Save Source
             <Save size={16} />

@@ -366,7 +366,7 @@ export default function DeptPage() {
                 </div>
                 <button
                   onClick={runSearch}
-                  className={`h-12 px-5 rounded-2xl bg-[#282828] hover:bg-[#171717] text-white text-sm font-medium flex items-center gap-2 shrink-0 transition-colors ${iconHoverClass}`}
+                  className={`h-12 px-5 rounded-2xl bg-primary hover:bg-primary/80 text-primary-foreground text-sm font-medium flex items-center gap-2 shrink-0 transition-colors ${iconHoverClass}`}
                 >
                   Start Search
                   <Search size={16} />
@@ -431,7 +431,7 @@ export default function DeptPage() {
                   : 'Save'}
             </Button>
             <Button
-              className={`h-12 px-5 rounded-2xl gap-2 bg-[#282828] hover:bg-[#171717] text-white ${iconHoverClass}`}
+              className={`h-12 px-5 rounded-2xl gap-2 bg-primary hover:bg-primary/80 text-primary-foreground ${iconHoverClass}`}
               onClick={handleSubmit}
               disabled={saving || submitting || submitted}
             >
