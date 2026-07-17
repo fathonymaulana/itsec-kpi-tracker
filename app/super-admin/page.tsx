@@ -24,6 +24,7 @@ import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -125,33 +126,33 @@ export default function SuperAdminPage() {
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
           <div className="max-w-5xl mx-auto">
-            <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Users</h1>
-                <p className="text-sm text-ink-muted mt-1">Manage every account across departments, and review PIN change requests.</p>
-              </div>
-              {tab === 'users' && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="h-9 w-56 rounded-lg border-divider" />
-                  <Button size="sm" className={`h-9 rounded-lg bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`} onClick={() => setDialogUser('new')}>
-                    <IconUserPlus size={14} className="mr-1" />
-                    Add User
-                  </Button>
-                </div>
-              )}
+            <div className="mb-6">
+              <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Users</h1>
+              <p className="text-sm text-ink-muted mt-1">Manage every account across departments, and review PIN change requests.</p>
             </div>
 
             <Tabs value={tab} onValueChange={v => v && setTab(v as 'users' | 'requests')}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="users">
-                  {tab === 'users' ? <UsersBold data-icon="inline-start" size={14} /> : <UsersLine data-icon="inline-start" size={14} />}
-                  Users
-                </TabsTrigger>
-                <TabsTrigger value="requests">
-                  {tab === 'requests' ? <KeyBold data-icon="inline-start" size={14} /> : <IconKey data-icon="inline-start" size={14} />}
-                  PIN Requests{pendingCount > 0 && <Badge className="ml-1.5 text-[10px] px-1.5">{pendingCount}</Badge>}
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+                <TabsList variant="line">
+                  <TabsTrigger value="users">
+                    {tab === 'users' ? <UsersBold data-icon="inline-start" size={14} /> : <UsersLine data-icon="inline-start" size={14} />}
+                    Users
+                  </TabsTrigger>
+                  <TabsTrigger value="requests">
+                    {tab === 'requests' ? <KeyBold data-icon="inline-start" size={14} /> : <IconKey data-icon="inline-start" size={14} />}
+                    PIN Requests{pendingCount > 0 && <Badge className="ml-1.5 text-[10px] px-1.5">{pendingCount}</Badge>}
+                  </TabsTrigger>
+                </TabsList>
+                {tab === 'users' && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="h-9 w-56 rounded-lg border-divider" />
+                    <Button size="sm" className={`h-9 rounded-lg bg-primary hover:bg-primary/80 text-primary-foreground ${iconHoverClass}`} onClick={() => setDialogUser('new')}>
+                      <IconUserPlus size={14} className="mr-1" />
+                      Add User
+                    </Button>
+                  </div>
+                )}
+              </div>
 
               {loading ? (
                 <div className="h-64 bg-panel border border-divider rounded-3xl animate-pulse" />
@@ -197,9 +198,10 @@ export default function SuperAdminPage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                          <Badge variant={u.active ? 'default' : 'destructive'} className="text-[10px] self-start">
+                          <Label className="gap-1.5 text-xs self-start" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
+                            <span className="size-1.5 rounded-full" style={{ background: 'currentColor' }} />
                             {u.active ? 'Active' : 'Inactive'}
-                          </Badge>
+                          </Label>
                         </div>
                       ))}
                     </div>
@@ -230,9 +232,10 @@ export default function SuperAdminPage() {
                               <TableCell className="text-sm text-muted-foreground">{ROLE_LABELS[u.role]}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">{u.dept_name || '—'}</TableCell>
                               <TableCell>
-                                <Badge variant={u.active ? 'default' : 'destructive'} className="text-[10px]">
+                                <Label className="gap-1.5 text-xs" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
+                                  <span className="size-1.5 rounded-full" style={{ background: 'currentColor' }} />
                                   {u.active ? 'Active' : 'Inactive'}
-                                </Badge>
+                                </Label>
                               </TableCell>
                               <TableCell className="text-right">
                                 <DropdownMenu>

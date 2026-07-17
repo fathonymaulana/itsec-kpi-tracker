@@ -254,7 +254,7 @@ export default function BoardPage() {
             </div>
 
             <Tabs value={view} onValueChange={v => v && setView(v as 'charts' | 'table')}>
-              <TabsList className="mb-4">
+              <TabsList variant="line" className="mb-4">
                 <TabsTrigger value="charts">
                   {view === 'charts' ? <ChartBold data-icon="inline-start" size={14} /> : <ChartLine data-icon="inline-start" size={14} />}
                   Charts
@@ -314,7 +314,7 @@ export default function BoardPage() {
                                 { v: dept.off_track, c: 'var(--danger-text)', bg: 'var(--danger-soft-bg)' },
                                 { v: dept.no_data, c: 'var(--ink-faint)', bg: 'var(--panel-soft-bg)' },
                               ].map((s, i) => s.v > 0 && (
-                                <span key={i} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: s.c, background: s.bg }}>
+                                <span key={i} className="size-5 shrink-0 flex items-center justify-center text-[10px] font-medium rounded-full" style={{ color: s.c, background: s.bg }}>
                                   {s.v}
                                 </span>
                               ))}

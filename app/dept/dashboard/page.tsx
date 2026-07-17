@@ -198,7 +198,7 @@ export default function DeptDashboard() {
               </div>
             ) : (
               <Tabs value={view} onValueChange={v => v && setView(v as 'charts' | 'table')}>
-                <TabsList className="mb-4">
+                <TabsList variant="line" className="mb-4">
                   <TabsTrigger value="charts">
                     {view === 'charts' ? <ChartBold data-icon="inline-start" size={14} /> : <ChartLine data-icon="inline-start" size={14} />}
                     Charts
