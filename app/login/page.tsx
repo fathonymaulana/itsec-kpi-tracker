@@ -91,17 +91,19 @@ function LoginForm() {
     <div className="h-screen overflow-hidden bg-white dark:bg-[#141414] flex flex-col relative z-0">
       {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
           element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive.
-          object-contain (not object-cover) is required for "never cropped": cover always fills the
-          box by slicing off whatever overflows, which at every viewport ratio was cutting real
-          artwork off at the top edge. contain scales the whole image to fit within the box — on any
-          box narrower than the image's own 3.5:1 ratio that leaves transparent letterboxing on the
-          sides instead, which is invisible against the page's own background, so there's no visible
-          cost to guaranteeing the full graphic is always shown intact. object-top keeps it flush
-          against the very top of the page on box ratios where the letterboxing lands top/bottom
-          instead. dark:invert flips the artwork's black strokes to white (and vice versa) for dark
-          mode — the source PNG has no separate dark variant, so this is a CSS filter instead;
-          invert() only touches RGB channels, so the transparent background is unaffected. */}
-      <div className="absolute inset-x-0 top-0 h-32 sm:h-40 md:h-56 lg:h-64 -z-10 overflow-hidden pointer-events-none select-none">
+          h-[65vh] (a viewport-relative unit, not a fixed px step per breakpoint) makes the band scale
+          proportionally with the screen at any resolution. object-contain (not object-cover) is
+          required for "never cropped": cover always fills the box by slicing off whatever overflows,
+          which at every viewport ratio was cutting real artwork off at the top edge. contain scales
+          the whole image to fit within the box — on any box narrower than the image's own 3.5:1 ratio
+          that leaves transparent letterboxing on the sides instead, which is invisible against the
+          page's own background, so there's no visible cost to guaranteeing the full graphic is always
+          shown intact even at this larger size. object-top keeps it flush against the very top of the
+          page on box ratios where the letterboxing lands top/bottom instead. dark:invert flips the
+          artwork's black strokes to white (and vice versa) for dark mode — the source PNG has no
+          separate dark variant, so this is a CSS filter instead; invert() only touches RGB channels,
+          so the transparent background is unaffected. */}
+      <div className="absolute inset-x-0 top-0 h-[65vh] -z-10 overflow-hidden pointer-events-none select-none">
         <Image
           src="/login-wordmark.png"
           alt=""
