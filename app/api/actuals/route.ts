@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('actuals')
-    .select('id, sub_metric_id, year, month, value, data_source_url, data_source_note')
+    .select('id, sub_metric_id, year, month, value, data_source_url, data_source_note, last_updated_at')
     .in('sub_metric_id', smIds)
     .eq('year', year)
   if (month) query = query.eq('month', month)

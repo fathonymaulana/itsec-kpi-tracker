@@ -43,6 +43,7 @@ interface Actual {
   value: number
   data_source_url?: string
   data_source_note?: string
+  last_updated_at?: string
 }
 
 interface Anomaly {
@@ -76,7 +77,10 @@ export default function DeptPage() {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
   const [modifyRequests, setModifyRequests] = useState<ModifyRequest[]>([])
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
@@ -112,16 +116,23 @@ export default function DeptPage() {
       const vals: Record<number, string> = {}
       const actMap: Record<number, Actual> = {}
       const ds: Record<number, { url: string; note: string }> = {}
+      let latestSavedAt: Date | null = null
       for (const a of (data.actuals || [])) {
         vals[a.sub_metric_id] = String(a.value)
         actMap[a.sub_metric_id] = a
         if (a.kpi_id && a.data_source_url) {
           ds[a.kpi_id] = { url: a.data_source_url, note: a.data_source_note || '' }
         }
+        if (a.last_updated_at) {
+          const t = new Date(a.last_updated_at)
+          if (!latestSavedAt || t > latestSavedAt) latestSavedAt = t
+        }
       }
       setValues(vals)
       setSavedActuals(actMap)
       setDataSources(ds)
+      setLastSavedAt(latestSavedAt)
+      setIsDirty(false)
     } catch {
       toast.error('Couldn’t load your saved data', { description: 'Please check your connection and try again.' })
     }
@@ -164,6 +175,7 @@ export default function DeptPage() {
 
   const handleValueChange = (subMetricId: number, val: string) => {
     setValues(prev => ({ ...prev, [subMetricId]: val }))
+    setIsDirty(true)
   }
 
   const handleDataSourceSave = async (kpiId: number, url: string, note: string) => {
@@ -184,42 +196,50 @@ export default function DeptPage() {
     }
   }
 
+  // Shared by the Save button and by Submit (which always saves first, in case the dept_head
+  // typed values and hit Submit without ever clicking Save) — one payload builder, one POST.
+  const saveActuals = async (): Promise<Anomaly[]> => {
+    if (!user || !token) return []
+    const payload: { sub_metric_id: number; kpi_id: number; dept_id: string; year: number; month: number; value: number; data_source_url?: string; data_source_note?: string }[] = []
+    for (const kpi of kpis) {
+      const ds = dataSources[kpi.id]
+      for (const sm of kpi.sub_metrics.filter(s => !s.is_calculated)) {
+        const raw = values[sm.id]
+        if (raw === undefined || raw === '') continue
+        const value = parseFloat(raw)
+        if (isNaN(value)) continue
+        payload.push({
+          sub_metric_id: sm.id,
+          kpi_id: kpi.id,
+          dept_id: user.dept_id ?? '',
+          year,
+          month,
+          value,
+          ...(ds ? { data_source_url: ds.url, data_source_note: ds.note } : {}),
+        })
+      }
+    }
+    const r = await fetch('/api/actuals', {
+      method: 'POST',
+      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actuals: payload }),
+    })
+    const data = await r.json()
+    if (!r.ok) throw new Error(data.error || 'Save failed')
+
+    await fetchActuals()
+    await fetchAnomalies()
+    setLastSavedAt(new Date())
+    setIsDirty(false)
+
+    return (data.anomalies || []) as Anomaly[]
+  }
+
   const handleSave = async () => {
     if (!user || !token) return
     setSaving(true)
     try {
-      const payload: { sub_metric_id: number; kpi_id: number; dept_id: string; year: number; month: number; value: number; data_source_url?: string; data_source_note?: string }[] = []
-      for (const kpi of kpis) {
-        const ds = dataSources[kpi.id]
-        for (const sm of kpi.sub_metrics.filter(s => !s.is_calculated)) {
-          const raw = values[sm.id]
-          if (raw === undefined || raw === '') continue
-          const value = parseFloat(raw)
-          if (isNaN(value)) continue
-          payload.push({
-            sub_metric_id: sm.id,
-            kpi_id: kpi.id,
-            dept_id: user.dept_id ?? '',
-            year,
-            month,
-            value,
-            ...(ds ? { data_source_url: ds.url, data_source_note: ds.note } : {}),
-          })
-        }
-      }
-      const r = await fetch('/api/actuals', {
-        method: 'POST',
-        headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ actuals: payload }),
-      })
-      const data = await r.json()
-      if (!r.ok) throw new Error(data.error || 'Save failed')
-
-      // Refresh actuals and anomalies
-      await fetchActuals()
-      await fetchAnomalies()
-
-      const newAnomalies = (data.anomalies || []) as Anomaly[]
+      const newAnomalies = await saveActuals()
       if (newAnomalies.length > 0) {
         toast.warning(`Saved — but ${newAnomalies.length} ${newAnomalies.length > 1 ? 'entries look' : 'entry looks'} unusual`, {
           description: newAnomalies.map(a => a.description).join(' · '),
@@ -237,8 +257,12 @@ export default function DeptPage() {
 
   const handleSubmit = async () => {
     if (!user || !token) return
-    setSaving(true)
+    setSubmitting(true)
     try {
+      // Always save first — covers the dept_head who typed values and went straight to Submit
+      // without clicking Save, so nothing typed is lost when the month locks.
+      const newAnomalies = await saveActuals()
+
       const r = await fetch('/api/submissions', {
         method: 'POST',
         headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
@@ -247,11 +271,19 @@ export default function DeptPage() {
       const data = await r.json()
       if (!r.ok) throw new Error(data.error || 'Submit failed')
       setSubmitted(true)
-      toast.success(`${MONTHS[month - 1]} ${year} submitted`, { description: 'Your data is locked and ready for Corporate Planning’s review.' })
+
+      if (newAnomalies.length > 0) {
+        toast.warning(`${MONTHS[month - 1]} ${year} submitted — but ${newAnomalies.length} ${newAnomalies.length > 1 ? 'entries look' : 'entry looks'} unusual`, {
+          description: newAnomalies.map(a => a.description).join(' · '),
+          duration: 8000,
+        })
+      } else {
+        toast.success(`${MONTHS[month - 1]} ${year} submitted`, { description: 'Your data is locked and ready for Corporate Planning’s review.' })
+      }
     } catch (err: unknown) {
       toast.error('Couldn’t submit this month', { description: err instanceof Error ? err.message : 'Please try again.' })
     } finally {
-      setSaving(false)
+      setSubmitting(false)
     }
   }
 
@@ -415,17 +447,21 @@ export default function DeptPage() {
               variant="outline"
               className={`h-12 px-5 rounded-2xl gap-2 border-divider bg-panel ${iconHoverClass}`}
               onClick={handleSave}
-              disabled={saving || submitted}
+              disabled={saving || submitting || submitted}
             >
-              <Save size={16} />
-              {saving ? 'Saving…' : 'Save'}
+              {!saving && !isDirty && lastSavedAt ? <CheckCircle2 size={16} /> : <Save size={16} />}
+              {saving
+                ? 'Saving…'
+                : !isDirty && lastSavedAt
+                  ? `Saved · ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  : 'Save'}
             </Button>
             <Button
               className={`h-12 px-5 rounded-2xl gap-2 bg-[#282828] hover:bg-[#171717] text-white ${iconHoverClass}`}
               onClick={handleSubmit}
-              disabled={saving || submitted}
+              disabled={saving || submitting || submitted}
             >
-              {submitted ? 'Submitted' : 'Submit Month'}
+              {submitted ? 'Submitted' : submitting ? 'Submitting…' : 'Submit Month'}
               <Send size={16} />
             </Button>
           </div>
