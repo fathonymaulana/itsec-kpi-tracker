@@ -18,8 +18,8 @@ import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { getStatus, MONTHS, type KpiStatus } from '@/lib/status'
-import { getPrimarySubMetric, resolvePrimaryValue } from '@/lib/kpi-primary'
+import { getStatus, getDefaultMonth, MONTHS, type KpiStatus } from '@/lib/status'
+import { getPrimarySubMetric, resolvePrimaryValue, resolveAllValues, getSubMetricStatuses } from '@/lib/kpi-primary'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -35,13 +35,18 @@ interface Kpi {
   sub_metrics: SubMetric[]
 }
 
-// Status compares against the PRIMARY sub-metric's own target/direction (set per-row, not per-KPI —
-// see lib/kpi-primary.ts), matching the logic already used server-side in app/api/board/summary/[year].
+// Status is the worst status among every sub-metric that carries its own target (set per-row, not
+// per-KPI — see lib/kpi-primary.ts) — a KPI with several independently-targeted components (e.g.
+// "≥4 agreements; ≥100 leads; ≥IDR5B pipeline") is off track if ANY of them is, not just the primary
+// one. Falls back to the primary sub-metric's target for simple single-target KPIs. Matches the same
+// logic used server-side in app/api/board/summary/[year] and in KpiCard's per-row badges.
 // kpi.numeric_target/direction are stale for KPIs with multiple components and must not be used here.
 function statusFor(kpi: Kpi, valuesBySmId: Record<number, number>): { value: number | null; status: KpiStatus } {
   const primary = getPrimarySubMetric(kpi.sub_metrics)
   const value = resolvePrimaryValue(kpi.sub_metrics, valuesBySmId)
-  const status = getStatus(value, primary?.numeric_target ?? null, primary?.direction ?? 1)
+  const allValues = resolveAllValues(kpi.sub_metrics, valuesBySmId)
+  const { overall } = getSubMetricStatuses(kpi.sub_metrics, allValues)
+  const status = overall ?? getStatus(value, primary?.numeric_target ?? null, primary?.direction ?? 1)
   return { value, status }
 }
 
@@ -95,8 +100,11 @@ export default function DeptDashboard() {
 
   useEffect(() => { if (user) fetchData() }, [user, fetchData])
 
-  // Stats
-  const currentMonth = new Date().getMonth() + 1
+  // Stats — the "current" period for the stat cards is the same "previous calendar month" default
+  // Data Entry uses (see getDefaultMonth), not the literal in-progress calendar month, since actuals
+  // for the still-running month haven't been submitted yet. Using the real current month here was why
+  // the stat cards stayed at "No Data" right after a dept_head submitted last month's data.
+  const currentMonth = getDefaultMonth()
   const statuses = kpis.map(kpi => {
     const vals = allActuals[currentMonth] || {}
     return statusFor(kpi, vals).status

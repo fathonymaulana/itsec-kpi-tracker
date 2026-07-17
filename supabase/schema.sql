@@ -102,18 +102,6 @@ create table verifications (
   unique (kpi_id, dept_id, year, month)
 );
 
-create table anomalies (
-  id bigint generated always as identity primary key,
-  sub_metric_id bigint not null references sub_metrics(id) on delete cascade,
-  year integer not null,
-  month integer not null,
-  anomaly_type text,
-  description text,
-  detected_at timestamptz not null default now(),
-  dismissed boolean not null default false,
-  resolved_note text
-);
-
 create table submissions (
   id bigint generated always as identity primary key,
   dept_id text not null references departments(id) on delete cascade,
@@ -145,7 +133,6 @@ create index on kpis (dept_id);
 create index on sub_metrics (kpi_id);
 create index on actuals (sub_metric_id, year, month);
 create index on verifications (dept_id, year, month);
-create index on anomalies (sub_metric_id, year, month) where not dismissed;
 create index on submissions (dept_id, year, month);
 create index on modify_requests (dept_id, year, month);
 create index on modify_requests (status);
@@ -160,7 +147,6 @@ alter table kpis enable row level security;
 alter table sub_metrics enable row level security;
 alter table actuals enable row level security;
 alter table verifications enable row level security;
-alter table anomalies enable row level security;
 alter table submissions enable row level security;
 alter table modify_requests enable row level security;
 -- No policies are defined: with RLS enabled and zero policies, every table denies all access to the

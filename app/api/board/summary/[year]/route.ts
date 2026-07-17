@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/auth-server'
-import { getStatus, type KpiStatus } from '@/lib/status'
-import { resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
+import { getStatus, worstStatus, type KpiStatus } from '@/lib/status'
+import { resolvePrimaryValue, resolveAllValues, getSubMetricStatuses, type SubMetricLike } from '@/lib/kpi-primary'
 
 // Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
 // round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
@@ -13,14 +13,6 @@ interface KpiWithSubMetrics {
   numeric_target: number | null
   direction: number
   sub_metrics: SubMetricLike[]
-}
-
-// Worst-first: a single department/month cell shows the most urgent status among its KPIs, falling back
-// to the best available signal when nothing is urgent.
-const SEVERITY: KpiStatus[] = ['off_track', 'watch', 'on_track', 'review_manually', 'no_data']
-function worstStatus(statuses: KpiStatus[]): KpiStatus | undefined {
-  for (const s of SEVERITY) if (statuses.includes(s)) return s
-  return undefined
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ year: string }> }) {
@@ -55,14 +47,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   ])
   const smIds = (allSubMetrics || []).map(sm => sm.id)
 
-  const [{ data: allActuals }, { data: allAnomalies }] = await Promise.all([
-    smIds.length
-      ? supabase.from('actuals').select('sub_metric_id, month, value').in('sub_metric_id', smIds).eq('year', year)
-      : Promise.resolve({ data: [] as { sub_metric_id: number; month: number; value: number | null }[] }),
-    smIds.length
-      ? supabase.from('anomalies').select('sub_metric_id').in('sub_metric_id', smIds).eq('dismissed', false)
-      : Promise.resolve({ data: [] as { sub_metric_id: number }[] }),
-  ])
+  const { data: allActuals } = smIds.length
+    ? await supabase.from('actuals').select('sub_metric_id, month, value').in('sub_metric_id', smIds).eq('year', year)
+    : { data: [] as { sub_metric_id: number; month: number; value: number | null }[] }
 
   const kpisByDept = new Map<string, typeof allKpis>()
   for (const k of allKpis || []) {
@@ -80,10 +67,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     actualsBySm.get(a.sub_metric_id)!.push({ month: a.month, value: a.value })
   }
   const submittedDeptSet = new Set((allSubmissions || []).map(s => s.dept_id))
-  const anomalyCountBySm = new Map<number, number>()
-  for (const a of allAnomalies || []) {
-    anomalyCountBySm.set(a.sub_metric_id, (anomalyCountBySm.get(a.sub_metric_id) || 0) + 1)
-  }
 
   const departments = (depts || []).map(dept => {
     const kpiRows = kpisByDept.get(dept.id) || []
@@ -101,6 +84,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const row = (actualsBySm.get(sm.id) || []).find(r => r.month === m)
         if (row && row.value !== null) valuesBySmId[sm.id] = Number(row.value)
       }
+      // Worst status among every sub-metric that carries its own target — a KPI with several
+      // independently-targeted components is off track if ANY of them is, not just the primary one.
+      const allValues = resolveAllValues(kpi.sub_metrics, valuesBySmId)
+      const { overall } = getSubMetricStatuses(kpi.sub_metrics, allValues)
+      if (overall) return overall
       const primary = kpi.sub_metrics.find(sm => sm.is_calculated) ?? kpi.sub_metrics[0]
       const value = resolvePrimaryValue(kpi.sub_metrics, valuesBySmId)
       const target = primary?.numeric_target ?? null
@@ -131,15 +119,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       no_data = kpis.length
     }
 
-    const anomaly_count = smIdsForDept.reduce((sum, id) => sum + (anomalyCountBySm.get(id) || 0), 0)
-
     return {
       dept_id: dept.id,
       department_name: dept.name,
       total: kpis.length,
       on_track, watch, off_track, no_data, review_manually,
       submitted: !!month && submittedDeptSet.has(dept.id),
-      anomaly_count,
       month_statuses,
     }
   })

@@ -30,6 +30,16 @@ export function getStatus(
   }
 }
 
+// Worst-first severity order — a KPI (or a group of independently-targeted sub-metrics within one
+// KPI) shows the most urgent status among its parts, falling back to the best available signal when
+// nothing is urgent. Shared by board summary, the dept dashboard, and KpiCard's per-sub-metric badges
+// so "the KPI is off track" always means the same thing everywhere it's computed.
+const SEVERITY: KpiStatus[] = ['off_track', 'watch', 'on_track', 'review_manually', 'no_data']
+export function worstStatus(statuses: KpiStatus[]): KpiStatus {
+  for (const s of SEVERITY) if (statuses.includes(s)) return s
+  return 'no_data'
+}
+
 export function getStatusLabel(status: KpiStatus): string {
   const labels: Record<KpiStatus, string> = {
     on_track:        'On Track',

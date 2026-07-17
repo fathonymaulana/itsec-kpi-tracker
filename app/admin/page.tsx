@@ -4,11 +4,10 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   CheckCircleLineDuotone as CheckCircle2,
-  DangerTriangleLineDuotone as AlertTriangle, DangerTriangleBold as AlertTriangleBold,
+  DangerTriangleLineDuotone as AlertTriangle,
   AltArrowRightLineDuotone as ChevronRight, AltArrowRightBold as ChevronRightBold,
   BuildingsLineDuotone as Building2,
   ShieldLineDuotone as Shield, ShieldBold as ShieldBold,
-  ClockCircleLineDuotone as Clock,
   LockUnlockedLineDuotone as LockUnlocked, LockUnlockedBold as LockUnlockedBold,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
@@ -27,7 +26,6 @@ interface Dept { id: string; name: string; submitted: boolean }
 interface SubMetric { id: number; name: string; unit: string; is_calculated: number; formula_key: string | null; calc_input_positions: string | null }
 interface Kpi { id: number; name: string; target_text: string; numeric_target: number | null; direction: number; sub_metrics: SubMetric[] }
 interface Actual { id: number; sub_metric_id: number; kpi_id: number; value: number; data_source_url?: string; data_source_note?: string }
-interface Anomaly { id: number; kpi_id: number; sub_metric_id: number; type: string; description: string; dismissed: number; created_at: string }
 interface Verification { id: number; kpi_id: number; status: 'pending' | 'verified' | 'flagged'; note: string; verified_at: string }
 interface ModifyRequest {
   id: number; kpi_id: number; dept_id: string; year: number; month: number
@@ -35,7 +33,7 @@ interface ModifyRequest {
   kpi_name: string | null; dept_name: string | null; requested_by_name: string | null
 }
 
-type TabKey = 'data' | 'anomalies' | 'verifications' | 'modify'
+type TabKey = 'data' | 'verifications' | 'modify'
 
 export default function AdminPage() {
   const { user, token, ready } = useAuth()
@@ -47,7 +45,6 @@ export default function AdminPage() {
   const [kpis, setKpis] = useState<Kpi[]>([])
   const [actuals, setActuals] = useState<Record<number, Actual>>({}) // smId → actual
   const [dataSources, setDataSources] = useState<Record<number, { url: string; note: string }>>({}) // kpi_id → ds
-  const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [verifications, setVerifications] = useState<Verification[]>([])
   const [modifyRequests, setModifyRequests] = useState<ModifyRequest[]>([])
   const [tab, setTab] = useState<TabKey>('data')
@@ -97,15 +94,13 @@ export default function AdminPage() {
     if (!token || !selectedDept) return
     setLoading(true)
     try {
-      const [kpiRes, actRes, anoRes, verRes] = await Promise.all([
+      const [kpiRes, actRes, verRes] = await Promise.all([
         fetch(`/api/departments/${selectedDept}/kpis`, { headers: authHeaders(token) }),
         fetch(`/api/actuals?dept_id=${selectedDept}&year=${year}&month=${month}`, { headers: authHeaders(token) }),
-        fetch(`/api/anomalies?dept_id=${selectedDept}&year=${year}&month=${month}`, { headers: authHeaders(token) }),
         fetch(`/api/verifications?dept_id=${selectedDept}&year=${year}&month=${month}`, { headers: authHeaders(token) }),
       ])
       const kpiData = await kpiRes.json()
       const actData = await actRes.json()
-      const anoData = await anoRes.json()
       const verData = await verRes.json()
 
       setKpis(kpiData.kpis || [])
@@ -122,7 +117,6 @@ export default function AdminPage() {
       }
       setActuals(actMap)
       setDataSources(ds)
-      setAnomalies(anoData.anomalies || [])
       setVerifications(verData.verifications || [])
     } catch { /* non-fatal */ }
     finally { setLoading(false) }
@@ -189,35 +183,14 @@ export default function AdminPage() {
     }
   }
 
-  const handleDismissAnomaly = async (anomalyId: number) => {
-    if (!token) return
-    setActionLoading(anomalyId)
-    try {
-      const r = await fetch(`/api/anomalies/${anomalyId}`, {
-        method: 'PATCH',
-        headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dismissed: 1 }),
-      })
-      if (!r.ok) throw new Error('Failed')
-      await fetchDeptData()
-      toast.success('Anomaly dismissed')
-    } catch {
-      toast.error('Couldn’t dismiss that anomaly', { description: 'Please try again.' })
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
   const valuesAsStrings: Record<number, string> = Object.fromEntries(
     Object.entries(actuals).map(([smId, a]) => [smId, String(a.value)])
   )
 
   const getKpiVerification = (kpiId: number) => verifications.find(v => v.kpi_id === kpiId)
-  const getKpiAnomalies = (kpiId: number) => anomalies.filter(a => a.kpi_id === kpiId && !a.dismissed)
 
   const selectedDeptObj = depts.find(d => d.id === selectedDept)
   const pendingVerifications = kpis.filter(k => !getKpiVerification(k.id)).length
-  const activeAnomalies = anomalies.filter(a => !a.dismissed).length
 
   if (!ready || !user) return null
 
@@ -251,7 +224,7 @@ export default function AdminPage() {
                 {canVerify ? 'Data Verification' : 'Data Review'}
               </h1>
               <p className="text-sm text-ink-muted mt-1">
-                Pick a department to review its submitted KPIs, flag anomalies, and verify entries for the period.
+                Pick a department to review its submitted KPIs and verify entries for the period.
               </p>
             </div>
 
@@ -279,7 +252,6 @@ export default function AdminPage() {
             <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-2 flex gap-1 mb-4">
               {([
                 { key: 'data', label: 'Data Review', icon: ChevronRight, boldIcon: ChevronRightBold },
-                { key: 'anomalies', label: `Anomalies${activeAnomalies > 0 ? ` (${activeAnomalies})` : ''}`, icon: AlertTriangle, boldIcon: AlertTriangleBold },
                 { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield, boldIcon: ShieldBold },
                 { key: 'modify', label: `Modify Requests${modifyRequests.length > 0 ? ` (${modifyRequests.length})` : ''}`, icon: LockUnlocked, boldIcon: LockUnlockedBold },
               ] as { key: TabKey; label: string; icon: React.ElementType; boldIcon: React.ElementType }[]).map(t => {
@@ -359,14 +331,12 @@ export default function AdminPage() {
                       <div className="text-center py-16 text-ink-faint text-sm">No data for this period.</div>
                     ) : kpis.map(kpi => {
                       const verification = getKpiVerification(kpi.id)
-                      const kpiAnomalies = getKpiAnomalies(kpi.id)
                       return (
                         <div key={kpi.id} className="space-y-1">
                           <KpiCard
                             kpi={kpi}
                             values={valuesAsStrings}
                             dataSource={dataSources[kpi.id]}
-                            anomalyCount={kpiAnomalies.length}
                             readOnly
                           />
                           {/* Verification status / action row */}
@@ -412,48 +382,6 @@ export default function AdminPage() {
                         </div>
                       )
                     })}
-                  </div>
-                )}
-
-                {/* ANOMALIES TAB */}
-                {tab === 'anomalies' && (
-                  <div>
-                    {anomalies.length === 0 ? (
-                      <div className="text-center py-16 text-ink-faint text-sm">No anomalies for this period.</div>
-                    ) : (
-                      <div className="space-y-2">
-                        {anomalies.map(a => (
-                          <div
-                            key={a.id}
-                            className={`bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3 ${a.dismissed ? 'opacity-50' : ''}`}
-                          >
-                            <AlertTriangle size={14} className={a.dismissed ? 'text-ink-faint' : 'text-[#F59E0B]'} />
-                            <div className="flex-1">
-                              <div className="text-xs font-medium text-ink">{kpis.find(k => k.id === a.kpi_id)?.name || 'Unknown KPI'}</div>
-                              <div className="text-xs text-ink-muted mt-0.5 font-normal">{a.description}</div>
-                              <div className="text-[10px] text-ink-faint mt-1 flex items-center gap-1">
-                                <Clock size={9} />
-                                {new Date(a.created_at).toLocaleDateString()}
-                              </div>
-                            </div>
-                            {!a.dismissed && canVerify && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 text-[11px] shrink-0"
-                                disabled={actionLoading === a.id}
-                                onClick={() => handleDismissAnomaly(a.id)}
-                              >
-                                Dismiss
-                              </Button>
-                            )}
-                            {a.dismissed && (
-                              <span className="text-[10px] text-ink-faint shrink-0">Dismissed</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )}
 

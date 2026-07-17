@@ -7,10 +7,9 @@ import {
   LockUnlockedLineDuotone as RequestModifyIcon,
   ClockCircleLineDuotone as PendingIcon,
 } from '@solar-icons/react-perf'
-import { computeCalcValue } from '@/lib/calculations'
 import { getStatus, getStatusColors } from '@/lib/status'
+import { resolveAllValues, getSubMetricStatuses } from '@/lib/kpi-primary'
 import { StatusBadge } from './StatusBadge'
-import { AnomalyBadge } from './AnomalyBadge'
 import { DataSourceModal } from './DataSourceModal'
 import { ModifyRequestModal } from './ModifyRequestModal'
 
@@ -21,6 +20,8 @@ interface SubMetric {
   is_calculated: number
   formula_key: string | null
   calc_input_positions: string | null
+  numeric_target?: number | null
+  direction?: number | null
 }
 
 interface KpiCardProps {
@@ -34,11 +35,9 @@ interface KpiCardProps {
   }
   values: Record<number, string>           // sub_metric_id → raw string input
   dataSource?: { url: string; note: string }
-  anomalyCount?: number
   readOnly?: boolean
   onValueChange?: (subMetricId: number, val: string) => void
   onDataSourceSave?: (kpiId: number, url: string, note: string) => void
-  onAnomalyClick?: () => void
   // When set, a locked (readOnly) card shows a "Request Modify" CTA instead of collapse/expand —
   // only meaningful on the dept_head's own Data Entry page, not on Corporate Planning's read-only
   // review view, so this is opt-in rather than inferred from readOnly alone.
@@ -50,11 +49,9 @@ export function KpiCard({
   kpi,
   values,
   dataSource,
-  anomalyCount = 0,
   readOnly = false,
   onValueChange,
   onDataSourceSave,
-  onAnomalyClick,
   modifyRequestStatus,
   onRequestModify,
 }: KpiCardProps) {
@@ -67,37 +64,29 @@ export function KpiCard({
   // Calculated sub-metrics
   const calcSMs = kpi.sub_metrics.filter(sm => sm.is_calculated)
 
-  // Resolve a calc sub-metric's value
-  const resolveCalcValue = (sm: SubMetric): number | null => {
-    if (!sm.formula_key) return null
-    let positions: number[]
-    if (sm.calc_input_positions) {
-      positions = sm.calc_input_positions.split(',').map(p => parseInt(p.trim()) - 1)
-    } else {
-      // Default: pass all input sub-metrics in order (A=first, B=second, etc.)
-      positions = inputSMs.map((_, i) => i)
-    }
-    const inputs = positions.map(pos => {
-      const inputSm = inputSMs[pos]
-      if (!inputSm) return null
-      const raw = values[inputSm.id]
-      const n = parseFloat(raw)
-      return isNaN(n) ? null : n
-    })
-    return computeCalcValue(sm.formula_key, inputs)
-  }
+  // Resolve every sub-metric's value (raw inputs pass through, calc rows run their formula), then
+  // derive a status per sub-metric that carries its own target — a KPI like "≥4 agreements; ≥100
+  // leads; ≥IDR5B pipeline" has three independently-targeted rows, and a single primary-sub-metric
+  // badge would hide whether the other two are actually on track. The header badge shows the worst
+  // of all of them; falls back to the KPI-level target for simple single-target KPIs.
+  const numericValues = Object.fromEntries(
+    Object.entries(values).map(([id, raw]) => [id, parseFloat(raw)]).filter(([, n]) => !isNaN(n as number))
+  ) as Record<number, number>
+  const allValues = resolveAllValues(kpi.sub_metrics, numericValues)
+  const { bySmId: statusBySmId, overall } = getSubMetricStatuses(kpi.sub_metrics, allValues)
 
-  // Compute the primary KPI metric value for status
-  const primaryCalc = calcSMs[0]
-  const primaryValue = primaryCalc ? resolveCalcValue(primaryCalc) : (() => {
-    const first = inputSMs[0]
-    if (!first) return null
-    const raw = values[first.id]
-    const n = parseFloat(raw)
-    return isNaN(n) ? null : n
-  })()
+  const resolveCalcValue = (sm: SubMetric): number | null => allValues[sm.id] ?? null
 
-  const status = getStatus(primaryValue ?? null, kpi.numeric_target, kpi.direction)
+  const status = overall ?? getStatus(
+    (() => {
+      const primaryCalc = calcSMs[0]
+      if (primaryCalc) return allValues[primaryCalc.id] ?? null
+      const first = inputSMs[0]
+      return first ? (allValues[first.id] ?? null) : null
+    })(),
+    kpi.numeric_target,
+    kpi.direction
+  )
   const statusColors = getStatusColors(status)
 
   const formatCalc = (val: number | null, unit: string): string => {
@@ -118,9 +107,6 @@ export function KpiCard({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-ink text-sm">{kpi.name}</span>
             <StatusBadge status={status} />
-            {anomalyCount > 0 && (
-              <AnomalyBadge count={anomalyCount} onClick={onAnomalyClick} />
-            )}
           </div>
           <div className="text-ink-muted text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>
         </div>
@@ -180,7 +166,10 @@ export function KpiCard({
         <div className="border-t border-divider">
           {inputSMs.map((sm, idx) => (
             <div key={sm.id} className={`flex items-center gap-4 px-6 py-2.5 ${idx % 2 === 0 ? 'bg-panel-soft' : 'bg-panel'}`}>
-              <div className="flex-1 text-xs text-ink-soft font-normal">{sm.name}</div>
+              <div className="flex-1 text-xs text-ink-soft font-normal flex items-center gap-2 flex-wrap">
+                {sm.name}
+                {statusBySmId[sm.id] && <StatusBadge status={statusBySmId[sm.id]} size="sm" />}
+              </div>
               <div className="text-[10px] text-ink-muted w-8 text-right shrink-0">{sm.unit}</div>
               {readOnly ? (
                 <div className="w-28 text-right text-sm font-normal text-ink">
@@ -206,14 +195,15 @@ export function KpiCard({
                 key={sm.id}
                 className={`flex items-center gap-4 px-6 py-2.5 ${(inputSMs.length + idx) % 2 === 0 ? 'bg-panel-soft' : 'bg-panel'}`}
               >
-                <div className="flex-1 text-xs text-ink-soft font-normal">
+                <div className="flex-1 text-xs text-ink-soft font-normal flex items-center gap-2 flex-wrap">
                   {sm.name}
-                  <span className="ml-1.5 text-[10px] text-ink-muted">(calculated)</span>
+                  <span className="text-[10px] text-ink-muted">(calculated)</span>
+                  {statusBySmId[sm.id] && <StatusBadge status={statusBySmId[sm.id]} size="sm" />}
                 </div>
                 <div className="text-[10px] text-ink-muted w-8 text-right shrink-0">{sm.unit}</div>
                 <div
                   className="w-28 text-right text-sm font-medium"
-                  style={{ color: val !== null ? statusColors.text : '#737373' }}
+                  style={{ color: val !== null ? getStatusColors(statusBySmId[sm.id] ?? status).text : '#737373' }}
                 >
                   {formatCalc(val, sm.unit)}
                 </div>

@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import {
   DisketteLineDuotone as Save,
   PlainLineDuotone as Send,
-  DangerTriangleLineDuotone as AlertTriangle,
   CheckCircleLineDuotone as CheckCircle2,
   MagnifierLineDuotone as Search,
 } from '@solar-icons/react-perf'
@@ -46,15 +45,6 @@ interface Actual {
   last_updated_at?: string
 }
 
-interface Anomaly {
-  id: number
-  kpi_id: number
-  sub_metric_id: number
-  type: string
-  description: string
-  dismissed: number
-}
-
 interface ModifyRequest {
   id: number
   kpi_id: number
@@ -74,7 +64,6 @@ export default function DeptPage() {
   const [values, setValues] = useState<Record<number, string>>({})
   const [savedActuals, setSavedActuals] = useState<Record<number, Actual>>({}) // sub_metric_id → actual
   const [dataSources, setDataSources] = useState<Record<number, { url: string; note: string }>>({}) // kpi_id → ds
-  const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -138,15 +127,6 @@ export default function DeptPage() {
     }
   }, [user, token, year, month])
 
-  const fetchAnomalies = useCallback(async () => {
-    if (!user || !token) return
-    try {
-      const r = await fetch(`/api/anomalies?dept_id=${user.dept_id}&year=${year}&month=${month}`, { headers: authHeaders(token) })
-      const data = await r.json()
-      setAnomalies((data.anomalies || []).filter((a: Anomaly) => !a.dismissed))
-    } catch { /* non-fatal */ }
-  }, [user, token, year, month])
-
   const checkSubmission = useCallback(async () => {
     if (!user || !token) return
     try {
@@ -170,8 +150,8 @@ export default function DeptPage() {
   }, [user, fetchKpis])
 
   useEffect(() => {
-    if (user) { fetchActuals(); fetchAnomalies(); checkSubmission(); fetchModifyRequests() }
-  }, [user, fetchActuals, fetchAnomalies, checkSubmission, fetchModifyRequests])
+    if (user) { fetchActuals(); checkSubmission(); fetchModifyRequests() }
+  }, [user, fetchActuals, checkSubmission, fetchModifyRequests])
 
   const handleValueChange = (subMetricId: number, val: string) => {
     setValues(prev => ({ ...prev, [subMetricId]: val }))
@@ -198,8 +178,8 @@ export default function DeptPage() {
 
   // Shared by the Save button and by Submit (which always saves first, in case the dept_head
   // typed values and hit Submit without ever clicking Save) — one payload builder, one POST.
-  const saveActuals = async (): Promise<Anomaly[]> => {
-    if (!user || !token) return []
+  const saveActuals = async (): Promise<void> => {
+    if (!user || !token) return
     const payload: { sub_metric_id: number; kpi_id: number; dept_id: string; year: number; month: number; value: number; data_source_url?: string; data_source_note?: string }[] = []
     for (const kpi of kpis) {
       const ds = dataSources[kpi.id]
@@ -228,26 +208,16 @@ export default function DeptPage() {
     if (!r.ok) throw new Error(data.error || 'Save failed')
 
     await fetchActuals()
-    await fetchAnomalies()
     setLastSavedAt(new Date())
     setIsDirty(false)
-
-    return (data.anomalies || []) as Anomaly[]
   }
 
   const handleSave = async () => {
     if (!user || !token) return
     setSaving(true)
     try {
-      const newAnomalies = await saveActuals()
-      if (newAnomalies.length > 0) {
-        toast.warning(`Saved — but ${newAnomalies.length} ${newAnomalies.length > 1 ? 'entries look' : 'entry looks'} unusual`, {
-          description: newAnomalies.map(a => a.description).join(' · '),
-          duration: 8000,
-        })
-      } else {
-        toast.success('Saved', { description: 'Your entries are stored as a draft — Submit Month when ready to send them for review.' })
-      }
+      await saveActuals()
+      toast.success('Saved', { description: 'Your entries are stored as a draft — Submit Month when ready to send them for review.' })
     } catch (err: unknown) {
       toast.error('Couldn’t save your entries', { description: err instanceof Error ? err.message : 'Please try again.' })
     } finally {
@@ -261,7 +231,7 @@ export default function DeptPage() {
     try {
       // Always save first — covers the dept_head who typed values and went straight to Submit
       // without clicking Save, so nothing typed is lost when the month locks.
-      const newAnomalies = await saveActuals()
+      await saveActuals()
 
       const r = await fetch('/api/submissions', {
         method: 'POST',
@@ -271,23 +241,13 @@ export default function DeptPage() {
       const data = await r.json()
       if (!r.ok) throw new Error(data.error || 'Submit failed')
       setSubmitted(true)
-
-      if (newAnomalies.length > 0) {
-        toast.warning(`${MONTHS[month - 1]} ${year} submitted — but ${newAnomalies.length} ${newAnomalies.length > 1 ? 'entries look' : 'entry looks'} unusual`, {
-          description: newAnomalies.map(a => a.description).join(' · '),
-          duration: 8000,
-        })
-      } else {
-        toast.success(`${MONTHS[month - 1]} ${year} submitted`, { description: 'Your data is locked and ready for Corporate Planning’s review.' })
-      }
+      toast.success(`${MONTHS[month - 1]} ${year} submitted`, { description: 'Your data is locked and ready for Corporate Planning’s review.' })
     } catch (err: unknown) {
       toast.error('Couldn’t submit this month', { description: err instanceof Error ? err.message : 'Please try again.' })
     } finally {
       setSubmitting(false)
     }
   }
-
-  const getKpiAnomalyCount = (kpiId: number) => anomalies.filter(a => a.kpi_id === kpiId).length
 
   // Most recent request per KPI — a fresh pending one always wins; an older rejected one only shows
   // if there's nothing more recent, so a re-request cleanly replaces the "Request Again" state.
@@ -364,12 +324,6 @@ export default function DeptPage() {
                     Submitted
                   </div>
                 )}
-                {anomalies.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-xs text-warning bg-warning-soft border border-warning-soft-border px-3 py-1 rounded-full">
-                    <AlertTriangle size={12} />
-                    {anomalies.length} anomaly{anomalies.length > 1 ? 'ies' : ''} flagged
-                  </div>
-                )}
               </div>
             </div>
 
@@ -428,7 +382,6 @@ export default function DeptPage() {
                     kpi={kpi}
                     values={values}
                     dataSource={dataSources[kpi.id]}
-                    anomalyCount={getKpiAnomalyCount(kpi.id)}
                     onValueChange={handleValueChange}
                     onDataSourceSave={handleDataSourceSave}
                     readOnly={submitted}

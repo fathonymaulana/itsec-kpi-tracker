@@ -102,7 +102,14 @@ function LoginForm() {
                 <label className="text-sm font-medium text-ink">Department / Role</label>
                 <Select value={selected} onValueChange={v => setSelected(v ?? '')}>
                   <SelectTrigger className="w-full !h-9 rounded-lg border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm text-ink-muted">
-                    <SelectValue placeholder="Select your department or role" />
+                    <SelectValue placeholder="Select your department or role">
+                      {(value: string | null) => {
+                        if (!value) return 'Select your department or role'
+                        const u = directory.find(d => String(d.id) === value)
+                        if (!u) return value
+                        return u.role === 'dept_head' ? u.name : `${u.name} — ${ROLE_LABELS[u.role]}`
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {management.length > 0 && (

@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  DangerTriangleLineDuotone as AlertTriangle,
   AltArrowDownLineDuotone as ChevronDown,
   AltArrowUpLineDuotone as ChevronUp,
   GraphNewUpLineDuotone as TrendingUp,
@@ -35,15 +34,6 @@ interface DeptSummary {
   month_statuses: Partial<Record<number, KpiStatus>>
 }
 
-interface AnomalyItem {
-  dept_id: string
-  department_name: string
-  kpi_name: string
-  type: string
-  description: string
-  created_at: string
-}
-
 // Status colors are semantic (green/amber/red/gray for on-track/watch/off-track/no-data) and stay
 // distinct from the app's default black chart color, which is reserved for single-series trend charts.
 const STATUS_COLORS = {
@@ -66,10 +56,8 @@ export default function BoardPage() {
   const [month, setMonth] = useState(getDefaultMonth())
   const [year, setYear] = useState(getDefaultYear())
   const [summaries, setSummaries] = useState<DeptSummary[]>([])
-  const [anomalies, setAnomalies] = useState<AnomalyItem[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
-  const [showAnomalies, setShowAnomalies] = useState(false)
   const [leftPanelOpen, setLeftPanelOpen] = useState(true)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const [view, setView] = useState<'charts' | 'table'>('charts')
@@ -86,14 +74,9 @@ export default function BoardPage() {
     try {
       // /api/board/summary already aggregates strictly one department per row, keyed by dept_id —
       // no department's figures ever blend into another's here or in the table/chart below.
-      const [sumRes, anoRes] = await Promise.all([
-        fetch(`/api/board/summary/${year}?month=${month}`, { headers: authHeaders(token) }),
-        fetch(`/api/board/anomalies?year=${year}&month=${month}`, { headers: authHeaders(token) }),
-      ])
+      const sumRes = await fetch(`/api/board/summary/${year}?month=${month}`, { headers: authHeaders(token) })
       const sumData = await sumRes.json()
-      const anoData = await anoRes.json()
       setSummaries(sumData.departments || [])
-      setAnomalies((anoData.anomalies || []).filter((a: AnomalyItem & { dismissed: number }) => !a.dismissed))
     } catch { /* non-fatal */ }
     finally { setLoading(false) }
   }, [user, token, year, month])
@@ -162,34 +145,6 @@ export default function BoardPage() {
                 Every department&apos;s KPI status for {MONTHS[month - 1]} {year}, at a glance.
               </p>
             </div>
-
-            {/* Anomaly alert */}
-            {anomalies.length > 0 && (
-              <button
-                onClick={() => setShowAnomalies(s => !s)}
-                className="w-full mb-6 flex items-center gap-3 bg-warning-soft border border-warning-soft-border px-4 py-3 rounded-2xl text-left hover:bg-[#FFF3CC] transition-colors"
-              >
-                <AlertTriangle size={15} className="text-warning shrink-0" />
-                <span className="text-sm font-medium text-warning flex-1">
-                  {anomalies.length} unresolved anomaly{anomalies.length > 1 ? 'ies' : ''} across departments
-                </span>
-                {showAnomalies ? <ChevronUp size={14} className="text-warning" /> : <ChevronDown size={14} className="text-warning" />}
-              </button>
-            )}
-
-            {showAnomalies && (
-              <div className="mb-6 bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
-                {anomalies.map((a, i) => (
-                  <div key={i} className={`px-4 py-3 flex items-start gap-3 ${i > 0 ? 'border-t border-divider' : ''}`}>
-                    <AlertTriangle size={13} className="text-[#F59E0B] shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-medium text-ink">{a.department_name} — {a.kpi_name}</div>
-                      <div className="text-xs text-ink-muted mt-0.5 font-normal">{a.description}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Summary stat cards */}
             <div className="grid grid-cols-2 gap-3 mb-6">

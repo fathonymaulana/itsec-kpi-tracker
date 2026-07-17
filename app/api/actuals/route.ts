@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/auth-server'
-import { detectAnomaliesBatch } from '@/lib/anomaly-server'
 
 // Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
 // round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
@@ -115,12 +114,7 @@ export async function POST(request: NextRequest) {
       .upsert(upsertRows, { onConflict: 'sub_metric_id,year,month' })
     if (upsertErr) throw upsertErr
 
-    const anomalyInputs = actuals
-      .filter(r => r.value !== null && r.value !== undefined)
-      .map(r => ({ sub_metric_id: r.sub_metric_id, kpi_id: r.kpi_id, year: r.year, month: r.month, value: Number(r.value) }))
-    const newAnomalies = await detectAnomaliesBatch(anomalyInputs)
-
-    return NextResponse.json({ success: true, anomalies: newAnomalies })
+    return NextResponse.json({ success: true })
   } catch (err) {
     console.error('Save actuals error:', err)
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Save failed' }, { status: 500 })
