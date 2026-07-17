@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/auth-server'
 
 // GET /api/super-admin/pin-requests — all requests (pending first), with the requesting user's name
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request, ['super_admin'])
+  const auth = requireAuth(request, ['corp_planning'])
   if (auth instanceof NextResponse) return auth
 
   const supabase = supabaseServer()

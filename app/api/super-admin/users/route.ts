@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth-server'
 
 // GET /api/super-admin/users — list every user
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request, ['super_admin'])
+  const auth = requireAuth(request, ['corp_planning'])
   if (auth instanceof NextResponse) return auth
 
   const supabase = supabaseServer()
@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
 
 // POST /api/super-admin/users — body: { name, role, dept_id?, pin }
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request, ['super_admin'])
+  const auth = requireAuth(request, ['corp_planning'])
   if (auth instanceof NextResponse) return auth
 
   const { name, role, dept_id, pin } = await request.json().catch(() => ({}))
   if (!name?.trim() || !role || !pin || !/^\d{4}$/.test(pin)) {
     return NextResponse.json({ error: 'name, role, and a 4-digit pin are required' }, { status: 400 })
   }
-  if (!['dept_head', 'corp_planning', 'super_admin'].includes(role)) {
+  if (!['dept_head', 'corp_planning'].includes(role)) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
   }
   if (role === 'dept_head' && !dept_id) {

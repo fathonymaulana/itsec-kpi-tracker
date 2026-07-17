@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth-server'
 
 // POST /api/users/me/pin-request — body: { new_pin }
 // Does NOT change the login PIN. Creates (or replaces) a pending request; the current PIN keeps
-// working until a Super Admin approves it via /api/super-admin/pin-requests/[id].
+// working until Corporate Planning approves it via /api/super-admin/pin-requests/[id].
 export async function POST(request: NextRequest) {
   const auth = requireAuth(request)
   if (auth instanceof NextResponse) return auth

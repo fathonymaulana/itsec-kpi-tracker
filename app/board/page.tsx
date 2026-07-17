@@ -6,24 +6,21 @@ import {
   AltArrowDownLineDuotone as ChevronDown,
   AltArrowUpLineDuotone as ChevronUp,
   GraphNewUpLineDuotone as TrendingUp,
-  GraphDownNewLineDuotone as TrendingDown,
   MinusCircleLineDuotone as Minus,
-  LogoutLineDuotone as LogOut,
   ClipboardCheckLineDuotone as FileSearch,
 } from '@solar-icons/react-perf'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { toast } from 'sonner'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
+import { DeptTopNav } from '@/components/layout/DeptTopNav'
+import { DateSidebar } from '@/components/kpi/DateSidebar'
+import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { iconHoverClass } from '@/lib/utils'
-import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart'
 import { MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const CURRENT_YEAR = new Date().getFullYear()
-const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR]
 
 interface DeptSummary {
   dept_id: string
@@ -45,6 +42,8 @@ interface AnomalyItem {
   created_at: string
 }
 
+// Status colors are semantic (green/amber/red/gray for on-track/watch/off-track/no-data) and stay
+// distinct from the app's default black chart color, which is reserved for single-series trend charts.
 const STATUS_COLORS = {
   on_track: '#22C55E',
   watch: '#F59E0B',
@@ -52,15 +51,16 @@ const STATUS_COLORS = {
   no_data: '#D1D5DB',
 }
 
+const chartConfig: ChartConfig = {
+  onTrack: { label: 'On Track', color: STATUS_COLORS.on_track },
+  watch: { label: 'Watch', color: STATUS_COLORS.watch },
+  offTrack: { label: 'Off Track', color: STATUS_COLORS.off_track },
+  noData: { label: 'No Data', color: STATUS_COLORS.no_data },
+}
+
 export default function BoardPage() {
-  const { user, token, ready, logout } = useAuth()
+  const { user, token, ready } = useAuth()
   const router = useRouter()
-  const handleLogout = () => {
-    const firstName = user?.name?.split(' ')[0]
-    logout()
-    router.push('/login')
-    toast.success('Signed out', { description: firstName ? `See you soon, ${firstName}.` : 'You’ve been signed out safely.' })
-  }
   const [month, setMonth] = useState(getDefaultMonth())
   const [year, setYear] = useState(getDefaultYear())
   const [summaries, setSummaries] = useState<DeptSummary[]>([])
@@ -68,7 +68,9 @@ export default function BoardPage() {
   const [loading, setLoading] = useState(true)
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
   const [showAnomalies, setShowAnomalies] = useState(false)
-  const [confirmLogout, setConfirmLogout] = useState(false)
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true)
+  const [rightPanelOpen, setRightPanelOpen] = useState(true)
+  const [view, setView] = useState<'charts' | 'table'>('charts')
 
   useEffect(() => {
     if (!ready) return
@@ -80,6 +82,8 @@ export default function BoardPage() {
     if (!user || !token) return
     setLoading(true)
     try {
+      // /api/board/summary already aggregates strictly one department per row, keyed by dept_id —
+      // no department's figures ever blend into another's here or in the table/chart below.
       const [sumRes, anoRes] = await Promise.all([
         fetch(`/api/board/summary/${year}?month=${month}`, { headers: authHeaders(token) }),
         fetch(`/api/board/anomalies?year=${year}&month=${month}`, { headers: authHeaders(token) }),
@@ -108,10 +112,10 @@ export default function BoardPage() {
   // Bar chart data: one bar group per dept
   const chartData = summaries.map(d => ({
     name: d.department_name.length > 8 ? d.dept_id.slice(0, 8) : d.department_name,
-    'On Track': d.on_track,
-    'Watch': d.watch,
-    'Off Track': d.off_track,
-    'No Data': d.no_data,
+    onTrack: d.on_track,
+    watch: d.watch,
+    offTrack: d.off_track,
+    noData: d.no_data,
   }))
 
   const toggleDept = (id: string) => {
@@ -126,202 +130,206 @@ export default function BoardPage() {
   const pct = (n: number) => totals.total > 0 ? Math.round(n / totals.total * 100) : 0
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F4F4]">
-      {/* Black/dark header for board */}
-      <header className="bg-[#1A1A1A] px-6 md:px-8 py-4 flex items-center gap-4">
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-7 h-7 bg-[#CC1F1F] rounded-sm flex items-center justify-center">
-            <span className="text-white font-semibold text-xs">IT</span>
-          </div>
-          <div>
-            <div className="text-white font-semibold text-sm leading-none">ITSEC</div>
-            <div className="text-white/40 text-[10px] font-normal">Executive Dashboard</div>
-          </div>
-        </div>
-        <div className="flex-1" />
-        <div className="flex items-center gap-2">
-          <Select value={String(month)} onValueChange={v => v && setMonth(parseInt(v))}>
-            <SelectTrigger className="w-[110px] h-7 text-xs bg-white/10 border-white/20 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS.map((m, i) => <SelectItem key={i + 1} value={String(i + 1)} className="text-xs">{m}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={String(year)} onValueChange={v => v && setYear(parseInt(v))}>
-            <SelectTrigger className="w-[80px] h-7 text-xs bg-white/10 border-white/20 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {YEARS.map(y => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        {user && (
-          <div className="flex items-center gap-3 shrink-0 ml-2">
-            <button
-              onClick={() => router.push('/admin')}
-              className={`flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors ${iconHoverClass}`}
-            >
-              <FileSearch size={13} />
-              <span className="hidden sm:inline">Data Review</span>
-            </button>
-            <div className="text-white/40 text-xs hidden sm:block">{user.name}</div>
-            <button onClick={() => router.push('/profile')} title="Profile">
-              <Avatar size="sm" className="ring-2 ring-white/20 hover:ring-white/40 transition-all">
-                {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
-                <AvatarFallback className="bg-white/10 text-white text-[10px]">
-                  {user.name.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </button>
-            <SwitchAccountDialog />
-            <button
-              onClick={() => setConfirmLogout(true)}
-              className={`flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors ${iconHoverClass}`}
-            >
-              <LogOut size={13} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          </div>
-        )}
-      </header>
-
-      <ConfirmDialog
-        open={confirmLogout}
-        onOpenChange={setConfirmLogout}
-        title="Sign out?"
-        description="You'll need your PIN again to sign back in."
-        confirmLabel="Sign out"
-        cancelLabel="Stay signed in"
-        onConfirm={handleLogout}
+    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+      <DeptTopNav
+        onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        onToggleRightPanel={() => setRightPanelOpen(v => !v)}
       />
 
-      <main className="flex-1 px-6 md:px-8 py-6 max-w-7xl mx-auto w-full">
-        {/* Anomaly alert */}
-        {anomalies.length > 0 && (
-          <button
-            onClick={() => setShowAnomalies(s => !s)}
-            className="w-full mb-6 flex items-center gap-3 bg-[#FFF8E6] border border-[#FDE68A] px-4 py-3 rounded-2xl text-left hover:bg-[#FFF3CC] transition-colors"
-          >
-            <AlertTriangle size={15} className="text-[#B45309] shrink-0" />
-            <span className="text-sm font-medium text-[#B45309] flex-1">
-              {anomalies.length} unresolved anomaly{anomalies.length > 1 ? 'ies' : ''} across departments
-            </span>
-            {showAnomalies ? <ChevronUp size={14} className="text-[#B45309]" /> : <ChevronDown size={14} className="text-[#B45309]" />}
-          </button>
+      <div className="flex-1 flex overflow-hidden">
+        {leftPanelOpen && (
+          <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
+            <DateSidebar
+              year={year}
+              onYearChange={setYear}
+              month={month}
+              onMonthChange={setMonth}
+              minYear={CURRENT_YEAR - 1}
+              maxYear={CURRENT_YEAR + 1}
+            />
+          </aside>
         )}
 
-        {showAnomalies && (
-          <div className="mb-6 bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
-            {anomalies.map((a, i) => (
-              <div key={i} className={`px-4 py-3 flex items-start gap-3 ${i > 0 ? 'border-t border-[#e5e5e5]' : ''}`}>
-                <AlertTriangle size={13} className="text-[#F59E0B] shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-medium text-[#1A1A1A]">{a.department_name} — {a.kpi_name}</div>
-                  <div className="text-xs text-[#808080] mt-0.5 font-normal">{a.description}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Summary stat cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {[
-            { label: 'On Track', value: totals.on_track, pct: pct(totals.on_track), color: '#166534', bg: '#DCFCE7', border: '#BBF7D0', Icon: TrendingUp },
-            { label: 'Watch', value: totals.watch, pct: pct(totals.watch), color: '#92400E', bg: '#FEF9C3', border: '#FDE68A', Icon: Minus },
-            { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: '#991B1B', bg: '#FEE2E2', border: '#FECACA', Icon: TrendingDown },
-            { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: '#6B7280', bg: '#F3F4F6', border: '#E5E7EB', Icon: Minus },
-          ].map(s => (
-            <div key={s.label} className="bg-white border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
-              <s.Icon size={16} style={{ color: s.color }} className="mt-0.5 shrink-0" />
-              <div>
-                <div className="text-2xl font-semibold" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-xs text-[#808080] font-normal">{s.label}</div>
-                <div className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }}>{s.pct}%</div>
-              </div>
+        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="mb-6">
+              <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Dashboard</h1>
+              <p className="text-sm text-[#737373] mt-1">
+                Every department&apos;s KPI status for {MONTHS[month - 1]} {year}, at a glance.
+              </p>
             </div>
-          ))}
-        </div>
 
-        {/* Stacked bar chart */}
-        {!loading && chartData.length > 0 && (
-          <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
-            <h3 className="font-medium text-[#282828] text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
-            <div style={{ height: 220 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                  <XAxis type="number" tick={{ fontSize: 9, fill: '#AAAAAA' }} tickLine={false} axisLine={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#595959' }} tickLine={false} axisLine={false} width={80} />
-                  <Tooltip
-                    contentStyle={{ fontSize: 11, border: '1px solid #EBEBEB', borderRadius: 2 }}
-                    cursor={{ fill: '#F9F9F9' }}
-                  />
-                  <Legend iconType="square" iconSize={8} wrapperStyle={{ fontSize: 10 }} />
-                  <Bar dataKey="On Track" stackId="a" fill={STATUS_COLORS.on_track} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="Watch" stackId="a" fill={STATUS_COLORS.watch} />
-                  <Bar dataKey="Off Track" stackId="a" fill={STATUS_COLORS.off_track} />
-                  <Bar dataKey="No Data" stackId="a" fill={STATUS_COLORS.no_data} radius={[0, 2, 2, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
+            {/* Anomaly alert */}
+            {anomalies.length > 0 && (
+              <button
+                onClick={() => setShowAnomalies(s => !s)}
+                className="w-full mb-6 flex items-center gap-3 bg-[#FFF8E6] border border-[#FDE68A] px-4 py-3 rounded-2xl text-left hover:bg-[#FFF3CC] transition-colors"
+              >
+                <AlertTriangle size={15} className="text-[#B45309] shrink-0" />
+                <span className="text-sm font-medium text-[#B45309] flex-1">
+                  {anomalies.length} unresolved anomaly{anomalies.length > 1 ? 'ies' : ''} across departments
+                </span>
+                {showAnomalies ? <ChevronUp size={14} className="text-[#B45309]" /> : <ChevronDown size={14} className="text-[#B45309]" />}
+              </button>
+            )}
 
-        {/* Department accordion */}
-        <div className="space-y-2">
-          <h3 className="font-medium text-[#1A1A1A] text-sm mb-3">Department Breakdown</h3>
-          {loading ? (
-            <div className="space-y-2">
-              {[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />)}
-            </div>
-          ) : summaries.map(dept => {
-            const expanded = expandedDepts.has(dept.dept_id)
-            const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
-            return (
-              <div key={dept.dept_id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
-                <button
-                  onClick={() => toggleDept(dept.dept_id)}
-                  className="w-full px-5 py-3.5 flex items-center gap-4 hover:bg-[#FAFAFA] transition-colors"
-                >
-                  <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-[#1A1A1A]">{dept.department_name}</div>
-                    <div className="text-xs text-[#AAAAAA] mt-0.5 font-normal">{dept.total} KPIs · {onPct}% on track</div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex gap-1.5">
-                      {[
-                        { v: dept.on_track, c: '#22C55E' },
-                        { v: dept.watch, c: '#F59E0B' },
-                        { v: dept.off_track, c: '#EF4444' },
-                        { v: dept.no_data, c: '#D1D5DB' },
-                      ].map((s, i) => s.v > 0 && (
-                        <span key={i} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: s.c, background: `${s.c}20` }}>
-                          {s.v}
-                        </span>
-                      ))}
+            {showAnomalies && (
+              <div className="mb-6 bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                {anomalies.map((a, i) => (
+                  <div key={i} className={`px-4 py-3 flex items-start gap-3 ${i > 0 ? 'border-t border-[#e5e5e5]' : ''}`}>
+                    <AlertTriangle size={13} className="text-[#F59E0B] shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-medium text-[#282828]">{a.department_name} — {a.kpi_name}</div>
+                      <div className="text-xs text-[#737373] mt-0.5 font-normal">{a.description}</div>
                     </div>
-                    {expanded ? <ChevronUp size={14} className="text-[#AAAAAA]" /> : <ChevronDown size={14} className="text-[#AAAAAA]" />}
                   </div>
-                </button>
-                {expanded && (
-                  <div className="border-t border-[#F2F2F2] px-5 py-3 space-y-3">
-                    <MonthGrid data={dept.month_statuses} compact />
-                    <button
-                      onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                      className="flex items-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors"
-                    >
-                      <FileSearch size={11} />
-                      View KPI details & sources
-                    </button>
+                ))}
+              </div>
+            )}
+
+            {/* Summary stat cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              {[
+                { label: 'On Track', value: totals.on_track, pct: pct(totals.on_track), color: '#166534', border: '#BBF7D0', Icon: TrendingUp },
+                { label: 'Watch', value: totals.watch, pct: pct(totals.watch), color: '#92400E', border: '#FDE68A', Icon: Minus },
+                { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: '#991B1B', border: '#FECACA', Icon: Minus },
+                { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: '#6B7280', border: '#E5E7EB', Icon: Minus },
+              ].map(s => (
+                <div key={s.label} className="bg-white border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
+                  <s.Icon size={16} style={{ color: s.color }} className="mt-0.5 shrink-0" />
+                  <div>
+                    <div className="text-2xl font-semibold" style={{ color: s.color }}>{s.value}</div>
+                    <div className="text-xs text-[#737373] font-normal">{s.label}</div>
+                    <div className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }}>{s.pct}%</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Tabs value={view} onValueChange={v => v && setView(v as 'charts' | 'table')}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="charts">Charts</TabsTrigger>
+                <TabsTrigger value="table">Table</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="charts">
+                {/* Stacked bar chart */}
+                {!loading && chartData.length > 0 && (
+                  <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
+                    <h3 className="font-medium text-[#282828] text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
+                    <ChartContainer config={chartConfig} className="h-[220px] w-full aspect-auto">
+                      <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                        <CartesianGrid horizontal={false} stroke="#F2F2F2" />
+                        <XAxis type="number" tick={{ fontSize: 9, fill: '#AAAAAA' }} tickLine={false} axisLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#595959' }} tickLine={false} axisLine={false} width={80} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+                        <Bar dataKey="onTrack" stackId="a" fill="var(--color-onTrack)" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="watch" stackId="a" fill="var(--color-watch)" />
+                        <Bar dataKey="offTrack" stackId="a" fill="var(--color-offTrack)" />
+                        <Bar dataKey="noData" stackId="a" fill="var(--color-noData)" radius={[0, 2, 2, 0]} />
+                      </BarChart>
+                    </ChartContainer>
                   </div>
                 )}
-              </div>
-            )
-          })}
-        </div>
-      </main>
+
+                {/* Department accordion */}
+                <div className="space-y-2">
+                  <h3 className="font-medium text-[#282828] text-sm mb-3">Department Breakdown</h3>
+                  {loading ? (
+                    <div className="space-y-2">
+                      {[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />)}
+                    </div>
+                  ) : summaries.map(dept => {
+                    const expanded = expandedDepts.has(dept.dept_id)
+                    const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
+                    return (
+                      <div key={dept.dept_id} className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                        <button
+                          onClick={() => toggleDept(dept.dept_id)}
+                          className="w-full px-5 py-3.5 flex items-center gap-4 hover:bg-[#FAFAFA] transition-colors"
+                        >
+                          <div className="flex-1 text-left">
+                            <div className="text-sm font-medium text-[#282828]">{dept.department_name}</div>
+                            <div className="text-xs text-[#AAAAAA] mt-0.5 font-normal">{dept.total} KPIs · {onPct}% on track</div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex gap-1.5">
+                              {[
+                                { v: dept.on_track, c: '#22C55E' },
+                                { v: dept.watch, c: '#F59E0B' },
+                                { v: dept.off_track, c: '#EF4444' },
+                                { v: dept.no_data, c: '#D1D5DB' },
+                              ].map((s, i) => s.v > 0 && (
+                                <span key={i} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: s.c, background: `${s.c}20` }}>
+                                  {s.v}
+                                </span>
+                              ))}
+                            </div>
+                            {expanded ? <ChevronUp size={14} className="text-[#AAAAAA]" /> : <ChevronDown size={14} className="text-[#AAAAAA]" />}
+                          </div>
+                        </button>
+                        {expanded && (
+                          <div className="border-t border-[#F2F2F2] px-5 py-3 space-y-3">
+                            <MonthGrid data={dept.month_statuses} compact />
+                            <button
+                              onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
+                              className="flex items-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors"
+                            >
+                              <FileSearch size={11} />
+                              View KPI details & sources
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="table">
+                <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Department</TableHead>
+                        <TableHead className="text-right">KPIs</TableHead>
+                        <TableHead className="text-right">On Track</TableHead>
+                        <TableHead className="text-right">Watch</TableHead>
+                        <TableHead className="text-right">Off Track</TableHead>
+                        <TableHead className="text-right">No Data</TableHead>
+                        <TableHead className="text-right">On Track %</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {summaries.map(dept => {
+                        const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
+                        return (
+                          <TableRow key={dept.dept_id}>
+                            <TableCell className="font-medium text-[#282828]">{dept.department_name}</TableCell>
+                            <TableCell className="text-right">{dept.total}</TableCell>
+                            <TableCell className="text-right" style={{ color: STATUS_COLORS.on_track }}>{dept.on_track}</TableCell>
+                            <TableCell className="text-right" style={{ color: STATUS_COLORS.watch }}>{dept.watch}</TableCell>
+                            <TableCell className="text-right" style={{ color: STATUS_COLORS.off_track }}>{dept.off_track}</TableCell>
+                            <TableCell className="text-right text-[#737373]">{dept.no_data}</TableCell>
+                            <TableCell className="text-right font-medium text-[#282828]">{onPct}%</TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </main>
+
+        {rightPanelOpen && (
+          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
+            <AddOnsPanel />
+          </aside>
+        )}
+      </div>
     </div>
   )
 }

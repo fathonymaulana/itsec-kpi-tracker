@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export interface AuthPayload {
   user_id: number
   name: string
-  role: 'dept_head' | 'corp_planning' | 'super_admin'
+  role: 'dept_head' | 'corp_planning'
   dept_id: string | null
 }
 

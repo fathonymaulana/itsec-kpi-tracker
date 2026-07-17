@@ -11,13 +11,12 @@ import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
 interface DirectoryUser {
   id: number
   name: string
-  role: 'dept_head' | 'corp_planning' | 'super_admin'
+  role: 'dept_head' | 'corp_planning'
   dept_id: string | null
   dept_name: string | null
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Super Admin',
   corp_planning: 'Corporate Planning',
 }
 
@@ -69,8 +68,7 @@ function LoginForm() {
       const stored = JSON.parse(localStorage.getItem('itsec_kpi_user') || '{}')
       const role = stored.role
       if (role === 'dept_head') router.push('/dept')
-      else if (role === 'corp_planning') router.push('/admin')
-      else router.push('/super-admin')
+      else router.push('/admin')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {

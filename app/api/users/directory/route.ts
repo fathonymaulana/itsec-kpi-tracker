@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 
 // Must stay dynamic — with no request-dependent APIs used, Next.js would otherwise statically
-// optimize this route and freeze the user list at build time, hiding anyone Super Admin adds later.
+// optimize this route and freeze the user list at build time, hiding anyone added later.
 export const dynamic = 'force-dynamic'
 
 // GET /api/users/directory — intentionally public (no auth): the login page needs this to populate

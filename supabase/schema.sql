@@ -6,9 +6,10 @@
 create extension if not exists "pgcrypto";
 
 create type verification_status as enum ('pending', 'verified', 'flagged');
--- 'board' is a retired value kept only because Postgres can't drop enum members in place — the
--- standalone Board role was merged into corp_planning (both /board and /admin are open to any
--- non-dept_head role already); application code no longer issues or accepts 'board'.
+-- 'board' and 'super_admin' are retired values kept only because Postgres can't drop enum members
+-- in place — both the standalone Board role and the standalone Super Admin role were merged into
+-- corp_planning (which now covers the executive dashboard, data verification, and user management);
+-- application code no longer issues or accepts either value.
 create type user_role as enum ('dept_head', 'corp_planning', 'board', 'super_admin');
 
 create table departments (
@@ -30,9 +31,9 @@ create table users (
 );
 create index on users (dept_id);
 
--- Self-service PIN changes don't take effect immediately — they sit here until a Super Admin
--- approves or rejects them; the old PIN keeps working in the meantime (see app/api/users/me/pin-request
--- and app/api/super-admin/pin-requests).
+-- Self-service PIN changes don't take effect immediately — they sit here until a corp_planning
+-- user approves or rejects them; the old PIN keeps working in the meantime (see
+-- app/api/users/me/pin-request and app/api/super-admin/pin-requests).
 create table pin_change_requests (
   id bigint generated always as identity primary key,
   user_id bigint not null references users(id) on delete cascade,

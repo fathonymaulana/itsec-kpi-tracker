@@ -4,6 +4,8 @@ import Image from 'next/image'
 import {
   Home2LineDuotone as Home,
   ClipboardListLineDuotone as ClipboardList,
+  ClipboardCheckLineDuotone as ClipboardCheck,
+  UsersGroupRoundedLineDuotone as Users,
   SidebarMinimalisticLineDuotone as SidebarIcon,
   BellLineDuotone as Bell,
 } from '@solar-icons/react-perf'
@@ -12,10 +14,17 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn, iconHoverClass } from '@/lib/utils'
 
-const NAV_ITEMS = [
-  { href: '/dept/dashboard', label: 'Dashboard', Icon: Home },
-  { href: '/dept', label: 'Data Entry', Icon: ClipboardList },
-]
+const NAV_ITEMS_BY_ROLE: Record<string, { href: string; label: string; Icon: typeof Home }[]> = {
+  dept_head: [
+    { href: '/dept/dashboard', label: 'Dashboard', Icon: Home },
+    { href: '/dept', label: 'Data Entry', Icon: ClipboardList },
+  ],
+  corp_planning: [
+    { href: '/board', label: 'Dashboard', Icon: Home },
+    { href: '/admin', label: 'Data Review', Icon: ClipboardCheck },
+    { href: '/super-admin', label: 'Users', Icon: Users },
+  ],
+}
 
 interface DeptTopNavProps {
   onToggleLeftPanel?: () => void
@@ -26,6 +35,7 @@ export function DeptTopNav({ onToggleLeftPanel, onToggleRightPanel }: DeptTopNav
   const router = useRouter()
   const pathname = usePathname()
   const { user } = useAuth()
+  const navItems = NAV_ITEMS_BY_ROLE[user?.role ?? ''] ?? []
 
   return (
     <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
@@ -34,7 +44,7 @@ export function DeptTopNav({ onToggleLeftPanel, onToggleRightPanel }: DeptTopNav
       </div>
 
       <nav className="flex items-center h-full justify-self-center">
-        {NAV_ITEMS.map(item => {
+        {navItems.map(item => {
           const active = pathname === item.href
           return (
             <button

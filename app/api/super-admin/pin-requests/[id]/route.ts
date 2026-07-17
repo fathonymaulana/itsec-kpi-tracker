@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/auth-server'
 
 // PATCH /api/super-admin/pin-requests/:id — body: { action: 'approve' | 'reject', note? }
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request, ['super_admin'])
+  const auth = requireAuth(request, ['corp_planning'])
   if (auth instanceof NextResponse) return auth
   const { id } = await params
 

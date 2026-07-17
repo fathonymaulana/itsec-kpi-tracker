@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn, iconHoverClass } from '@/lib/utils'
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Super Admin',
   corp_planning: 'Corporate Planning',
   dept_head: 'Department Head',
 }

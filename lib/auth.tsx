@@ -7,7 +7,7 @@ export interface AuthUser {
   user_id: number
   name: string
   avatar_url: string | null
-  role: 'dept_head' | 'corp_planning' | 'super_admin'
+  role: 'dept_head' | 'corp_planning'
   dept_id: string | null
   dept_name: string
 }

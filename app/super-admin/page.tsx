@@ -3,19 +3,17 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
-  UsersGroupRoundedLineDuotone as IconUsers,
   UserPlusLineDuotone as IconUserPlus,
   ShieldCheckLineDuotone as IconShieldCheck,
   KeyLineDuotone as IconKey,
-  LogoutLineDuotone as IconLogout,
   PenLineDuotone as IconPen,
   CheckCircleLineDuotone as IconCheckCircle,
   CloseCircleLineDuotone as IconCloseCircle,
   ClockCircleLineDuotone as IconClock,
-  TransferHorizontalLineDuotone as IconSwitch,
 } from '@solar-icons/react-perf'
-import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
 import { useAuth, authHeaders } from '@/lib/auth'
+import { DeptTopNav } from '@/components/layout/DeptTopNav'
+import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -23,22 +21,19 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader,
-  SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarInset, SidebarTrigger,
-} from '@/components/ui/sidebar'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { iconHoverClass } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
-type Role = 'dept_head' | 'corp_planning' | 'super_admin'
+type Role = 'dept_head' | 'corp_planning'
 interface AdminUser { id: number; name: string; avatar_url: string | null; role: Role; dept_id: string | null; dept_name: string | null; active: boolean; created_at: string }
 interface PinRequest { id: number; status: 'pending' | 'approved' | 'rejected'; requested_at: string; user: { id: number; name: string; role: Role; dept_id: string | null } }
 interface Dept { id: string; name: string }
 
-const ROLE_LABELS: Record<Role, string> = { dept_head: 'Department Head', corp_planning: 'Corporate Planning', super_admin: 'Super Admin' }
+const ROLE_LABELS: Record<Role, string> = { dept_head: 'Department Head', corp_planning: 'Corporate Planning' }
 
 export default function SuperAdminPage() {
-  const { user, token, ready, logout } = useAuth()
+  const { user, token, ready } = useAuth()
   const router = useRouter()
   const [tab, setTab] = useState<'users' | 'requests'>('users')
   const [users, setUsers] = useState<AdminUser[]>([])
@@ -48,12 +43,12 @@ export default function SuperAdminPage() {
   const [loading, setLoading] = useState(true)
   const [dialogUser, setDialogUser] = useState<AdminUser | 'new' | null>(null)
   const [resetPinFor, setResetPinFor] = useState<AdminUser | null>(null)
-  const [confirmLogout, setConfirmLogout] = useState(false)
+  const [rightPanelOpen, setRightPanelOpen] = useState(true)
 
   useEffect(() => {
     if (!ready) return
     if (!user) { router.push('/login'); return }
-    if (user.role !== 'super_admin') { router.push('/login'); return }
+    if (user.role !== 'corp_planning') { router.push('/login'); return }
   }, [user, router, ready])
 
   const fetchAll = useCallback(async () => {
@@ -72,13 +67,7 @@ export default function SuperAdminPage() {
     finally { setLoading(false) }
   }, [token])
 
-  useEffect(() => { if (user?.role === 'super_admin') fetchAll() }, [user, fetchAll])
-
-  const handleLogout = () => {
-    logout()
-    router.push('/login')
-    toast.success('Signed out', { description: 'See you next time.' })
-  }
+  useEffect(() => { if (user?.role === 'corp_planning') fetchAll() }, [user, fetchAll])
 
   const handleReview = async (id: number, action: 'approve' | 'reject') => {
     if (!token) return
@@ -118,197 +107,153 @@ export default function SuperAdminPage() {
     !search.trim() || u.name.toLowerCase().includes(search.toLowerCase()) || (u.dept_name || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  if (!ready || !user || user.role !== 'super_admin') return null
+  if (!ready || !user || user.role !== 'corp_planning') return null
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader className="p-3">
-          <div className="flex items-center gap-2 px-1 py-1">
-            <div className="w-7 h-7 bg-[#CC1F1F] rounded-sm flex items-center justify-center shrink-0">
-              <span className="text-white font-semibold text-xs">IT</span>
-            </div>
-            <div>
-              <div className="text-sm font-semibold leading-none">ITSEC</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">Super Admin</div>
-            </div>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Management</SidebarGroupLabel>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton isActive={tab === 'users'} onClick={() => setTab('users')}>
-                  <IconUsers size={16} />
-                  <span>Users</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton isActive={tab === 'requests'} onClick={() => setTab('requests')}>
-                  <IconKey size={16} />
-                  <span>PIN Requests</span>
-                </SidebarMenuButton>
-                {pendingCount > 0 && <SidebarMenuBadge>{pendingCount}</SidebarMenuBadge>}
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter className="p-3">
-          <div className="flex items-center gap-2 px-1 mb-2">
-            <Avatar size="sm">
-              {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
-              <AvatarFallback className="text-[10px]">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <div className="text-xs font-medium truncate">{user.name}</div>
-              <div className="text-[10px] text-muted-foreground">Super Admin</div>
-            </div>
-          </div>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => router.push('/profile')}>
-                <IconPen size={14} />
-                <span>Profile</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SwitchAccountDialog
-                renderTrigger={(onClick) => (
-                  <SidebarMenuButton onClick={onClick}>
-                    <IconSwitch size={14} />
-                    <span>Switch Account</span>
-                  </SidebarMenuButton>
-                )}
-              />
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setConfirmLogout(true)}>
-                <IconLogout size={14} />
-                <span>Sign out</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
+    <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
+      <DeptTopNav onToggleRightPanel={() => setRightPanelOpen(v => !v)} />
 
-      <SidebarInset>
-        <header className="flex items-center gap-3 border-b border-[#EBEBEB] px-4 py-3">
-          <SidebarTrigger />
-          <h1 className="text-sm font-medium text-[#1A1A1A]">{tab === 'users' ? 'User Management' : 'PIN Change Requests'}</h1>
-          <div className="flex-1" />
-          {tab === 'users' && (
-            <>
-              <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 w-56 text-xs" />
-              <Button size="sm" className={`h-8 bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`} onClick={() => setDialogUser('new')}>
-                <IconUserPlus size={14} className="mr-1" />
-                Add User
-              </Button>
-            </>
-          )}
-        </header>
-
-        <main className="p-6">
-          {loading ? (
-            <div className="h-64 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
-          ) : tab === 'users' ? (
-            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map(u => (
-                    <TableRow key={u.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar size="sm">
-                            {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.name} />}
-                            <AvatarFallback className="text-[10px]">{u.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm">{u.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{ROLE_LABELS[u.role]}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{u.dept_name || '—'}</TableCell>
-                      <TableCell>
-                        <Badge variant={u.active ? 'default' : 'destructive'} className="text-[10px]">
-                          {u.active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setDialogUser(u)}>
-                            <IconPen size={11} className="mr-1" /> Edit
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setResetPinFor(u)}>
-                            <IconKey size={11} className="mr-1" /> Reset PIN
-                          </Button>
-                          <Button
-                            size="sm" variant="outline"
-                            className={`h-6 text-[11px] ${u.active ? 'text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]' : 'text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]'}`}
-                            onClick={() => handleToggleActive(u)}
-                          >
-                            {u.active ? 'Deactivate' : 'Reactivate'}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
-              {requests.length === 0 ? (
-                <div className="text-center py-16 text-[#AAAAAA] text-sm">No PIN change requests.</div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Requested</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {requests.map(r => (
-                      <TableRow key={r.id}>
-                        <TableCell className="text-sm">{r.user?.name || 'Unknown'}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{new Date(r.requested_at).toLocaleString()}</TableCell>
-                        <TableCell>
-                          {r.status === 'pending' && <Badge className="text-[10px] gap-1"><IconClock size={10} /> Pending</Badge>}
-                          {r.status === 'approved' && <Badge variant="default" className="text-[10px] gap-1"><IconCheckCircle size={10} /> Approved</Badge>}
-                          {r.status === 'rejected' && <Badge variant="destructive" className="text-[10px] gap-1"><IconCloseCircle size={10} /> Rejected</Badge>}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {r.status === 'pending' && (
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button size="sm" variant="outline" className="h-6 text-[11px] text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]" onClick={() => handleReview(r.id, 'approve')}>
-                                <IconShieldCheck size={11} className="mr-1" /> Approve
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-6 text-[11px] text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]" onClick={() => handleReview(r.id, 'reject')}>
-                                Reject
-                              </Button>
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+      <div className="flex-1 flex overflow-hidden">
+        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h1 className="text-2xl font-semibold text-[#282828] tracking-[-0.6px]">Users</h1>
+                <p className="text-sm text-[#737373] mt-1">Manage every account across departments, and review PIN change requests.</p>
+              </div>
+              {tab === 'users' && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="h-9 w-56 rounded-lg border-[#e5e5e5]" />
+                  <Button size="sm" className={`h-9 rounded-lg bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white ${iconHoverClass}`} onClick={() => setDialogUser('new')}>
+                    <IconUserPlus size={14} className="mr-1" />
+                    Add User
+                  </Button>
+                </div>
               )}
             </div>
-          )}
+
+            <Tabs value={tab} onValueChange={v => v && setTab(v as 'users' | 'requests')}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="users">Users</TabsTrigger>
+                <TabsTrigger value="requests">
+                  PIN Requests{pendingCount > 0 && <Badge className="ml-1.5 text-[10px] px-1.5">{pendingCount}</Badge>}
+                </TabsTrigger>
+              </TabsList>
+
+              {loading ? (
+                <div className="h-64 bg-white border border-[#e5e5e5] rounded-3xl animate-pulse" />
+              ) : (
+                <>
+                  <TabsContent value="users">
+                    <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Department</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredUsers.map(u => (
+                            <TableRow key={u.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Avatar size="sm">
+                                    {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.name} />}
+                                    <AvatarFallback className="text-[10px]">{u.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm">{u.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{ROLE_LABELS[u.role]}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{u.dept_name || '—'}</TableCell>
+                              <TableCell>
+                                <Badge variant={u.active ? 'default' : 'destructive'} className="text-[10px]">
+                                  {u.active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setDialogUser(u)}>
+                                    <IconPen size={11} className="mr-1" /> Edit
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setResetPinFor(u)}>
+                                    <IconKey size={11} className="mr-1" /> Reset PIN
+                                  </Button>
+                                  <Button
+                                    size="sm" variant="outline"
+                                    className={`h-6 text-[11px] ${u.active ? 'text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]' : 'text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]'}`}
+                                    onClick={() => handleToggleActive(u)}
+                                  >
+                                    {u.active ? 'Deactivate' : 'Reactivate'}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="requests">
+                    <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
+                      {requests.length === 0 ? (
+                        <div className="text-center py-16 text-[#AAAAAA] text-sm">No PIN change requests.</div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>User</TableHead>
+                              <TableHead>Requested</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {requests.map(r => (
+                              <TableRow key={r.id}>
+                                <TableCell className="text-sm">{r.user?.name || 'Unknown'}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{new Date(r.requested_at).toLocaleString()}</TableCell>
+                                <TableCell>
+                                  {r.status === 'pending' && <Badge className="text-[10px] gap-1"><IconClock size={10} /> Pending</Badge>}
+                                  {r.status === 'approved' && <Badge variant="default" className="text-[10px] gap-1"><IconCheckCircle size={10} /> Approved</Badge>}
+                                  {r.status === 'rejected' && <Badge variant="destructive" className="text-[10px] gap-1"><IconCloseCircle size={10} /> Rejected</Badge>}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {r.status === 'pending' && (
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <Button size="sm" variant="outline" className="h-6 text-[11px] text-[#166534] border-[#BBF7D0] hover:bg-[#DCFCE7]" onClick={() => handleReview(r.id, 'approve')}>
+                                        <IconShieldCheck size={11} className="mr-1" /> Approve
+                                      </Button>
+                                      <Button size="sm" variant="outline" className="h-6 text-[11px] text-[#991B1B] border-[#FECACA] hover:bg-[#FEE2E2]" onClick={() => handleReview(r.id, 'reject')}>
+                                        Reject
+                                      </Button>
+                                    </div>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </div>
+                  </TabsContent>
+                </>
+              )}
+            </Tabs>
+          </div>
         </main>
-      </SidebarInset>
+
+        {rightPanelOpen && (
+          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
+            <AddOnsPanel />
+          </aside>
+        )}
+      </div>
 
       {dialogUser && (
         <UserFormDialog
@@ -327,17 +272,7 @@ export default function SuperAdminPage() {
           onSaved={() => { setResetPinFor(null); fetchAll() }}
         />
       )}
-
-      <ConfirmDialog
-        open={confirmLogout}
-        onOpenChange={setConfirmLogout}
-        title="Sign out?"
-        description="You'll need your PIN again to sign back in."
-        confirmLabel="Sign out"
-        cancelLabel="Stay signed in"
-        onConfirm={handleLogout}
-      />
-    </SidebarProvider>
+    </div>
   )
 }
 

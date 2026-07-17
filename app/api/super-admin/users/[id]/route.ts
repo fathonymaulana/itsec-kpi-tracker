@@ -7,7 +7,7 @@ import { requireAuth } from '@/lib/auth-server'
 // new_pin is a direct admin override — it bypasses the pending-request/approval flow entirely
 // (that flow is for self-service changes via /api/users/me/pin-request).
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request, ['super_admin'])
+  const auth = requireAuth(request, ['corp_planning'])
   if (auth instanceof NextResponse) return auth
   const { id } = await params
 
@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const patch: Record<string, unknown> = {}
   if (typeof name === 'string' && name.trim()) patch.name = name.trim()
   if (typeof role === 'string') {
-    if (!['dept_head', 'corp_planning', 'super_admin'].includes(role)) {
+    if (!['dept_head', 'corp_planning'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
     patch.role = role
@@ -31,6 +31,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (Object.keys(patch).length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
 
   const supabase = supabaseServer()
+
+  // Corporate Planning now also manages user accounts, so it's possible to deactivate or demote the
+  // only person left who can manage users — guard against that self-lockout.
+  const losesCorpPlanningAccess = (patch.active === false) || (patch.role && patch.role !== 'corp_planning')
+  if (losesCorpPlanningAccess) {
+    const { data: target } = await supabase.from('users').select('role').eq('id', id).maybeSingle()
+    if (target?.role === 'corp_planning') {
+      const { count } = await supabase
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('role', 'corp_planning')
+        .eq('active', true)
+        .neq('id', id)
+      if (!count) {
+        return NextResponse.json({ error: 'Can’t remove the last Corporate Planning account — add another one first.' }, { status: 400 })
+      }
+    }
+  }
+
   const { error } = await supabase.from('users').update(patch).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })

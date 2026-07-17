@@ -21,7 +21,6 @@ interface Profile {
 const ROLE_LABELS: Record<string, string> = {
   dept_head: 'Department Head',
   corp_planning: 'Corporate Planning',
-  super_admin: 'Super Admin',
 }
 
 export default function ProfilePage() {
@@ -114,7 +113,7 @@ export default function ProfilePage() {
       if (!r.ok) throw new Error(data.error || 'Request failed')
       setNewPin('')
       await fetchProfile()
-      toast.success('PIN change requested', { description: 'Your current PIN still works until Super Admin approves the change.' })
+      toast.success('PIN change requested', { description: 'Your current PIN still works until Corporate Planning approves the change.' })
     } catch (err) {
       toast.error('Couldn’t submit that request', { description: err instanceof Error ? err.message : 'Please try again.' })
     } finally {
@@ -180,12 +179,12 @@ export default function ProfilePage() {
             {/* Password card */}
             <div className="bg-white border border-[#e5e5e5] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
               <h2 className="font-medium text-[#1A1A1A] text-sm mb-1">Password</h2>
-              <p className="text-xs text-[#808080] mb-4">Changing your PIN requires Super Admin approval — your current PIN keeps working until then.</p>
+              <p className="text-xs text-[#808080] mb-4">Changing your PIN requires Corporate Planning&apos;s approval — your current PIN keeps working until then.</p>
 
               {profile.pending_pin_request ? (
                 <div className="flex items-center gap-2 text-xs text-[#B45309] bg-[#FFF8E6] border border-[#FDE68A] px-3 py-2.5 rounded">
                   <Clock size={13} className="shrink-0" />
-                  Waiting on Super Admin approval — requested {new Date(profile.pending_pin_request.requested_at).toLocaleString()}
+                  Waiting on Corporate Planning&apos;s approval — requested {new Date(profile.pending_pin_request.requested_at).toLocaleString()}
                 </div>
               ) : (
                 <div>
