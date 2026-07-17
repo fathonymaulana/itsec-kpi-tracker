@@ -269,7 +269,8 @@ export default function DeptPage() {
         )}
 
         {/* Center: data entry */}
-        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 py-8">
           <div className="max-w-3xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
@@ -331,7 +332,7 @@ export default function DeptPage() {
             ) : kpis.length === 0 ? (
               <div className="text-center py-20 text-[#AAAAAA] text-sm">No KPIs configured for this department.</div>
             ) : (
-              <div className="space-y-3 pb-28">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="font-medium text-[#282828] text-sm">{MONTHS[month - 1]} {year}</h2>
                   <span className="text-xs text-[#737373] font-normal">
@@ -358,9 +359,10 @@ export default function DeptPage() {
               </div>
             )}
           </div>
+          </div>
 
-          {/* Sticky Save/Submit bar */}
-          <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-gradient-to-t from-[#fafafa] via-[#fafafa] to-transparent flex justify-end gap-3">
+          {/* Save/Submit action bar — pinned flush to the bottom of the screen, not floating over content */}
+          <div className="shrink-0 border-t border-[#e5e5e5] bg-white px-6 py-4 flex justify-end gap-3">
             <Button
               variant="outline"
               className={`h-12 px-5 rounded-2xl gap-2 border-[#e5e5e5] bg-white ${iconHoverClass}`}
