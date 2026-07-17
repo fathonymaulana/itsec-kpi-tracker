@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/auth-server'
 
+// Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
+// round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
+export const preferredRegion = 'sin1'
+
 const MAX_BYTES = 2 * 1024 * 1024 // 2MB
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 

@@ -3,6 +3,10 @@ import bcrypt from 'bcryptjs'
 import { supabaseServer } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/auth-server'
 
+// Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
+// round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
+export const preferredRegion = 'sin1'
+
 // POST /api/users/me/pin-request — body: { new_pin }
 // Does NOT change the login PIN. Creates (or replaces) a pending request; the current PIN keeps
 // working until Corporate Planning approves it via /api/super-admin/pin-requests/[id].

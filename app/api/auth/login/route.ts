@@ -3,6 +3,10 @@ import bcrypt from 'bcryptjs'
 import { supabaseServer } from '@/lib/supabase-server'
 import { signToken } from '@/lib/auth-server'
 
+// Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
+// round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
+export const preferredRegion = 'sin1'
+
 export async function POST(request: NextRequest) {
   const { user_id, pin } = await request.json().catch(() => ({}))
   if (!user_id || !pin) return NextResponse.json({ error: 'user_id and PIN required' }, { status: 400 })

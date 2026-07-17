@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/auth-server'
 
+// Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
+// round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
+export const preferredRegion = 'sin1'
+
 // GET /api/modify-requests?dept_id=&year=&month=&status=
 // dept_head callers are always scoped to their own dept_id, regardless of what's in the query string —
 // corp_planning can pass dept_id to filter, or omit it to see requests across every department.

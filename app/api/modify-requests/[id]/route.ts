@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/auth-server'
 
+// Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
+// round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
+export const preferredRegion = 'sin1'
+
 // PATCH /api/modify-requests/:id — body: { action: 'approve' | 'reject', note? }
 // Approving deletes the submissions row for that dept/year/month, unlocking the whole month for
 // re-editing (this app has no per-KPI lock — submission is all-or-nothing for the period).

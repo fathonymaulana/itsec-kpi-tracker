@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/auth-server'
 
+// Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
+// round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
+export const preferredRegion = 'sin1'
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ actual_id: string }> }) {
   const auth = requireAuth(request, ['dept_head', 'corp_planning'])
   if (auth instanceof NextResponse) return auth

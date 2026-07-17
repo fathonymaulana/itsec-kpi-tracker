@@ -4,6 +4,10 @@ import { requireAuth } from '@/lib/auth-server'
 import { getStatus, type KpiStatus } from '@/lib/status'
 import { resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 
+// Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
+// round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
+export const preferredRegion = 'sin1'
+
 interface KpiWithSubMetrics {
   id: number
   numeric_target: number | null
