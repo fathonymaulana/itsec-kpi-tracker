@@ -72,9 +72,12 @@ function LoginForm() {
       const role = stored.role
       if (role === 'dept_head') router.push('/dept')
       else router.push('/admin')
+      // Intentionally leave `loading` true here instead of a `finally` — this component unmounts
+      // once the route change lands, so resetting it on success would only be visible as a flash
+      // back to "Sign in" in the moment before that happens. Only the failure path resets it, so
+      // the CTA stays in "Signing in…" continuously until the destination page opens or an error surfaces.
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed')
-    } finally {
       setLoading(false)
     }
   }
@@ -85,11 +88,22 @@ function LoginForm() {
     // `relative z-0` (not just `relative`) is required here: without an explicit z-index, this div
     // never becomes a stacking context of its own, so the -z-10 wordmark image below escapes to the
     // page's root stacking context instead and paints behind the <body> background — invisible.
-    <div className="h-screen overflow-hidden bg-app flex flex-col relative z-0">
+    <div className="h-screen overflow-hidden bg-white dark:bg-[#141414] flex flex-col relative z-0">
       {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
-          element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive. */}
-      <div className="absolute inset-x-0 top-0 h-40 md:h-56 -z-10 overflow-hidden pointer-events-none select-none">
-        <Image src="/login-wordmark.png" alt="" fill priority className="object-cover object-top" />
+          element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive.
+          scale-125 zooms the artwork in (so it reads bolder/bigger instead of a thin cropped sliver)
+          while object-cover keeps it filling the band with no empty gaps. dark:invert flips the
+          artwork's black strokes to white (and vice versa) for dark mode — the source PNG is a fixed
+          black-on-transparent asset with no separate dark variant, so this is done with a CSS filter
+          instead; invert() only touches RGB channels, so the transparent background is unaffected. */}
+      <div className="absolute inset-x-0 top-0 h-56 md:h-80 -z-10 overflow-hidden pointer-events-none select-none">
+        <Image
+          src="/login-wordmark.png"
+          alt=""
+          fill
+          priority
+          className="object-cover object-top scale-125 dark:invert"
+        />
       </div>
 
       {/* Centered content */}
@@ -98,6 +112,7 @@ function LoginForm() {
         <div className="flex flex-col gap-6 items-start w-full max-w-[373px] shrink-0">
           <div className="bg-panel border border-divider shadow-2xl rounded-3xl w-full p-8 flex flex-col gap-6">
             <ItsecLogo className="h-5 w-auto text-ink self-center" />
+            <p className="text-[20px] font-semibold text-ink self-center">Sign in to your account</p>
             <form onSubmit={handleSubmit} className="contents">
               {preselectedUser && (
                 <p className="text-ink-muted text-sm leading-6 tracking-[-0.192px] text-center w-full -mb-2">

@@ -21,6 +21,7 @@ import { getDefaultMonth, getDefaultYear, MONTHS } from '@/lib/status'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -263,7 +264,8 @@ export default function AdminPage() {
             </div>
 
             {/* Tabs — Modify Requests is global (any department), so it works with no department selected */}
-            <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-2 flex gap-1 mb-4">
+            <Tabs value={tab} onValueChange={v => v && setTab(v as TabKey)}>
+            <TabsList variant="line" className="mb-4">
               {([
                 { key: 'data', label: 'Data Review', icon: ChevronRight, boldIcon: ChevronRightBold },
                 { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield, boldIcon: ShieldBold },
@@ -271,21 +273,13 @@ export default function AdminPage() {
               ] as { key: TabKey; label: string; icon: React.ElementType; boldIcon: React.ElementType }[]).map(t => {
                 const Icon = tab === t.key ? t.boldIcon : t.icon
                 return (
-                  <button
-                    key={t.key}
-                    onClick={() => setTab(t.key)}
-                    className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 transition-colors ${
-                      tab === t.key
-                        ? 'border-[#CC1F1F] text-[#CC1F1F] font-medium'
-                        : 'border-transparent text-ink-muted hover:text-ink-soft'
-                    }`}
-                  >
-                    <Icon size={12} />
+                  <TabsTrigger key={t.key} value={t.key}>
+                    <Icon data-icon="inline-start" size={12} />
                     {t.label}
-                  </button>
+                  </TabsTrigger>
                 )
               })}
-            </div>
+            </TabsList>
 
             {/* MODIFY REQUESTS TAB */}
             {tab === 'modify' && (
@@ -338,7 +332,7 @@ export default function AdminPage() {
               <>
                 {/* DATA TAB */}
                 {tab === 'data' && (
-                  <div className="space-y-3">
+                  <div className="space-y-6">
                     {loading ? (
                       [...Array(4)].map((_, i) => <div key={i} className="h-24 bg-panel border border-divider rounded-3xl animate-pulse" />)
                     ) : kpis.length === 0 ? (
@@ -346,7 +340,7 @@ export default function AdminPage() {
                     ) : kpis.map(kpi => {
                       const verification = getKpiVerification(kpi.id)
                       return (
-                        <div key={kpi.id} className="space-y-1">
+                        <div key={kpi.id} className="space-y-2">
                           <KpiCard
                             kpi={kpi}
                             values={valuesAsStrings}
@@ -437,6 +431,7 @@ export default function AdminPage() {
                 )}
               </>
             )}
+            </Tabs>
           </div>
         </main>
 
