@@ -12,7 +12,7 @@ export function MonthGrid({ data, compact = false }: MonthGridProps) {
       {MONTHS.map((label, i) => {
         const month = i + 1
         const status = data[month]
-        const colors = status ? getStatusColors(status) : { bg: '#F2F2F2', border: '#DDDDDD', text: '#AAAAAA' }
+        const colors = getStatusColors(status ?? 'no_data')
         return (
           <div
             key={month}

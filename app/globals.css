@@ -72,6 +72,15 @@
     --warning-soft-bg: #fff8e6;
     --warning-text: #b45309;
     --warning-soft-border: #fde68a;
+
+    /* getStatusColors()'s "no_data" / "review_manually" pair — the same neutral-grey badge role,
+       centralized here so StatusBadge/MonthGrid/KpiCard all pick up dark mode automatically. */
+    --no-data-text: #aaaaaa;
+    --no-data-bg: #f2f2f2;
+    --no-data-border: #dddddd;
+    --review-text: #595959;
+    --review-bg: #ebebeb;
+    --review-border: #cccccc;
   }
   .dark {
     --background: oklch(0.145 0 0);
@@ -124,6 +133,13 @@
     --warning-soft-bg: rgba(245, 158, 11, 0.15);
     --warning-text: #fbbf24;
     --warning-soft-border: rgba(245, 158, 11, 0.3);
+
+    --no-data-text: #8a8a8a;
+    --no-data-bg: rgba(255, 255, 255, 0.06);
+    --no-data-border: rgba(255, 255, 255, 0.14);
+    --review-text: #b3b3b3;
+    --review-bg: rgba(255, 255, 255, 0.08);
+    --review-border: rgba(255, 255, 255, 0.18);
   }
   * {
     @apply border-border;

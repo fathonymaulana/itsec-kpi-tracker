@@ -38,11 +38,13 @@ interface DeptSummary {
 
 // Status colors are semantic (green/amber/red/gray for on-track/watch/off-track/no-data) and stay
 // distinct from the app's default black chart color, which is reserved for single-series trend charts.
+// Referencing the CSS custom properties (not literal hex) is what makes these respond to dark mode —
+// inline style="color:#hex" never sees the .dark class at all, only var() lookups do.
 const STATUS_COLORS = {
-  on_track: '#22C55E',
-  watch: '#F59E0B',
-  off_track: '#EF4444',
-  no_data: '#D1D5DB',
+  on_track: 'var(--success-text)',
+  watch: 'var(--warning-text)',
+  off_track: 'var(--danger-text)',
+  no_data: 'var(--ink-faint)',
 }
 
 const chartConfig: ChartConfig = {
@@ -186,10 +188,10 @@ export default function BoardPage() {
             {/* Summary stat cards */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               {[
-                { label: 'On Track', value: totals.on_track, pct: pct(totals.on_track), color: '#166534', border: '#BBF7D0', Icon: TrendingUp },
-                { label: 'Watch', value: totals.watch, pct: pct(totals.watch), color: '#92400E', border: '#FDE68A', Icon: Minus },
-                { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: '#991B1B', border: '#FECACA', Icon: Minus },
-                { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: '#6B7280', border: '#E5E7EB', Icon: Minus },
+                { label: 'On Track', value: totals.on_track, pct: pct(totals.on_track), color: 'var(--success-text)', border: 'var(--success-soft-border)', Icon: TrendingUp },
+                { label: 'Watch', value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', border: 'var(--warning-soft-border)', Icon: Minus },
+                { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', border: 'var(--danger-soft-border)', Icon: Minus },
+                { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-faint)', border: 'var(--divider)', Icon: Minus },
               ].map(s => (
                 <div key={s.label} className="bg-panel border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
                   <s.Icon size={16} style={{ color: s.color }} className="mt-0.5 shrink-0" />
@@ -219,17 +221,17 @@ export default function BoardPage() {
                 {!loading && chartData.length > 0 && (
                   <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
                     <h3 className="font-medium text-ink text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
-                    <ChartContainer config={chartConfig} className="h-[220px] w-full aspect-auto">
-                      <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                        <CartesianGrid horizontal={false} stroke="#F2F2F2" />
-                        <XAxis type="number" tick={{ fontSize: 9, fill: '#AAAAAA' }} tickLine={false} axisLine={false} />
-                        <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#595959' }} tickLine={false} axisLine={false} width={80} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartContainer config={chartConfig} className="h-[320px] w-full aspect-auto">
+                      <BarChart data={chartData} layout="vertical" barSize={18} barCategoryGap="30%" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                        <CartesianGrid horizontal={false} stroke="var(--divider)" />
+                        <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'var(--ink-soft)' }} tickLine={false} axisLine={false} width={84} />
+                        <ChartTooltip cursor={{ fill: 'var(--panel-soft-bg)' }} content={<ChartTooltipContent />} />
                         <ChartLegend content={<ChartLegendContent />} />
-                        <Bar dataKey="onTrack" stackId="a" fill="var(--color-onTrack)" radius={[0, 0, 0, 0]} />
-                        <Bar dataKey="watch" stackId="a" fill="var(--color-watch)" />
-                        <Bar dataKey="offTrack" stackId="a" fill="var(--color-offTrack)" />
-                        <Bar dataKey="noData" stackId="a" fill="var(--color-noData)" radius={[0, 2, 2, 0]} />
+                        <Bar dataKey="onTrack" stackId="a" fill="var(--color-onTrack)" radius={[3, 3, 3, 3]} />
+                        <Bar dataKey="watch" stackId="a" fill="var(--color-watch)" radius={[3, 3, 3, 3]} />
+                        <Bar dataKey="offTrack" stackId="a" fill="var(--color-offTrack)" radius={[3, 3, 3, 3]} />
+                        <Bar dataKey="noData" stackId="a" fill="var(--color-noData)" radius={[3, 3, 3, 3]} />
                       </BarChart>
                     </ChartContainer>
                   </div>
@@ -258,12 +260,12 @@ export default function BoardPage() {
                           <div className="flex items-center gap-3 shrink-0">
                             <div className="flex gap-1.5">
                               {[
-                                { v: dept.on_track, c: '#22C55E' },
-                                { v: dept.watch, c: '#F59E0B' },
-                                { v: dept.off_track, c: '#EF4444' },
-                                { v: dept.no_data, c: '#D1D5DB' },
+                                { v: dept.on_track, c: 'var(--success-text)', bg: 'var(--success-soft-bg)' },
+                                { v: dept.watch, c: 'var(--warning-text)', bg: 'var(--warning-soft-bg)' },
+                                { v: dept.off_track, c: 'var(--danger-text)', bg: 'var(--danger-soft-bg)' },
+                                { v: dept.no_data, c: 'var(--ink-faint)', bg: 'var(--panel-soft-bg)' },
                               ].map((s, i) => s.v > 0 && (
-                                <span key={i} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: s.c, background: `${s.c}20` }}>
+                                <span key={i} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: s.c, background: s.bg }}>
                                   {s.v}
                                 </span>
                               ))}

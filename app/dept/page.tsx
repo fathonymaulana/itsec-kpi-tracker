@@ -34,6 +34,7 @@ interface Kpi {
   target_text: string
   numeric_target: number | null
   direction: number
+  frequency?: string | null
   sub_metrics: SubMetric[]
 }
 
@@ -63,6 +64,7 @@ export default function DeptPage() {
   const [month, setMonth] = useState(getDefaultMonth())
   const [year, setYear] = useState(getDefaultYear())
   const [values, setValues] = useState<Record<number, string>>({})
+  const [yearActuals, setYearActuals] = useState<Record<number, Record<number, number>>>({}) // month → smId → value
   const [savedActuals, setSavedActuals] = useState<Record<number, Actual>>({}) // sub_metric_id → actual
   const [dataSources, setDataSources] = useState<Record<number, { url: string; note: string }>>({}) // kpi_id → ds
   const [loading, setLoading] = useState(true)
@@ -128,6 +130,22 @@ export default function DeptPage() {
     }
   }, [user, token, year, month])
 
+  // Whole year's actuals, independent of the single month being edited above — needed so KpiCard can
+  // sum a quarter/year's entries for KPIs whose target isn't monthly (see lib/frequency.ts).
+  const fetchYearActuals = useCallback(async () => {
+    if (!user || !token) return
+    try {
+      const r = await fetch(`/api/actuals?dept_id=${user.dept_id}&year=${year}`, { headers: authHeaders(token) })
+      const data = await r.json()
+      const byMonth: Record<number, Record<number, number>> = {}
+      for (const a of (data.actuals || [])) {
+        if (!byMonth[a.month]) byMonth[a.month] = {}
+        byMonth[a.month][a.sub_metric_id] = a.value
+      }
+      setYearActuals(byMonth)
+    } catch { /* non-fatal */ }
+  }, [user, token, year])
+
   const checkSubmission = useCallback(async () => {
     if (!user || !token) return
     try {
@@ -151,8 +169,8 @@ export default function DeptPage() {
   }, [user, fetchKpis])
 
   useEffect(() => {
-    if (user) { fetchActuals(); checkSubmission(); fetchModifyRequests() }
-  }, [user, fetchActuals, checkSubmission, fetchModifyRequests])
+    if (user) { fetchActuals(); fetchYearActuals(); checkSubmission(); fetchModifyRequests() }
+  }, [user, fetchActuals, fetchYearActuals, checkSubmission, fetchModifyRequests])
 
   const handleValueChange = (subMetricId: number, val: string) => {
     setValues(prev => ({ ...prev, [subMetricId]: val }))
@@ -209,6 +227,7 @@ export default function DeptPage() {
     if (!r.ok) throw new Error(data.error || 'Save failed')
 
     await fetchActuals()
+    await fetchYearActuals()
     setLastSavedAt(new Date())
     setIsDirty(false)
   }
@@ -380,6 +399,8 @@ export default function DeptPage() {
                     key={kpi.id}
                     kpi={kpi}
                     values={values}
+                    yearActuals={yearActuals}
+                    month={month}
                     dataSource={dataSources[kpi.id]}
                     onValueChange={handleValueChange}
                     onDataSourceSave={handleDataSourceSave}

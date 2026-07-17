@@ -15,12 +15,12 @@ import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
-import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { getStatus, getDefaultMonth, MONTHS, type KpiStatus } from '@/lib/status'
-import { getPrimarySubMetric, resolvePrimaryValue, resolveAllValues, getSubMetricStatuses } from '@/lib/kpi-primary'
+import { getPrimarySubMetric, resolvePrimaryValue, getPeriodStatuses } from '@/lib/kpi-primary'
+import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -33,20 +33,23 @@ interface SubMetric {
 }
 interface Kpi {
   id: number; name: string; target_text: string; numeric_target: number | null; direction: number
+  frequency?: string | null
   sub_metrics: SubMetric[]
 }
 
 // Status is the worst status among every sub-metric that carries its own target (set per-row, not
 // per-KPI — see lib/kpi-primary.ts) — a KPI with several independently-targeted components (e.g.
 // "≥4 agreements; ≥100 leads; ≥IDR5B pipeline") is off track if ANY of them is, not just the primary
-// one. Falls back to the primary sub-metric's target for simple single-target KPIs. Matches the same
-// logic used server-side in app/api/board/summary/[year] and in KpiCard's per-row badges.
+// one. Evaluated over the KPI's own reporting period (see lib/frequency.ts) — a "≥4/year" target
+// isn't judged against a single month's raw entry, it's judged against the year's running total, so
+// entering "1" in one month of a 4-per-year target doesn't wrongly flag off track. Falls back to the
+// primary sub-metric's target for simple single-target KPIs. Matches the logic used server-side in
+// app/api/board/summary/[year] and in KpiCard's per-row badges.
 // kpi.numeric_target/direction are stale for KPIs with multiple components and must not be used here.
-function statusFor(kpi: Kpi, valuesBySmId: Record<number, number>): { value: number | null; status: KpiStatus } {
+function statusFor(kpi: Kpi, actualsByMonth: Record<number, Record<number, number>>, month: number): { value: number | null; status: KpiStatus } {
   const primary = getPrimarySubMetric(kpi.sub_metrics)
-  const value = resolvePrimaryValue(kpi.sub_metrics, valuesBySmId)
-  const allValues = resolveAllValues(kpi.sub_metrics, valuesBySmId)
-  const { overall } = getSubMetricStatuses(kpi.sub_metrics, allValues)
+  const value = resolvePrimaryValue(kpi.sub_metrics, actualsByMonth[month] || {})
+  const { overall } = getPeriodStatuses(kpi.sub_metrics, actualsByMonth, kpi.frequency, month)
   const status = overall ?? getStatus(value, primary?.numeric_target ?? null, primary?.direction ?? 1)
   return { value, status }
 }
@@ -106,10 +109,7 @@ export default function DeptDashboard() {
   // for the still-running month haven't been submitted yet. Using the real current month here was why
   // the stat cards stayed at "No Data" right after a dept_head submitted last month's data.
   const currentMonth = getDefaultMonth()
-  const statuses = kpis.map(kpi => {
-    const vals = allActuals[currentMonth] || {}
-    return statusFor(kpi, vals).status
-  })
+  const statuses = kpis.map(kpi => statusFor(kpi, allActuals, currentMonth).status)
   const onTrack = statuses.filter(s => s === 'on_track').length
   const watch = statuses.filter(s => s === 'watch').length
   const offTrack = statuses.filter(s => s === 'off_track').length
@@ -123,17 +123,17 @@ export default function DeptDashboard() {
     const monthValues = MONTHS.map((label, mi) => {
       const m = mi + 1
       const vals = allActuals[m] || {}
-      const { value: v, status } = statusFor(kpi, vals)
-      monthStatuses[m] = status
+      const v = resolvePrimaryValue(kpi.sub_metrics, vals)
+      monthStatuses[m] = statusFor(kpi, allActuals, m).status
       const displayValue = v !== null
         ? unit === '%' ? parseFloat((v * 100).toFixed(1)) : parseFloat(v.toFixed(2))
         : null
       return { month: label.slice(0, 3), value: displayValue, raw: v }
     })
     const hasData = monthValues.some(d => d.value !== null)
-    const currentVals = allActuals[currentMonth] || {}
-    const { value: currentV, status: currentStatus } = statusFor(kpi, currentVals)
-    return { kpi, unit, monthValues, monthStatuses, hasData, currentV, currentStatus }
+    const period = parsePeriod(kpi.frequency)
+    const { value: currentV } = statusFor(kpi, allActuals, currentMonth)
+    return { kpi, unit, monthValues, monthStatuses, hasData, currentV, period }
   })
 
   if (!ready || !user) return null
@@ -170,10 +170,10 @@ export default function DeptDashboard() {
             {/* Stat summary */}
             <div className="grid grid-cols-2 gap-3 mb-8">
               {[
-                { label: 'On Track', value: onTrack, color: '#0d9488', Icon: TrendingUp, caption: 'performing at or above target' },
-                { label: 'Watch', value: watch, color: '#B45309', Icon: Eye, caption: 'trending toward target, worth watching' },
-                { label: 'Off Track', value: offTrack, color: '#CC1F1F', Icon: TrendingDown, caption: 'below target — needs attention' },
-                { label: 'No Data', value: noData, color: '#737373', Icon: CircleDashed, caption: 'not yet entered this month' },
+                { label: 'On Track', value: onTrack, color: 'var(--success-text)', Icon: TrendingUp, caption: 'performing at or above target' },
+                { label: 'Watch', value: watch, color: 'var(--warning-text)', Icon: Eye, caption: 'trending toward target, worth watching' },
+                { label: 'Off Track', value: offTrack, color: 'var(--danger-text)', Icon: TrendingDown, caption: 'below target — needs attention' },
+                { label: 'No Data', value: noData, color: 'var(--ink-muted)', Icon: CircleDashed, caption: 'not yet entered this month' },
               ].map(s => {
                 const pct = kpis.length > 0 ? Math.round((s.value / kpis.length) * 100) : 0
                 return (
@@ -209,7 +209,7 @@ export default function DeptDashboard() {
                 </TabsList>
 
                 <TabsContent value="charts" className="space-y-4">
-                  {kpisWithData.map(({ kpi, unit, monthValues, monthStatuses, hasData, currentV, currentStatus }) => {
+                  {kpisWithData.map(({ kpi, unit, monthValues, monthStatuses, hasData, currentV, period }) => {
                     const chartConfig: ChartConfig = { value: { label: kpi.name, color: CHART_COLOR } }
                     return (
                       <div key={kpi.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
@@ -217,7 +217,9 @@ export default function DeptDashboard() {
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-ink text-sm">{kpi.name}</span>
-                              <StatusBadge status={currentStatus} />
+                              <span className="inline-flex items-center border border-divider bg-panel-soft text-ink-muted px-2.5 py-1 text-xs rounded font-medium tracking-wide">
+                                {periodLabel(period)}
+                              </span>
                             </div>
                             <div className="text-ink-muted text-xs mt-0.5 font-normal">Target: {kpi.target_text}</div>
                           </div>
@@ -283,12 +285,14 @@ export default function DeptDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {kpisWithData.map(({ kpi, unit, monthValues, currentStatus }) => (
+                        {kpisWithData.map(({ kpi, unit, monthValues, period }) => (
                           <TableRow key={kpi.id}>
                             <TableCell className="sticky left-0 bg-panel font-medium text-ink">
                               <div className="flex items-center gap-2">
                                 {kpi.name}
-                                <StatusBadge status={currentStatus} />
+                                <span className="inline-flex items-center border border-divider bg-panel-soft text-ink-muted px-2.5 py-1 text-xs rounded font-medium tracking-wide">
+                                  {periodLabel(period)}
+                                </span>
                               </div>
                               <div className="text-xs text-ink-muted font-normal mt-0.5">Target: {kpi.target_text}</div>
                             </TableCell>

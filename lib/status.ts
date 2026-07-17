@@ -51,13 +51,16 @@ export function getStatusLabel(status: KpiStatus): string {
   return labels[status]
 }
 
+// Colors are CSS custom-property references, not literal hex — that's what lets every consumer
+// (StatusBadge, MonthGrid, KpiCard) respond to dark mode automatically, since inline style="color:#hex"
+// never sees the .dark class but style="color:var(--x)" does.
 export function getStatusColors(status: KpiStatus) {
   const map: Record<KpiStatus, { text: string; bg: string; border: string }> = {
-    on_track:        { text: '#1A6B3A', bg: '#EBF5EB', border: '#A3D4B0' },
-    watch:           { text: '#B45309', bg: '#FFF3E0', border: '#F6C687' },
-    off_track:       { text: '#CC1F1F', bg: '#FDECEA', border: '#F5A8A8' },
-    no_data:         { text: '#AAAAAA', bg: '#F2F2F2', border: '#DDDDDD' },
-    review_manually: { text: '#595959', bg: '#EBEBEB', border: '#CCCCCC' },
+    on_track:        { text: 'var(--success-text)', bg: 'var(--success-soft-bg)', border: 'var(--success-soft-border)' },
+    watch:           { text: 'var(--warning-text)', bg: 'var(--warning-soft-bg)', border: 'var(--warning-soft-border)' },
+    off_track:       { text: 'var(--danger-text)', bg: 'var(--danger-soft-bg)', border: 'var(--danger-soft-border)' },
+    no_data:         { text: 'var(--no-data-text)', bg: 'var(--no-data-bg)', border: 'var(--no-data-border)' },
+    review_manually: { text: 'var(--review-text)', bg: 'var(--review-bg)', border: 'var(--review-border)' },
   }
   return map[status]
 }

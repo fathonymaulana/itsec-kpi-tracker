@@ -25,7 +25,7 @@ const CURRENT_YEAR = new Date().getFullYear()
 
 interface Dept { id: string; name: string; submitted: boolean }
 interface SubMetric { id: number; name: string; unit: string; is_calculated: number; formula_key: string | null; calc_input_positions: string | null }
-interface Kpi { id: number; name: string; target_text: string; numeric_target: number | null; direction: number; sub_metrics: SubMetric[] }
+interface Kpi { id: number; name: string; target_text: string; numeric_target: number | null; direction: number; frequency?: string | null; sub_metrics: SubMetric[] }
 interface Actual { id: number; sub_metric_id: number; kpi_id: number; value: number; data_source_url?: string; data_source_note?: string }
 interface Verification { id: number; kpi_id: number; status: 'pending' | 'verified' | 'flagged'; note: string; verified_at: string }
 interface ModifyRequest {
@@ -45,6 +45,7 @@ export default function AdminPage() {
   const [year, setYear] = useState(getDefaultYear())
   const [kpis, setKpis] = useState<Kpi[]>([])
   const [actuals, setActuals] = useState<Record<number, Actual>>({}) // smId → actual
+  const [yearActuals, setYearActuals] = useState<Record<number, Record<number, number>>>({}) // month → smId → value
   const [dataSources, setDataSources] = useState<Record<number, { url: string; note: string }>>({}) // kpi_id → ds
   const [verifications, setVerifications] = useState<Verification[]>([])
   const [modifyRequests, setModifyRequests] = useState<ModifyRequest[]>([])
@@ -95,14 +96,18 @@ export default function AdminPage() {
     if (!token || !selectedDept) return
     setLoading(true)
     try {
-      const [kpiRes, actRes, verRes] = await Promise.all([
+      const [kpiRes, actRes, verRes, yearActRes] = await Promise.all([
         fetch(`/api/departments/${selectedDept}/kpis`, { headers: authHeaders(token) }),
         fetch(`/api/actuals?dept_id=${selectedDept}&year=${year}&month=${month}`, { headers: authHeaders(token) }),
         fetch(`/api/verifications?dept_id=${selectedDept}&year=${year}&month=${month}`, { headers: authHeaders(token) }),
+        // Whole year, independent of the month above — lets KpiCard sum a quarter/year's entries
+        // for KPIs whose target isn't monthly (see lib/frequency.ts).
+        fetch(`/api/actuals?dept_id=${selectedDept}&year=${year}`, { headers: authHeaders(token) }),
       ])
       const kpiData = await kpiRes.json()
       const actData = await actRes.json()
       const verData = await verRes.json()
+      const yearActData = await yearActRes.json()
 
       setKpis(kpiData.kpis || [])
 
@@ -119,6 +124,13 @@ export default function AdminPage() {
       setActuals(actMap)
       setDataSources(ds)
       setVerifications(verData.verifications || [])
+
+      const byMonth: Record<number, Record<number, number>> = {}
+      for (const a of (yearActData.actuals || [])) {
+        if (!byMonth[a.month]) byMonth[a.month] = {}
+        byMonth[a.month][a.sub_metric_id] = a.value
+      }
+      setYearActuals(byMonth)
     } catch { /* non-fatal */ }
     finally { setLoading(false) }
   }, [token, selectedDept, year, month])
@@ -335,6 +347,8 @@ export default function AdminPage() {
                           <KpiCard
                             kpi={kpi}
                             values={valuesAsStrings}
+                            yearActuals={yearActuals}
+                            month={month}
                             dataSource={dataSources[kpi.id]}
                             readOnly
                           />

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/auth-server'
 import { getStatus, worstStatus, type KpiStatus } from '@/lib/status'
-import { resolvePrimaryValue, resolveAllValues, getSubMetricStatuses, type SubMetricLike } from '@/lib/kpi-primary'
+import { resolvePrimaryValue, getPeriodStatuses, type SubMetricLike } from '@/lib/kpi-primary'
 
 // Supabase project is in ap-southeast (Singapore-area) — pin this function to sin1 so DB
 // round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
@@ -12,6 +12,7 @@ interface KpiWithSubMetrics {
   id: number
   numeric_target: number | null
   direction: number
+  frequency: string | null
   sub_metrics: SubMetricLike[]
 }
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // Fetch every department's data in a fixed, small number of batched queries instead of
   // looping per department (which used to run 5 sequential queries per department — 40+
   // round-trips for an 8-department org on every dashboard load).
-  const { data: allKpis } = await supabase.from('kpis').select('id, dept_id, numeric_target, direction').in('dept_id', deptIds)
+  const { data: allKpis } = await supabase.from('kpis').select('id, dept_id, numeric_target, direction, frequency').in('dept_id', deptIds)
   const kpiIds = (allKpis || []).map(k => k.id)
 
   const [{ data: allSubMetrics }, { data: allSubmissions }] = await Promise.all([
@@ -62,9 +63,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     smByKpi.get(sm.kpi_id)!.push(sm)
   }
   const actualsBySm = new Map<number, { month: number; value: number | null }[]>()
+  const actualsByMonth: Record<number, Record<number, number>> = {} // month -> smId -> value, all depts
   for (const a of allActuals || []) {
     if (!actualsBySm.has(a.sub_metric_id)) actualsBySm.set(a.sub_metric_id, [])
     actualsBySm.get(a.sub_metric_id)!.push({ month: a.month, value: a.value })
+    if (a.value !== null) {
+      if (!actualsByMonth[a.month]) actualsByMonth[a.month] = {}
+      actualsByMonth[a.month][a.sub_metric_id] = Number(a.value)
+    }
   }
   const submittedDeptSet = new Set((allSubmissions || []).map(s => s.dept_id))
 
@@ -74,23 +80,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       id: k.id,
       numeric_target: k.numeric_target,
       direction: k.direction,
+      frequency: k.frequency,
       sub_metrics: (smByKpi.get(k.id) || []).map(sm => ({ ...sm, is_calculated: !!sm.is_calc })),
     }))
     const smIdsForDept = kpis.flatMap(k => k.sub_metrics.map(sm => sm.id))
 
+    // Worst status among every sub-metric that carries its own target, evaluated over the KPI's own
+    // reporting period (see lib/frequency.ts) — a "≥4/year" target is judged against the year's
+    // running total, not a single month's raw entry, so an early-year monthly value of 1 doesn't
+    // wrongly flag off track.
     const statusForMonth = (kpi: KpiWithSubMetrics, m: number): KpiStatus => {
-      const valuesBySmId: Record<number, number> = {}
-      for (const sm of kpi.sub_metrics) {
-        const row = (actualsBySm.get(sm.id) || []).find(r => r.month === m)
-        if (row && row.value !== null) valuesBySmId[sm.id] = Number(row.value)
-      }
-      // Worst status among every sub-metric that carries its own target — a KPI with several
-      // independently-targeted components is off track if ANY of them is, not just the primary one.
-      const allValues = resolveAllValues(kpi.sub_metrics, valuesBySmId)
-      const { overall } = getSubMetricStatuses(kpi.sub_metrics, allValues)
+      const { overall } = getPeriodStatuses(kpi.sub_metrics, actualsByMonth, kpi.frequency, m)
       if (overall) return overall
       const primary = kpi.sub_metrics.find(sm => sm.is_calculated) ?? kpi.sub_metrics[0]
-      const value = resolvePrimaryValue(kpi.sub_metrics, valuesBySmId)
+      const value = resolvePrimaryValue(kpi.sub_metrics, actualsByMonth[m] || {})
       const target = primary?.numeric_target ?? null
       const direction = primary?.direction ?? 1
       return getStatus(value, target, direction)

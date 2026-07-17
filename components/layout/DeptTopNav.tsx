@@ -115,7 +115,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
 
         {user && (
           <button onClick={() => router.push('/profile')} title="Profile">
-            <Avatar size="sm" className="size-8 ring-1 ring-divider">
+            <Avatar className="ring-1 ring-divider">
               {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
               <AvatarFallback className="text-[10px]">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
