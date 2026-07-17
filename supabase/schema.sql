@@ -45,6 +45,8 @@ create table pin_change_requests (
   review_note text
 );
 create index on pin_change_requests (status) where status = 'pending';
+create index on pin_change_requests (user_id);
+create index on pin_change_requests (reviewed_by);
 
 create table kpis (
   id bigint generated always as identity primary key,
@@ -147,6 +149,9 @@ create index on anomalies (sub_metric_id, year, month) where not dismissed;
 create index on submissions (dept_id, year, month);
 create index on modify_requests (dept_id, year, month);
 create index on modify_requests (status);
+create index on modify_requests (kpi_id);
+create index on modify_requests (requested_by);
+create index on modify_requests (reviewed_by);
 
 alter table departments enable row level security;
 alter table users enable row level security;
