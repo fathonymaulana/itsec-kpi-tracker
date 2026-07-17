@@ -6,15 +6,16 @@ import {
   UserPlusLineDuotone as IconUserPlus,
   ShieldCheckLineDuotone as IconShieldCheck,
   KeyLineDuotone as IconKey,
-  PenLineDuotone as IconPen,
+  KeyBold as IconKeyBold,
+  PenBold as IconPen,
   CheckCircleLineDuotone as IconCheckCircle,
   CloseCircleLineDuotone as IconCloseCircle,
   ClockCircleLineDuotone as IconClock,
   UsersGroupRoundedLineDuotone as UsersLine, UsersGroupRoundedBold as UsersBold,
   KeyBold as KeyBold,
-  MenuDotsLineDuotone as IconMenuDots,
-  UserCrossLineDuotone as IconUserCross,
-  UserCheckLineDuotone as IconUserCheck,
+  MenuDotsBold as IconMenuDots,
+  UserCrossBold as IconUserCross,
+  UserCheckBold as IconUserCheck,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
@@ -199,7 +200,7 @@ export default function SuperAdminPage() {
                                       <IconPen size={14} /> Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setResetPinFor(u)}>
-                                      <IconKey size={14} /> Reset PIN
+                                      <IconKeyBold size={14} /> Reset PIN
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem variant={u.active ? 'destructive' : 'default'} onClick={() => handleToggleActive(u)}>

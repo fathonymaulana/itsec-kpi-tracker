@@ -52,6 +52,7 @@ const config: Config = {
         background: 'var(--background)',
         foreground: 'var(--foreground)',
         card: { DEFAULT: 'var(--card)', foreground: 'var(--card-foreground)' },
+        popover: { DEFAULT: 'var(--popover)', foreground: 'var(--popover-foreground)' },
         border: 'var(--border)',
         input: 'var(--input)',
         ring: 'var(--ring)',
@@ -85,6 +86,10 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      boxShadow: {
+        // Tailwind v3 has no "xs" shadow size by default — this matches v4's own --shadow-xs value.
+        xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
       },
     },
   },

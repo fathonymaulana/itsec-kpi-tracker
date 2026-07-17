@@ -21,7 +21,9 @@ import { MonthRangePicker, type MonthPeriod } from '@/components/kpi/MonthRangeP
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart'
-import { MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
+import { getStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
+import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
+import { StatusBadge } from '@/components/kpi/StatusBadge'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -34,6 +36,13 @@ interface DeptSummary {
   off_track: number
   no_data: number
   month_statuses: Partial<Record<number, KpiStatus>>
+}
+
+interface DeptKpiSummary {
+  id: number
+  name: string
+  target_text: string
+  status: KpiStatus
 }
 
 // Status colors are semantic (green/amber/red/gray for on-track/watch/off-track/no-data) and stay
@@ -62,6 +71,8 @@ export default function BoardPage() {
   const [summaries, setSummaries] = useState<DeptSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
+  const [deptKpiDetails, setDeptKpiDetails] = useState<Record<string, DeptKpiSummary[]>>({})
+  const [loadingDeptDetails, setLoadingDeptDetails] = useState<Set<string>>(new Set())
   const [leftPanelOpen, setLeftPanelOpen] = useState(true)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const [view, setView] = useState<'charts' | 'table'>('charts')
@@ -124,6 +135,52 @@ export default function BoardPage() {
   const statusForPeriod = (deptId: string, p: MonthPeriod): KpiStatus | undefined =>
     yearSummaries[p.year]?.find(d => d.dept_id === deptId)?.month_statuses[p.month]
 
+  // Lazy-loaded on first expand — the board summary endpoint only carries aggregate counts, not KPI
+  // names/targets, so seeing the actual per-KPI breakdown for one department means a real fetch.
+  const fetchDeptKpiDetails = useCallback(async (deptId: string) => {
+    if (!token || deptKpiDetails[deptId] || loadingDeptDetails.has(deptId)) return
+    setLoadingDeptDetails(prev => new Set(prev).add(deptId))
+    try {
+      const [kpiRes, actRes] = await Promise.all([
+        fetch(`/api/departments/${deptId}/kpis`, { headers: authHeaders(token) }),
+        fetch(`/api/actuals?dept_id=${deptId}&year=${year}`, { headers: authHeaders(token) }),
+      ])
+      const kpiData = await kpiRes.json()
+      const actData = await actRes.json()
+      const actualsByMonth: Record<number, Record<number, number>> = {}
+      for (const a of (actData.actuals || [])) {
+        if (!actualsByMonth[a.month]) actualsByMonth[a.month] = {}
+        actualsByMonth[a.month][a.sub_metric_id] = a.value
+      }
+      interface KpiRow {
+        id: number; name: string; target_text: string; numeric_target: number | null; direction: number
+        frequency?: string | null; sub_metrics: (SubMetricLike & { unit: string })[]
+      }
+      const summariesForDept: DeptKpiSummary[] = (kpiData.kpis || []).map((kpi: KpiRow) => {
+        const { overall } = getPeriodStatuses(kpi.sub_metrics, actualsByMonth, kpi.frequency, month)
+        const status = overall ?? getStatus(
+          resolvePrimaryValue(kpi.sub_metrics, actualsByMonth[month] || {}),
+          kpi.numeric_target,
+          kpi.direction
+        )
+        return { id: kpi.id, name: kpi.name, target_text: kpi.target_text, status }
+      })
+      setDeptKpiDetails(prev => ({ ...prev, [deptId]: summariesForDept }))
+    } catch { /* non-fatal */ }
+    finally {
+      setLoadingDeptDetails(prev => { const next = new Set(prev); next.delete(deptId); return next })
+    }
+  }, [token, year, month, deptKpiDetails, loadingDeptDetails])
+
+  const toggleDept = (id: string) => {
+    setExpandedDepts(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) { next.delete(id) }
+      else { next.add(id); fetchDeptKpiDetails(id) }
+      return next
+    })
+  }
+
   if (!ready || !user) return null
 
   // Totals across all depts
@@ -143,15 +200,6 @@ export default function BoardPage() {
     offTrack: d.off_track,
     noData: d.no_data,
   }))
-
-  const toggleDept = (id: string) => {
-    setExpandedDepts(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
 
   const pct = (n: number) => totals.total > 0 ? Math.round(n / totals.total * 100) : 0
 
@@ -276,6 +324,23 @@ export default function BoardPage() {
                         {expanded && (
                           <div className="border-t border-divider px-5 py-3 space-y-3">
                             <MonthGrid data={dept.month_statuses} compact />
+                            {loadingDeptDetails.has(dept.dept_id) ? (
+                              <div className="space-y-1.5">
+                                {[...Array(3)].map((_, i) => <div key={i} className="h-8 bg-panel-soft rounded-lg animate-pulse" />)}
+                              </div>
+                            ) : deptKpiDetails[dept.dept_id] && (
+                              <div className="space-y-1">
+                                {deptKpiDetails[dept.dept_id].map(k => (
+                                  <div key={k.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-panel-soft">
+                                    <div className="min-w-0">
+                                      <div className="text-xs font-medium text-ink truncate">{k.name}</div>
+                                      <div className="text-[10px] text-ink-faint truncate">Target: {k.target_text}</div>
+                                    </div>
+                                    <StatusBadge status={k.status} size="sm" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                             <button
                               onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
                               className="flex items-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors"
@@ -303,6 +368,7 @@ export default function BoardPage() {
                         <TableHead className="text-right">Off Track</TableHead>
                         <TableHead className="text-right">No Data</TableHead>
                         <TableHead className="text-right">On Track %</TableHead>
+                        <TableHead className="text-right">Details</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -317,6 +383,15 @@ export default function BoardPage() {
                             <TableCell className="text-right" style={{ color: STATUS_COLORS.off_track }}>{dept.off_track}</TableCell>
                             <TableCell className="text-right text-ink-muted">{dept.no_data}</TableCell>
                             <TableCell className="text-right font-medium text-ink">{onPct}%</TableCell>
+                            <TableCell className="text-right">
+                              <button
+                                onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
+                                className="inline-flex items-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors"
+                              >
+                                <FileSearch size={11} />
+                                View details & sources
+                              </button>
+                            </TableCell>
                           </TableRow>
                         )
                       })}

@@ -137,16 +137,18 @@ export default function AdminPage() {
 
   useEffect(() => { if (selectedDept) fetchDeptData() }, [selectedDept, fetchDeptData])
 
-  // Global — pending requests can come from any department, so this deliberately isn't scoped to
-  // selectedDept the way the tabs above are.
+  // Scoped to selectedDept when one is picked, same as the Data Review/Verifications tabs — shows
+  // requests across every department only while nothing's selected yet.
   const fetchModifyRequests = useCallback(async () => {
     if (!token) return
     try {
-      const r = await fetch('/api/modify-requests?status=pending', { headers: authHeaders(token) })
+      const qs = new URLSearchParams({ status: 'pending' })
+      if (selectedDept) qs.set('dept_id', selectedDept)
+      const r = await fetch(`/api/modify-requests?${qs.toString()}`, { headers: authHeaders(token) })
       const data = await r.json()
       setModifyRequests(data.requests || [])
     } catch { /* non-fatal */ }
-  }, [token])
+  }, [token, selectedDept])
 
   useEffect(() => { if (user) fetchModifyRequests() }, [user, fetchModifyRequests])
 
