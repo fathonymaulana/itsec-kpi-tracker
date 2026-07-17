@@ -15,7 +15,9 @@ import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
+import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
+import { MonthRangePicker, type MonthPeriod } from '@/components/kpi/MonthRangePicker'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart'
@@ -62,6 +64,14 @@ export default function BoardPage() {
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const [view, setView] = useState<'charts' | 'table'>('charts')
 
+  // Full-year breakdown (Table tab only) — independent of the single `month` above, which still
+  // drives the stat cards/chart. Board summary's month_statuses already covers all 12 months of
+  // whatever year is requested, so a range spanning one year needs just one fetch; a range crossing
+  // a year boundary fetches each year involved and merges them.
+  const [rangeFrom, setRangeFrom] = useState<MonthPeriod>({ year: getDefaultYear(), month: 1 })
+  const [rangeTo, setRangeTo] = useState<MonthPeriod>({ year: getDefaultYear(), month: 12 })
+  const [yearSummaries, setYearSummaries] = useState<Record<number, DeptSummary[]>>({})
+
   useEffect(() => {
     if (!ready) return
     if (!user) { router.push('/login'); return }
@@ -82,6 +92,35 @@ export default function BoardPage() {
   }, [user, token, year, month])
 
   useEffect(() => { if (user) fetchData() }, [user, fetchData])
+
+  const fetchYearSummary = useCallback(async (y: number) => {
+    if (!token) return
+    try {
+      const r = await fetch(`/api/board/summary/${y}`, { headers: authHeaders(token) })
+      const d = await r.json()
+      setYearSummaries(prev => ({ ...prev, [y]: d.departments || [] }))
+    } catch { /* non-fatal */ }
+  }, [token])
+
+  useEffect(() => {
+    if (!user) return
+    for (const y of Array.from(new Set([rangeFrom.year, rangeTo.year]))) {
+      if (!yearSummaries[y]) fetchYearSummary(y)
+    }
+  }, [user, rangeFrom.year, rangeTo.year, yearSummaries, fetchYearSummary])
+
+  // Every {year, month} period from rangeFrom to rangeTo inclusive, in order.
+  const rangePeriods: MonthPeriod[] = []
+  {
+    let y = rangeFrom.year, m = rangeFrom.month
+    while (y < rangeTo.year || (y === rangeTo.year && m <= rangeTo.month)) {
+      rangePeriods.push({ year: y, month: m })
+      m++
+      if (m > 12) { m = 1; y++ }
+    }
+  }
+  const statusForPeriod = (deptId: string, p: MonthPeriod): KpiStatus | undefined =>
+    yearSummaries[p.year]?.find(d => d.dept_id === deptId)?.month_statuses[p.month]
 
   if (!ready || !user) return null
 
@@ -124,18 +163,16 @@ export default function BoardPage() {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        {leftPanelOpen && (
-          <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
-            <DateSidebar
-              year={year}
-              onYearChange={setYear}
-              month={month}
-              onMonthChange={setMonth}
-              minYear={CURRENT_YEAR - 1}
-              maxYear={CURRENT_YEAR + 1}
-            />
-          </aside>
-        )}
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block p-12 overflow-y-auto">
+          <DateSidebar
+            year={year}
+            onYearChange={setYear}
+            month={month}
+            onMonthChange={setMonth}
+            minYear={CURRENT_YEAR - 1}
+            maxYear={CURRENT_YEAR + 1}
+          />
+        </AnimatedAside>
 
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
           <div className="max-w-5xl mx-auto">
@@ -253,7 +290,7 @@ export default function BoardPage() {
               </TabsContent>
 
               <TabsContent value="table">
-                <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden mb-6">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -284,16 +321,60 @@ export default function BoardPage() {
                     </TableBody>
                   </Table>
                 </div>
+
+                {/* Full-year breakdown — every month in the selected range, per department */}
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <h3 className="font-medium text-ink text-sm">Full Period Overview</h3>
+                  <MonthRangePicker
+                    from={rangeFrom}
+                    to={rangeTo}
+                    onChange={(f, t) => { setRangeFrom(f); setRangeTo(t) }}
+                    minYear={CURRENT_YEAR - 2}
+                    maxYear={CURRENT_YEAR + 1}
+                  />
+                </div>
+                <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="sticky left-0 bg-panel">Department</TableHead>
+                        {rangePeriods.map(p => (
+                          <TableHead key={`${p.year}-${p.month}`} className="text-center whitespace-nowrap">
+                            {MONTHS[p.month - 1].slice(0, 3)} {p.year !== rangePeriods[0].year || p.year !== rangePeriods[rangePeriods.length - 1].year ? String(p.year).slice(2) : ''}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {summaries.map(dept => (
+                        <TableRow key={dept.dept_id}>
+                          <TableCell className="font-medium text-ink sticky left-0 bg-panel">{dept.department_name}</TableCell>
+                          {rangePeriods.map(p => {
+                            const status = statusForPeriod(dept.dept_id, p)
+                            const color = status ? STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? '#D1D5DB' : '#E5E5E5'
+                            return (
+                              <TableCell key={`${p.year}-${p.month}`} className="text-center">
+                                <span
+                                  title={`${MONTHS[p.month - 1]} ${p.year}: ${status ?? 'no data'}`}
+                                  className="inline-block size-2.5 rounded-full"
+                                  style={{ backgroundColor: color }}
+                                />
+                              </TableCell>
+                            )
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
         </main>
 
-        {rightPanelOpen && (
-          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
-            <AddOnsPanel />
-          </aside>
-        )}
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+          <AddOnsPanel />
+        </AnimatedAside>
       </div>
     </div>
   )

@@ -12,6 +12,7 @@ import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
+import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
@@ -293,18 +294,16 @@ export default function DeptPage() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left: clock + date picker */}
-        {leftPanelOpen && (
-          <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
-            <DateSidebar
-              year={year}
-              onYearChange={setYear}
-              month={month}
-              onMonthChange={setMonth}
-              minYear={CURRENT_YEAR - 1}
-              maxYear={CURRENT_YEAR + 1}
-            />
-          </aside>
-        )}
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block p-12 overflow-y-auto">
+          <DateSidebar
+            year={year}
+            onYearChange={setYear}
+            month={month}
+            onMonthChange={setMonth}
+            minYear={CURRENT_YEAR - 1}
+            maxYear={CURRENT_YEAR + 1}
+          />
+        </AnimatedAside>
 
         {/* Center: data entry */}
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
@@ -398,7 +397,7 @@ export default function DeptPage() {
           <div className="shrink-0 border-t border-divider bg-app px-6 py-4 flex justify-end gap-3">
             <Button
               variant="outline"
-              className={`h-12 px-5 rounded-2xl gap-2 border-divider bg-panel ${iconHoverClass}`}
+              className={`h-12 px-5 rounded-2xl gap-2 border-divider bg-panel text-ink ${iconHoverClass}`}
               onClick={handleSave}
               disabled={saving || submitting || submitted}
             >
@@ -421,11 +420,9 @@ export default function DeptPage() {
         </main>
 
         {/* Right: add-ons */}
-        {rightPanelOpen && (
-          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
-            <AddOnsPanel />
-          </aside>
-        )}
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+          <AddOnsPanel />
+        </AnimatedAside>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { AltArrowLeftLineDuotone as ChevronLeft, AltArrowRightLineDuotone as ChevronRight } from '@solar-icons/react-perf'
-import { MONTHS } from '@/lib/status'
+import { MonthPicker } from './MonthPicker'
 
 interface DateSidebarProps {
   year: number
@@ -43,45 +43,38 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
       </div>
 
       {/* Year / month picker */}
-      <div className="bg-panel border border-divider rounded-3xl overflow-hidden">
-        <div className="bg-panel-soft p-6 flex items-center justify-between">
-          <button
-            onClick={() => onYearChange(year - 1)}
-            disabled={minYear !== undefined && year <= minYear}
-            className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors disabled:opacity-40 disabled:hover:border-divider"
-          >
-            <ChevronLeft size={16} className="text-ink" />
-          </button>
-          <span className="text-xl font-semibold text-ink tracking-[-0.1px]">{year}</span>
-          <button
-            onClick={() => onYearChange(year + 1)}
-            disabled={maxYear !== undefined && year >= maxYear}
-            className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors disabled:opacity-40 disabled:hover:border-divider"
-          >
-            <ChevronRight size={16} className="text-ink" />
-          </button>
+      {month !== undefined && onMonthChange ? (
+        <div className="bg-panel border border-divider rounded-3xl p-4">
+          <MonthPicker
+            year={year}
+            month={month}
+            onChange={(y, m) => { if (y !== year) onYearChange(y); onMonthChange(m) }}
+            minYear={minYear}
+            maxYear={maxYear}
+            className="w-full"
+          />
         </div>
-
-        {month !== undefined && onMonthChange && (
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => onMonthChange(month === 1 ? 12 : month - 1)}
-                className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors"
-              >
-                <ChevronLeft size={16} className="text-ink" />
-              </button>
-              <span className="text-base font-medium text-ink tracking-[-0.192px]">{MONTHS[month - 1]}</span>
-              <button
-                onClick={() => onMonthChange(month === 12 ? 1 : month + 1)}
-                className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors"
-              >
-                <ChevronRight size={16} className="text-ink" />
-              </button>
-            </div>
+      ) : (
+        <div className="bg-panel border border-divider rounded-3xl overflow-hidden">
+          <div className="bg-panel-soft p-6 flex items-center justify-between">
+            <button
+              onClick={() => onYearChange(year - 1)}
+              disabled={minYear !== undefined && year <= minYear}
+              className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors disabled:opacity-40 disabled:hover:border-divider"
+            >
+              <ChevronLeft size={16} className="text-ink" />
+            </button>
+            <span className="text-xl font-semibold text-ink tracking-[-0.1px]">{year}</span>
+            <button
+              onClick={() => onYearChange(year + 1)}
+              disabled={maxYear !== undefined && year >= maxYear}
+              className="size-8 rounded-lg bg-panel border border-divider flex items-center justify-center hover:border-[#CC1F1F] transition-colors disabled:opacity-40 disabled:hover:border-divider"
+            >
+              <ChevronRight size={16} className="text-ink" />
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

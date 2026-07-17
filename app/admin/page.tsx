@@ -14,6 +14,7 @@ import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
+import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { getDefaultMonth, getDefaultYear, MONTHS } from '@/lib/status'
 import { Button } from '@/components/ui/button'
@@ -204,18 +205,16 @@ export default function AdminPage() {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        {leftPanelOpen && (
-          <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
-            <DateSidebar
-              year={year}
-              onYearChange={setYear}
-              month={month}
-              onMonthChange={setMonth}
-              minYear={CURRENT_YEAR - 1}
-              maxYear={CURRENT_YEAR + 1}
-            />
-          </aside>
-        )}
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block p-12 overflow-y-auto">
+          <DateSidebar
+            year={year}
+            onYearChange={setYear}
+            month={month}
+            onMonthChange={setMonth}
+            minYear={CURRENT_YEAR - 1}
+            maxYear={CURRENT_YEAR + 1}
+          />
+        </AnimatedAside>
 
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
           <div className="max-w-4xl mx-auto">
@@ -424,11 +423,9 @@ export default function AdminPage() {
           </div>
         </main>
 
-        {rightPanelOpen && (
-          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
-            <AddOnsPanel />
-          </aside>
-        )}
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+          <AddOnsPanel />
+        </AnimatedAside>
       </div>
 
       <Dialog open={!!rejectTarget} onOpenChange={o => !o && setRejectTarget(null)}>

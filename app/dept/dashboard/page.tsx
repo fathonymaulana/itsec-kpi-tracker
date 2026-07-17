@@ -14,6 +14,7 @@ import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
+import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -148,11 +149,9 @@ export default function DeptDashboard() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left: clock + year picker */}
-        {leftPanelOpen && (
-          <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
-            <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
-          </aside>
-        )}
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block p-12 overflow-y-auto">
+          <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
+        </AnimatedAside>
 
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
           <div className="max-w-4xl mx-auto">
@@ -310,11 +309,9 @@ export default function DeptDashboard() {
         </main>
 
         {/* Right: add-ons */}
-        {rightPanelOpen && (
-          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
-            <AddOnsPanel />
-          </aside>
-        )}
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+          <AddOnsPanel />
+        </AnimatedAside>
       </div>
     </div>
   )

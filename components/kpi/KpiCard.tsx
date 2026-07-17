@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   LinkMinimalisticLineDuotone as Link2,
   AltArrowDownLineDuotone as ChevronDown,
@@ -162,8 +163,15 @@ export function KpiCard({
       </div>
 
       {/* Sub-metrics */}
+      <AnimatePresence initial={false}>
       {!collapsed && (
-        <div className="border-t border-divider">
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          className="border-t border-divider overflow-hidden"
+        >
           {inputSMs.map((sm, idx) => (
             <div key={sm.id} className={`flex items-center gap-4 px-6 py-2.5 ${idx % 2 === 0 ? 'bg-panel-soft' : 'bg-panel'}`}>
               <div className="flex-1 text-xs text-ink-soft font-normal flex items-center gap-2 flex-wrap">
@@ -227,8 +235,9 @@ export function KpiCard({
               )}
             </div>
           )}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {!readOnly && (
         <DataSourceModal

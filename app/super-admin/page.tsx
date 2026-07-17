@@ -12,10 +12,14 @@ import {
   ClockCircleLineDuotone as IconClock,
   UsersGroupRoundedLineDuotone as UsersLine, UsersGroupRoundedBold as UsersBold,
   KeyBold as KeyBold,
+  MenuDotsLineDuotone as IconMenuDots,
+  UserCrossLineDuotone as IconUserCross,
+  UserCheckLineDuotone as IconUserCheck,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
+import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { iconHoverClass } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
@@ -182,21 +187,27 @@ export default function SuperAdminPage() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setDialogUser(u)}>
-                                    <IconPen size={11} className="mr-1" /> Edit
-                                  </Button>
-                                  <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setResetPinFor(u)}>
-                                    <IconKey size={11} className="mr-1" /> Reset PIN
-                                  </Button>
-                                  <Button
-                                    size="sm" variant="outline"
-                                    className={`h-6 text-[11px] ${u.active ? 'text-danger border-danger-soft-border hover:bg-danger-soft' : 'text-success border-success-soft-border hover:bg-success-soft'}`}
-                                    onClick={() => handleToggleActive(u)}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    className={`inline-flex size-7 items-center justify-center rounded-md hover:bg-muted transition-colors ${iconHoverClass}`}
+                                    title="Actions"
                                   >
-                                    {u.active ? 'Deactivate' : 'Reactivate'}
-                                  </Button>
-                                </div>
+                                    <IconMenuDots size={16} className="text-ink-muted" />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => setDialogUser(u)}>
+                                      <IconPen size={14} /> Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setResetPinFor(u)}>
+                                      <IconKey size={14} /> Reset PIN
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem variant={u.active ? 'destructive' : 'default'} onClick={() => handleToggleActive(u)}>
+                                      {u.active ? <IconUserCross size={14} /> : <IconUserCheck size={14} />}
+                                      {u.active ? 'Deactivate' : 'Reactivate'}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -254,11 +265,9 @@ export default function SuperAdminPage() {
           </div>
         </main>
 
-        {rightPanelOpen && (
-          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
-            <AddOnsPanel />
-          </aside>
-        )}
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block overflow-y-auto">
+          <AddOnsPanel />
+        </AnimatedAside>
       </div>
 
       {dialogUser && (
