@@ -358,42 +358,45 @@ export default function BoardPage() {
               </TabsContent>
 
               <TabsContent value="table">
-                {/* Mobile/tablet: one card per department — 8 columns doesn't fit a phone screen
-                    without truncating every value, so this is a stacked equivalent instead. */}
+                {/* Mobile/tablet: one card per department, matching the Figma "Table Card
+                    Responsive" component exactly — a muted header (label + value, View details
+                    button), one divided label/value row per metric, and a footer stat. Replaces
+                    the earlier 4-up colored-badge grid with this row-based layout. */}
                 <div className="flex md:hidden flex-col gap-3 mb-6">
                   {summaries.map(dept => {
                     const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
+                    const rows = [
+                      { label: 'KPIs', value: dept.total },
+                      { label: 'On Track', value: dept.on_track },
+                      { label: 'Watch', value: dept.watch },
+                      { label: 'Off Track', value: dept.off_track },
+                      { label: 'No Data', value: dept.no_data },
+                    ]
                     return (
-                      <div key={dept.dept_id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-4 flex flex-col gap-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm font-medium text-ink">{dept.department_name}</span>
-                          <span className="text-sm font-medium text-ink">{onPct}% on track</span>
+                      <div key={dept.dept_id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
+                        <div className="bg-panel-soft flex items-center justify-between px-6 py-4">
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-[10px] text-ink-faint">Department</span>
+                            <span className="text-sm font-medium text-ink">{dept.department_name}</span>
+                          </div>
+                          <button
+                            onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
+                            className="flex items-center gap-2 h-8 px-3 rounded-md bg-panel border border-divider shadow-xs text-sm font-medium text-ink"
+                          >
+                            <FileSearch size={16} />
+                            View details
+                          </button>
                         </div>
-                        <div className="grid grid-cols-4 gap-2 text-center">
-                          <div className="bg-panel-soft rounded-xl py-2">
-                            <div className="text-base font-semibold" style={{ color: STATUS_COLORS.on_track }}>{dept.on_track}</div>
-                            <div className="text-[10px] text-ink-faint mt-0.5">On Track</div>
+                        {rows.map(r => (
+                          <div key={r.label} className="flex items-center justify-between border-t border-divider">
+                            <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">{r.label}</span>
+                            <span className="flex-1 py-3 text-sm font-medium text-ink text-center">{r.value}</span>
                           </div>
-                          <div className="bg-panel-soft rounded-xl py-2">
-                            <div className="text-base font-semibold" style={{ color: STATUS_COLORS.watch }}>{dept.watch}</div>
-                            <div className="text-[10px] text-ink-faint mt-0.5">Watch</div>
-                          </div>
-                          <div className="bg-panel-soft rounded-xl py-2">
-                            <div className="text-base font-semibold" style={{ color: STATUS_COLORS.off_track }}>{dept.off_track}</div>
-                            <div className="text-[10px] text-ink-faint mt-0.5">Off Track</div>
-                          </div>
-                          <div className="bg-panel-soft rounded-xl py-2">
-                            <div className="text-base font-semibold text-ink-muted">{dept.no_data}</div>
-                            <div className="text-[10px] text-ink-faint mt-0.5">No Data</div>
-                          </div>
+                        ))}
+                        <div className="border-t border-divider flex flex-col items-center gap-1.5 px-6 py-4">
+                          <span className="text-lg font-semibold text-ink">{onPct}%</span>
+                          <span className="text-[10px] text-ink-faint">On Track %</span>
                         </div>
-                        <button
-                          onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                          className="inline-flex items-center justify-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors border-t border-divider pt-3"
-                        >
-                          <FileSearch size={11} />
-                          View details & sources
-                        </button>
                       </div>
                     )
                   })}
