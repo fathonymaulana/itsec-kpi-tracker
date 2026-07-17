@@ -91,26 +91,36 @@ function LoginForm() {
     <div className="h-screen overflow-hidden bg-white dark:bg-[#141414] flex flex-col relative z-0">
       {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
           element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive.
-          Sized bigger on mobile (h-[58vh]) than desktop (md:h-[52vh]) per explicit feedback that the
-          mobile band specifically needed to read larger — a viewport-relative unit at every
-          breakpoint, not a fixed px step, so the proportion holds within each size class.
-          object-contain (not object-cover) keeps it "never cropped" per the standing requirement:
-          cover always fills the box by slicing off whatever overflows; contain scales the whole
-          image to fit within the box instead — on a box narrower than the image's own 3.5:1 ratio
-          that leaves transparent letterboxing on the sides, invisible against the page's own
-          matching background, so there's no visible cost to guaranteeing the full graphic stays
-          intact at this larger size, top or bottom included. object-top keeps it flush against the
-          very top of the page on box ratios where the letterboxing lands top/bottom instead.
-          dark:invert flips the artwork's black strokes to white (and vice versa) for dark mode — the
-          source PNG has no separate dark variant, so this is a CSS filter instead; invert() only
-          touches RGB channels, so the transparent background is unaffected. */}
+          Two separate art-directed assets (not one image reused at different sizes): the wide banner
+          crop reads well stretched across a desktop viewport, but the same crop shrunk down to phone
+          width loses too much detail, so a tighter close-up crop is swapped in below md instead —
+          Next/Image has no single-tag way to pick a different src per breakpoint, so this is two
+          <Image> instances toggled via md:hidden/hidden md:block, matching every other responsive
+          swap in this app. Sized bigger on mobile (h-[58vh]) than desktop (md:h-[52vh]) per earlier
+          feedback that the mobile band specifically needed to read larger. object-contain (not
+          object-cover) keeps it "never cropped" per the standing requirement: cover always fills the
+          box by slicing off whatever overflows; contain scales the whole image to fit within the box
+          instead — on a box narrower than the image's own ratio that leaves transparent letterboxing
+          on the sides, invisible against the page's own matching background, so there's no visible
+          cost to guaranteeing the full graphic stays intact, top or bottom included. object-top keeps
+          it flush against the very top of the page on box ratios where the letterboxing lands
+          top/bottom instead. dark:invert flips the artwork's black strokes to white (and vice versa)
+          for dark mode — neither source PNG has a separate dark variant, so this is a CSS filter
+          instead; invert() only touches RGB channels, so the transparent background is unaffected. */}
       <div className="absolute inset-x-0 top-0 h-[58vh] md:h-[52vh] -z-10 overflow-hidden pointer-events-none select-none">
         <Image
-          src="/login-wordmark.png"
+          src="/login-wordmark-mobile.png"
           alt=""
           fill
           priority
-          className="object-contain object-top dark:invert"
+          className="object-contain object-top dark:invert md:hidden"
+        />
+        <Image
+          src="/login-wordmark-desktop.png"
+          alt=""
+          fill
+          priority
+          className="object-contain object-top dark:invert hidden md:block"
         />
       </div>
 
@@ -193,13 +203,18 @@ function LoginForm() {
                   // fill/near-white text in light mode, near-white fill/near-black text in dark mode.
                   // disabled:bg-primary keeps the fill solid either way; only the text swaps between
                   // muted-foreground and primary-foreground, both of which stay correctly paired with
-                  // whichever fill color --primary resolves to in the current theme.
-                  'w-full h-12 rounded-2xl bg-primary hover:bg-primary/80 font-medium gap-2 disabled:opacity-100 disabled:bg-primary',
+                  // whichever fill color --primary resolves to in the current theme. The unfilled
+                  // disabled state intentionally stays full-opacity (muted-foreground text carries
+                  // that "disabled" read on its own) — only the signing-in state below fades its
+                  // content, as processing feedback distinct from "not ready to submit yet".
+                  'w-full h-12 rounded-2xl bg-primary hover:bg-primary/80 font-medium disabled:opacity-100 disabled:bg-primary disabled:pointer-events-none',
                   formFilled ? 'text-primary-foreground' : 'text-muted-foreground'
                 )}
               >
-                {loading && <Spinner className="size-4" />}
-                {loading ? 'Signing in…' : 'Sign in'}
+                <span className={cn('flex items-center gap-2', loading && 'opacity-60')}>
+                  {loading && <Spinner className="size-4" />}
+                  {loading ? 'Signing in…' : 'Sign in'}
+                </span>
               </Button>
             </form>
 
