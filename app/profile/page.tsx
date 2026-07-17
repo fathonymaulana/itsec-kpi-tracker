@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CameraLinear as Camera, ClockCircleLinear as Clock, ShieldCheckLinear as ShieldCheck } from '@solar-icons/react-perf'
+import { CameraLineDuotone as Camera, ClockCircleLineDuotone as Clock, ShieldCheckLineDuotone as ShieldCheck } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { AppNav } from '@/components/layout/AppNav'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'

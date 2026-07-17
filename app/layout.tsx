@@ -23,7 +23,7 @@ export default function RootLayout({
           {children}
           <CookieConsent />
         </AuthProvider>
-        <Toaster richColors position="bottom-right" visibleToasts={4} />
+        <Toaster position="bottom-right" visibleToasts={4} />
       </body>
     </html>
   )

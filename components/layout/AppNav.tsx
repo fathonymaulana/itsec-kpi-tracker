@@ -2,10 +2,12 @@
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
-import { LogoutLinear as LogOut } from '@solar-icons/react-perf'
+import { LogoutLineDuotone as LogOut } from '@solar-icons/react-perf'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { iconHoverClass } from '@/lib/utils'
 import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useState } from 'react'
 
 interface AppNavProps {
   title?: string
@@ -16,6 +18,7 @@ interface AppNavProps {
 export function AppNav({ title, subtitle, actions }: AppNavProps) {
   const { user, logout } = useAuth()
   const router = useRouter()
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   const handleLogout = () => {
     const firstName = user?.name?.split(' ')[0]
@@ -64,7 +67,7 @@ export function AppNav({ title, subtitle, actions }: AppNavProps) {
           </button>
           <SwitchAccountDialog />
           <button
-            onClick={handleLogout}
+            onClick={() => setConfirmLogout(true)}
             className={`flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors ${iconHoverClass}`}
           >
             <LogOut size={13} />
@@ -72,6 +75,16 @@ export function AppNav({ title, subtitle, actions }: AppNavProps) {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Sign out?"
+        description="You'll need your PIN again to sign back in."
+        confirmLabel="Sign out"
+        cancelLabel="Stay signed in"
+        onConfirm={handleLogout}
+      />
     </header>
   )
 }

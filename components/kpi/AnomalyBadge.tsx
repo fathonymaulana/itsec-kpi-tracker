@@ -1,5 +1,5 @@
 'use client'
-import { DangerTriangleLinear as AlertTriangle } from '@solar-icons/react-perf'
+import { DangerTriangleLineDuotone as AlertTriangle } from '@solar-icons/react-perf'
 
 interface AnomalyBadgeProps {
   count: number

@@ -1,28 +1,39 @@
 'use client'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { Home2Linear as Home, ClipboardListLinear as ClipboardList } from '@solar-icons/react-perf'
+import {
+  Home2LineDuotone as Home,
+  ClipboardListLineDuotone as ClipboardList,
+  SidebarMinimalisticLineDuotone as SidebarIcon,
+  BellLineDuotone as Bell,
+} from '@solar-icons/react-perf'
 import { useAuth } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { cn } from '@/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn, iconHoverClass } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { href: '/dept/dashboard', label: 'Dashboard', Icon: Home },
   { href: '/dept', label: 'Data Entry', Icon: ClipboardList },
 ]
 
-export function DeptTopNav() {
+interface DeptTopNavProps {
+  onToggleLeftPanel?: () => void
+  onToggleRightPanel?: () => void
+}
+
+export function DeptTopNav({ onToggleLeftPanel, onToggleRightPanel }: DeptTopNavProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { user } = useAuth()
 
   return (
-    <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex items-center justify-between px-6 h-16 shrink-0">
-      <div className="flex items-center gap-3.5">
+    <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
+      <div className="flex items-center gap-3.5 justify-self-start">
         <Image src="/login/itsec-logo-badge.svg" alt="ITSEC KPI Tracker" width={179} height={19} className="h-5 w-auto" />
       </div>
 
-      <nav className="flex items-center h-full">
+      <nav className="flex items-center h-full justify-self-center">
         {NAV_ITEMS.map(item => {
           const active = pathname === item.href
           return (
@@ -41,7 +52,46 @@ export function DeptTopNav() {
         })}
       </nav>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 justify-self-end">
+        {onToggleLeftPanel && (
+          <button
+            onClick={onToggleLeftPanel}
+            className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
+            title="Toggle left panel"
+          >
+            <SidebarIcon size={18} className="text-[#282828] -scale-x-100" />
+          </button>
+        )}
+        {onToggleRightPanel && (
+          <button
+            onClick={onToggleRightPanel}
+            className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
+            title="Toggle right panel"
+          >
+            <SidebarIcon size={18} className="text-[#282828]" />
+          </button>
+        )}
+
+        <Popover>
+          <PopoverTrigger
+            className={cn('size-9 rounded-full bg-[#e5e5e5] flex items-center justify-center hover:bg-[#dddddd] transition-colors', iconHoverClass)}
+            title="Notifications"
+          >
+            <Bell size={18} className="text-[#282828]" />
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#e5e5e5]">
+              <div className="text-sm font-semibold text-[#282828]">Notifications</div>
+            </div>
+            <div className="p-8 text-center flex flex-col items-center gap-2">
+              <Bell size={28} className="text-[#DDDDDD]" />
+              <p className="text-sm text-[#737373]">You&apos;re all caught up — no notifications yet.</p>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <div className="w-px h-6 bg-[#e5e5e5] mx-1" />
+
         {user && (
           <button onClick={() => router.push('/profile')} title="Profile">
             <Avatar size="sm" className="ring-1 ring-[#e5e5e5]">

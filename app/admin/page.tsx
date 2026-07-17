@@ -3,14 +3,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
-  CheckCircleLinear as CheckCircle2,
-  DangerTriangleLinear as AlertTriangle,
-  SquareArrowRightUpLinear as ExternalLink,
-  AltArrowRightLinear as ChevronRight,
-  BuildingsLinear as Building2,
-  ShieldLinear as Shield,
-  ClockCircleLinear as Clock,
-  ChartSquareLinear as BarChart3,
+  CheckCircleLineDuotone as CheckCircle2,
+  DangerTriangleLineDuotone as AlertTriangle,
+  SquareArrowRightUpLineDuotone as ExternalLink,
+  AltArrowRightLineDuotone as ChevronRight,
+  BuildingsLineDuotone as Building2,
+  ShieldLineDuotone as Shield,
+  ClockCircleLineDuotone as Clock,
+  ChartSquareLineDuotone as BarChart3,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { AppNav } from '@/components/layout/AppNav'

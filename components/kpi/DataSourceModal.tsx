@@ -4,11 +4,12 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
-  LinkMinimalisticLinear as Link2,
-  InfoCircleLinear as Info,
-  CloseSquareLinear as X,
-  DisketteLinear as Save,
+  LinkMinimalisticLineDuotone as Link2,
+  InfoCircleLineDuotone as Info,
+  CloseSquareLineDuotone as X,
+  DisketteLineDuotone as Save,
 } from '@solar-icons/react-perf'
 
 interface DataSourceModalProps {
@@ -24,14 +25,21 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
   const [url, setUrl] = useState(initialUrl)
   const [note, setNote] = useState(initialNote)
   const [confirmed, setConfirmed] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const isDirty = url !== initialUrl || note !== initialNote || confirmed
 
   const handleSave = () => {
     onSave(url, note)
     onClose()
   }
 
+  const handleCancel = () => {
+    if (isDirty) setConfirmDiscard(true)
+    else onClose()
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(next) => { if (!next) handleCancel() }}>
       <DialogContent showCloseButton={false} className="max-w-[549px] rounded-[32px] p-6 gap-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -43,7 +51,7 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
             </h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="size-10 rounded-full bg-[#282828] hover:bg-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center shrink-0 transition-colors"
           >
             <X size={16} className="text-white" />
@@ -94,7 +102,7 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
         <div className="flex gap-4 justify-end">
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={handleCancel}
             className="h-12 px-5 rounded-2xl border-[#e5e5e5] text-[#595959] font-medium"
           >
             Cancel
@@ -109,6 +117,16 @@ export function DataSourceModal({ open, onClose, onSave, initialUrl = '', initia
           </Button>
         </div>
       </DialogContent>
+
+      <ConfirmDialog
+        open={confirmDiscard}
+        onOpenChange={setConfirmDiscard}
+        title="Discard this source?"
+        description="The link and notes you entered haven't been saved."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={onClose}
+      />
     </Dialog>
   )
 }

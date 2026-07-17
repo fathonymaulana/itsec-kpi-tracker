@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DangerCircleLinear as AlertCircle } from '@solar-icons/react-perf'
+import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
 
 interface DirectoryUser {
   id: number

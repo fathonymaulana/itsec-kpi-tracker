@@ -1,7 +1,7 @@
 'use client'
 import { useState, MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { TransferHorizontalLinear as ArrowLeftRight, AltArrowRightLinear as ChevronRight, CloseCircleLinear as X } from '@solar-icons/react-perf'
+import { TransferHorizontalLineDuotone as ArrowLeftRight, AltArrowRightLineDuotone as ChevronRight, CloseCircleLineDuotone as X } from '@solar-icons/react-perf'
 import { useAuth } from '@/lib/auth'
 import { getAccountHistory, forgetAccount, type AccountHistoryEntry } from '@/lib/account-history'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Cookie } from 'lucide-react' // no Solar Icons equivalent for a cookie glyph — kept as the one intentional exception
-import { AltArrowDownLinear as ChevronDown, CloseCircleLinear as X } from '@solar-icons/react-perf'
+import { AltArrowDownLineDuotone as ChevronDown, CloseCircleLineDuotone as X } from '@solar-icons/react-perf'
 import { Button } from '@/components/ui/button'
 import { getCookie, setCookie } from '@/lib/cookies'
 import { cn, iconHoverClass } from '@/lib/utils'

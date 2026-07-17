@@ -2,10 +2,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  GraphNewUpLinear as TrendingUp,
-  EyeLinear as Eye,
-  GraphDownNewLinear as TrendingDown,
-  MinusCircleLinear as CircleDashed,
+  GraphNewUpLineDuotone as TrendingUp,
+  EyeLineDuotone as Eye,
+  GraphDownNewLineDuotone as TrendingDown,
+  MinusCircleLineDuotone as CircleDashed,
 } from '@solar-icons/react-perf'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
@@ -47,6 +47,8 @@ export default function DeptDashboard() {
   const [year, setYear] = useState(CURRENT_YEAR)
   const [allActuals, setAllActuals] = useState<Record<number, Record<number, number>>>({}) // month → {smId → value}
   const [loading, setLoading] = useState(true)
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true)
+  const [rightPanelOpen, setRightPanelOpen] = useState(true)
 
   useEffect(() => {
     if (!ready) return
@@ -92,13 +94,18 @@ export default function DeptDashboard() {
 
   return (
     <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
-      <DeptTopNav />
+      <DeptTopNav
+        onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        onToggleRightPanel={() => setRightPanelOpen(v => !v)}
+      />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left: clock + year picker */}
-        <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
-          <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
-        </aside>
+        {leftPanelOpen && (
+          <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
+            <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
+          </aside>
+        )}
 
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
           <div className="max-w-4xl mx-auto">
@@ -236,9 +243,11 @@ export default function DeptDashboard() {
         </main>
 
         {/* Right: add-ons */}
-        <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
-          <AddOnsPanel />
-        </aside>
+        {rightPanelOpen && (
+          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
+            <AddOnsPanel />
+          </aside>
+        )}
       </div>
     </div>
   )

@@ -3,11 +3,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
-  DisketteLinear as Save,
-  PlainLinear as Send,
-  DangerTriangleLinear as AlertTriangle,
-  CheckCircleLinear as CheckCircle2,
-  MagnifierLinear as Search,
+  DisketteLineDuotone as Save,
+  PlainLineDuotone as Send,
+  DangerTriangleLineDuotone as AlertTriangle,
+  CheckCircleLineDuotone as CheckCircle2,
+  MagnifierLineDuotone as Search,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
@@ -71,6 +71,8 @@ export default function DeptPage() {
   const [submitted, setSubmitted] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true)
+  const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const hasFetchedRef = useRef(false)
 
   useEffect(() => {
@@ -246,20 +248,25 @@ export default function DeptPage() {
 
   return (
     <div className="h-screen flex flex-col bg-[#fafafa] overflow-hidden">
-      <DeptTopNav />
+      <DeptTopNav
+        onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        onToggleRightPanel={() => setRightPanelOpen(v => !v)}
+      />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left: clock + date picker */}
-        <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
-          <DateSidebar
-            year={year}
-            onYearChange={setYear}
-            month={month}
-            onMonthChange={setMonth}
-            minYear={CURRENT_YEAR - 1}
-            maxYear={CURRENT_YEAR + 1}
-          />
-        </aside>
+        {leftPanelOpen && (
+          <aside className="hidden md:block w-[350px] shrink-0 p-12 overflow-y-auto">
+            <DateSidebar
+              year={year}
+              onYearChange={setYear}
+              month={month}
+              onMonthChange={setMonth}
+              minYear={CURRENT_YEAR - 1}
+              maxYear={CURRENT_YEAR + 1}
+            />
+          </aside>
+        )}
 
         {/* Center: data entry */}
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
@@ -375,9 +382,11 @@ export default function DeptPage() {
         </main>
 
         {/* Right: add-ons */}
-        <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
-          <AddOnsPanel />
-        </aside>
+        {rightPanelOpen && (
+          <aside className="hidden lg:block w-[400px] shrink-0 overflow-y-auto">
+            <AddOnsPanel />
+          </aside>
+        )}
       </div>
     </div>
   )

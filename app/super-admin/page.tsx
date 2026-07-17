@@ -3,16 +3,16 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
-  UsersGroupRoundedLinear as IconUsers,
-  UserPlusLinear as IconUserPlus,
-  ShieldCheckLinear as IconShieldCheck,
-  KeyLinear as IconKey,
-  LogoutLinear as IconLogout,
-  PenLinear as IconPen,
-  CheckCircleLinear as IconCheckCircle,
-  CloseCircleLinear as IconCloseCircle,
-  ClockCircleLinear as IconClock,
-  TransferHorizontalLinear as IconSwitch,
+  UsersGroupRoundedLineDuotone as IconUsers,
+  UserPlusLineDuotone as IconUserPlus,
+  ShieldCheckLineDuotone as IconShieldCheck,
+  KeyLineDuotone as IconKey,
+  LogoutLineDuotone as IconLogout,
+  PenLineDuotone as IconPen,
+  CheckCircleLineDuotone as IconCheckCircle,
+  CloseCircleLineDuotone as IconCloseCircle,
+  ClockCircleLineDuotone as IconClock,
+  TransferHorizontalLineDuotone as IconSwitch,
 } from '@solar-icons/react-perf'
 import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
 import { useAuth, authHeaders } from '@/lib/auth'
@@ -28,6 +28,7 @@ import {
   SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarInset, SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { iconHoverClass } from '@/lib/utils'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 type Role = 'dept_head' | 'corp_planning' | 'super_admin'
 interface AdminUser { id: number; name: string; avatar_url: string | null; role: Role; dept_id: string | null; dept_name: string | null; active: boolean; created_at: string }
@@ -47,6 +48,7 @@ export default function SuperAdminPage() {
   const [loading, setLoading] = useState(true)
   const [dialogUser, setDialogUser] = useState<AdminUser | 'new' | null>(null)
   const [resetPinFor, setResetPinFor] = useState<AdminUser | null>(null)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   useEffect(() => {
     if (!ready) return
@@ -181,7 +183,7 @@ export default function SuperAdminPage() {
               />
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout}>
+              <SidebarMenuButton onClick={() => setConfirmLogout(true)}>
                 <IconLogout size={14} />
                 <span>Sign out</span>
               </SidebarMenuButton>
@@ -325,6 +327,16 @@ export default function SuperAdminPage() {
           onSaved={() => { setResetPinFor(null); fetchAll() }}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Sign out?"
+        description="You'll need your PIN again to sign back in."
+        confirmLabel="Sign out"
+        cancelLabel="Stay signed in"
+        onConfirm={handleLogout}
+      />
     </SidebarProvider>
   )
 }
@@ -341,6 +353,9 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
   const [deptId, setDeptId] = useState(initial?.dept_id || '')
   const [pin, setPin] = useState('')
   const [saving, setSaving] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const isDirty = pin.length > 0 || name.trim() !== (initial?.name || '') || role !== (initial?.role || 'dept_head') || deptId !== (initial?.dept_id || '')
+  const handleCancel = () => { if (isDirty) setConfirmDiscard(true); else onClose() }
 
   const handleSubmit = async () => {
     if (!token || !name.trim()) return
@@ -416,12 +431,21 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={handleCancel}>Cancel</Button>
           <Button disabled={saving} onClick={handleSubmit} className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white">
             {saving ? 'Saving…' : initial ? 'Save Changes' : 'Create User'}
           </Button>
         </DialogFooter>
       </DialogContent>
+      <ConfirmDialog
+        open={confirmDiscard}
+        onOpenChange={setConfirmDiscard}
+        title="Discard changes?"
+        description="What you've entered here hasn't been saved yet."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={onClose}
+      />
     </Dialog>
   )
 }
@@ -434,6 +458,8 @@ function ResetPinDialog({ targetUser, token, onClose, onSaved }: {
 }) {
   const [pin, setPin] = useState('')
   const [saving, setSaving] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const handleCancel = () => { if (pin.length > 0) setConfirmDiscard(true); else onClose() }
 
   const handleSubmit = async () => {
     if (!token || pin.length !== 4) return
@@ -470,12 +496,21 @@ function ResetPinDialog({ targetUser, token, onClose, onSaved }: {
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={handleCancel}>Cancel</Button>
           <Button disabled={saving || pin.length !== 4} onClick={handleSubmit} className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white">
             {saving ? 'Saving…' : 'Reset PIN'}
           </Button>
         </DialogFooter>
       </DialogContent>
+      <ConfirmDialog
+        open={confirmDiscard}
+        onOpenChange={setConfirmDiscard}
+        title="Discard the new PIN?"
+        description="The PIN you typed won't be saved."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={onClose}
+      />
     </Dialog>
   )
 }

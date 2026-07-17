@@ -2,14 +2,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  DangerTriangleLinear as AlertTriangle,
-  AltArrowDownLinear as ChevronDown,
-  AltArrowUpLinear as ChevronUp,
-  GraphNewUpLinear as TrendingUp,
-  GraphDownNewLinear as TrendingDown,
-  MinusCircleLinear as Minus,
-  LogoutLinear as LogOut,
-  ClipboardCheckLinear as FileSearch,
+  DangerTriangleLineDuotone as AlertTriangle,
+  AltArrowDownLineDuotone as ChevronDown,
+  AltArrowUpLineDuotone as ChevronUp,
+  GraphNewUpLineDuotone as TrendingUp,
+  GraphDownNewLineDuotone as TrendingDown,
+  MinusCircleLineDuotone as Minus,
+  LogoutLineDuotone as LogOut,
+  ClipboardCheckLineDuotone as FileSearch,
 } from '@solar-icons/react-perf'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { toast } from 'sonner'
@@ -18,6 +18,7 @@ import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { iconHoverClass } from '@/lib/utils'
 import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -67,6 +68,7 @@ export default function BoardPage() {
   const [loading, setLoading] = useState(true)
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
   const [showAnomalies, setShowAnomalies] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   useEffect(() => {
     if (!ready) return
@@ -175,7 +177,7 @@ export default function BoardPage() {
             </button>
             <SwitchAccountDialog />
             <button
-              onClick={handleLogout}
+              onClick={() => setConfirmLogout(true)}
               className={`flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-normal px-2.5 py-1.5 rounded hover:bg-white/10 transition-colors ${iconHoverClass}`}
             >
               <LogOut size={13} />
@@ -184,6 +186,16 @@ export default function BoardPage() {
           </div>
         )}
       </header>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Sign out?"
+        description="You'll need your PIN again to sign back in."
+        confirmLabel="Sign out"
+        cancelLabel="Stay signed in"
+        onConfirm={handleLogout}
+      />
 
       <main className="flex-1 px-6 md:px-8 py-6 max-w-7xl mx-auto w-full">
         {/* Anomaly alert */}

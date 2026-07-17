@@ -1,11 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogoutLinear as LogOut, TransferHorizontalLinear as ArrowLeftRight } from '@solar-icons/react-perf'
+import { LogoutLineDuotone as LogOut, TransferHorizontalLineDuotone as ArrowLeftRight } from '@solar-icons/react-perf'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
 import { SwitchAccountDialog } from '@/components/layout/SwitchAccountDialog'
 import { Switch } from '@/components/ui/switch'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 const DARK_MODE_KEY = 'itsec_kpi_dark_mode'
 
@@ -13,6 +14,7 @@ export function AddOnsPanel() {
   const { user, logout } = useAuth()
   const router = useRouter()
   const [darkMode, setDarkMode] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem(DARK_MODE_KEY) === '1'
@@ -69,13 +71,23 @@ export function AddOnsPanel() {
         />
 
         <button
-          onClick={handleLogout}
+          onClick={() => setConfirmLogout(true)}
           className="bg-[#f5f5f5] border border-[#e5e5e5] rounded-xl px-4 py-3.5 w-full flex items-center justify-between hover:border-[#CC1F1F] transition-colors group"
         >
           <span className="text-base text-[#dc2626] tracking-[-0.192px]">Log out</span>
           <LogOut size={20} className="text-[#dc2626] group-hover:scale-110 transition-transform" />
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Sign out?"
+        description="You'll need your PIN again to sign back in."
+        confirmLabel="Sign out"
+        cancelLabel="Stay signed in"
+        onConfirm={handleLogout}
+      />
     </div>
   )
 }
