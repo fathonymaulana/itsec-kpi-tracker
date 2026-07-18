@@ -269,9 +269,9 @@ export default function AdminPage() {
                 </SelectContent>
               </Select>
               {selectedDeptObj?.submitted && (
-                <span className="flex items-center gap-1 text-xs text-success bg-success-soft border border-success-soft-border px-2.5 py-1 rounded-full">
+                <Badge variant="success" className="h-auto px-2.5 py-1 text-xs">
                   <CheckCircle2 size={11} /> Submitted
-                </span>
+                </Badge>
               )}
             </div>
 
@@ -404,7 +404,7 @@ export default function AdminPage() {
                                 </Button>
                               </>
                             ) : (
-                              <span className="text-[11px] text-ink-faint">Pending verification</span>
+                              <Badge variant="warning" className="h-auto px-2.5 py-1 text-[11px]">Pending verification</Badge>
                             )}
                           </div>
                         </div>
@@ -427,7 +427,7 @@ export default function AdminPage() {
                         {kpis.map(kpi => {
                           const v = getKpiVerification(kpi.id)
                           return (
-                            <div key={kpi.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl px-4 py-3 flex items-center gap-3">
+                            <div key={kpi.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-xl px-4 py-3 flex items-center gap-3">
                               <div className="flex-1">
                                 <div className="text-xs font-medium text-ink">{kpi.name}</div>
                                 <div className="text-[11px] text-ink-faint mt-0.5 font-normal">{kpi.target_text}</div>

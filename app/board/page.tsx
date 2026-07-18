@@ -9,8 +9,9 @@ import {
   ClipboardCheckLineDuotone as FileSearch,
   ChartLineDuotone as ChartLine, ChartBold as ChartBold,
   ListLineDuotone as ListLine, ListBold as ListBold,
+  TuningLineDuotone as IconFilters,
 } from '@solar-icons/react-perf'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
@@ -22,11 +23,13 @@ import { MonthRangePicker, type MonthPeriod } from '@/components/kpi/MonthRangeP
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, type ChartConfig } from '@/components/ui/chart'
+import { Badge } from '@/components/ui/badge'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
 import { getStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { cn, iconHoverClass } from '@/lib/utils'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -110,6 +113,7 @@ export default function BoardPage() {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const [view, setView] = useState<'charts' | 'table'>('charts')
+  const [visibleSeries, setVisibleSeries] = useState({ onTrack: true, watch: true, offTrack: true, noData: true })
 
   // Full-year breakdown (Table tab only) — independent of the single `month` above, which still
   // drives the stat cards/chart. Board summary's month_statuses already covers all 12 months of
@@ -237,6 +241,17 @@ export default function BoardPage() {
 
   const pct = (n: number) => totals.total > 0 ? Math.round(n / totals.total * 100) : 0
 
+  // Per-status sparkline for the stat cards (large screens only) — built from yearSummaries (already
+  // fetched for the Table tab's Full Period Overview), which only carries each department's overall
+  // status per month, not per-KPI counts. So this counts DEPARTMENTS at that status per month, not
+  // individual KPIs like the card's headline number — a coarser but real, non-fabricated trend line.
+  const yearData = yearSummaries[year] || []
+  const monthlyDeptCounts = (statusKey: KpiStatus) =>
+    MONTHS.map((label, mi) => {
+      const m = mi + 1
+      return { month: label.slice(0, 3), value: yearData.filter(d => d.month_statuses[m] === statusKey).length }
+    })
+
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
@@ -292,17 +307,27 @@ export default function BoardPage() {
             {/* Summary stat cards */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               {[
-                { label: 'On Track', value: totals.on_track, pct: pct(totals.on_track), color: 'var(--success-text)', border: 'var(--success-soft-border)', Icon: TrendingUp },
-                { label: 'Watch', value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', border: 'var(--warning-soft-border)', Icon: Minus },
-                { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', border: 'var(--danger-soft-border)', Icon: Minus },
-                { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-faint)', border: 'var(--divider)', Icon: Minus },
+                { label: 'On Track', statusKey: 'on_track' as const, value: totals.on_track, pct: pct(totals.on_track), color: 'var(--success-text)', border: 'var(--success-soft-border)', Icon: TrendingUp },
+                { label: 'Watch', statusKey: 'watch' as const, value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', border: 'var(--warning-soft-border)', Icon: Minus },
+                { label: 'Off Track', statusKey: 'off_track' as const, value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', border: 'var(--danger-soft-border)', Icon: Minus },
+                { label: 'No Data', statusKey: 'no_data' as const, value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-faint)', border: 'var(--divider)', Icon: Minus },
               ].map(s => (
-                <div key={s.label} className="bg-panel border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
-                  <s.Icon size={16} style={{ color: s.color }} className="mt-0.5 shrink-0" />
-                  <div>
+                <div key={s.label} className="bg-panel border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-center gap-3" style={{ borderColor: s.border }}>
+                  <s.Icon size={16} style={{ color: s.color }} className="self-start mt-0.5 shrink-0" />
+                  <div className="shrink-0">
                     <div className="text-2xl font-semibold" style={{ color: s.color }}>{s.value}</div>
                     <div className="text-xs text-ink-muted font-normal">{s.label}</div>
                     <div className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }}>{s.pct}%</div>
+                  </div>
+                  {/* Fills the empty space to the right on large screens only — a compact trend
+                      sparkline (shadcn Charts, i.e. the same ChartContainer used everywhere else in
+                      this app) built from yearSummaries, already fetched for the Table tab. */}
+                  <div className="hidden lg:block flex-1 h-12 min-w-0">
+                    <ChartContainer config={{ value: { label: s.label, color: s.color } }} className="h-full w-full aspect-auto">
+                      <LineChart data={monthlyDeptCounts(s.statusKey)} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+                        <Line type="monotone" dataKey="value" stroke={s.color} strokeWidth={2} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ChartContainer>
                   </div>
                 </div>
               ))}
@@ -324,7 +349,33 @@ export default function BoardPage() {
                 {/* Stacked bar chart */}
                 {!loading && chartData.length > 0 && (
                   <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
-                    <h3 className="font-medium text-ink text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
+                    <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-ink text-sm">Department KPI Status</h3>
+                        <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{MONTHS[month - 1]} {year}</Badge>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), iconHoverClass)}>
+                          <IconFilters size={13} className="mr-1" />
+                          Filters
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuCheckboxItem checked={visibleSeries.onTrack} onCheckedChange={v => setVisibleSeries(s => ({ ...s, onTrack: v }))}>
+                            On Track
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem checked={visibleSeries.watch} onCheckedChange={v => setVisibleSeries(s => ({ ...s, watch: v }))}>
+                            Watch
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem checked={visibleSeries.offTrack} onCheckedChange={v => setVisibleSeries(s => ({ ...s, offTrack: v }))}>
+                            Off Track
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem checked={visibleSeries.noData} onCheckedChange={v => setVisibleSeries(s => ({ ...s, noData: v }))}>
+                            No Data
+                          </DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="-mx-5 border-t border-divider mb-4" />
                     <ChartContainer config={chartConfig} className="h-[380px] w-full aspect-auto">
                       <BarChart data={chartData} layout="vertical" barSize={34} barCategoryGap="28%" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
                         <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--divider)" />
@@ -334,18 +385,26 @@ export default function BoardPage() {
                         <ChartLegend content={<ChartLegendCircles />} />
                         {/* Solid fills from chartConfig's own theme-aware CSS vars (ChartContainer auto-
                             generates --color-onTrack etc. from chartConfig) — no gradient defs needed. */}
-                        <Bar dataKey="onTrack" stackId="a" fill="var(--color-onTrack)" radius={[6, 6, 6, 6]}>
-                          <LabelList dataKey="onTrack" content={<BarSegmentLabel />} />
-                        </Bar>
-                        <Bar dataKey="watch" stackId="a" fill="var(--color-watch)" radius={[6, 6, 6, 6]}>
-                          <LabelList dataKey="watch" content={<BarSegmentLabel />} />
-                        </Bar>
-                        <Bar dataKey="offTrack" stackId="a" fill="var(--color-offTrack)" radius={[6, 6, 6, 6]}>
-                          <LabelList dataKey="offTrack" content={<BarSegmentLabel />} />
-                        </Bar>
-                        <Bar dataKey="noData" stackId="a" fill="var(--color-noData)" radius={[6, 6, 6, 6]}>
-                          <LabelList dataKey="noData" content={<BarSegmentLabel />} />
-                        </Bar>
+                        {visibleSeries.onTrack && (
+                          <Bar dataKey="onTrack" stackId="a" fill="var(--color-onTrack)" radius={[6, 6, 6, 6]}>
+                            <LabelList dataKey="onTrack" content={<BarSegmentLabel />} />
+                          </Bar>
+                        )}
+                        {visibleSeries.watch && (
+                          <Bar dataKey="watch" stackId="a" fill="var(--color-watch)" radius={[6, 6, 6, 6]}>
+                            <LabelList dataKey="watch" content={<BarSegmentLabel />} />
+                          </Bar>
+                        )}
+                        {visibleSeries.offTrack && (
+                          <Bar dataKey="offTrack" stackId="a" fill="var(--color-offTrack)" radius={[6, 6, 6, 6]}>
+                            <LabelList dataKey="offTrack" content={<BarSegmentLabel />} />
+                          </Bar>
+                        )}
+                        {visibleSeries.noData && (
+                          <Bar dataKey="noData" stackId="a" fill="var(--color-noData)" radius={[6, 6, 6, 6]}>
+                            <LabelList dataKey="noData" content={<BarSegmentLabel />} />
+                          </Bar>
+                        )}
                       </BarChart>
                     </ChartContainer>
                   </div>
@@ -362,7 +421,7 @@ export default function BoardPage() {
                     const expanded = expandedDepts.has(dept.dept_id)
                     const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
                     return (
-                      <div key={dept.dept_id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                      <div key={dept.dept_id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
                         <button
                           onClick={() => toggleDept(dept.dept_id)}
                           className="w-full px-5 py-3.5 flex items-center gap-4 hover:bg-app transition-colors"

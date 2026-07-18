@@ -43,9 +43,10 @@ export async function PATCH(request: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   const { name, avatar_url } = await request.json().catch(() => ({}))
-  const patch: Record<string, string> = {}
+  const patch: Record<string, string | null> = {}
   if (typeof name === 'string' && name.trim()) patch.name = name.trim()
-  if (typeof avatar_url === 'string') patch.avatar_url = avatar_url
+  // avatar_url === null resets to no avatar (the fallback initials) — an explicit reset, not "field omitted".
+  if (typeof avatar_url === 'string' || avatar_url === null) patch.avatar_url = avatar_url
   if (Object.keys(patch).length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
 
   const supabase = supabaseServer()

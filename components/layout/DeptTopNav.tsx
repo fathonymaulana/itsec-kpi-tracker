@@ -33,6 +33,11 @@ const NAV_ITEMS_BY_ROLE: Record<string, { href: string; label: string; icons: Ic
   ],
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  dept_head: 'Department Head',
+  corp_planning: 'Corporate Planning',
+}
+
 interface DeptTopNavProps {
   leftPanelOpen?: boolean
   onToggleLeftPanel?: () => void
@@ -141,11 +146,15 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
 
         {user && (
           <Tooltip>
-            <TooltipTrigger onClick={() => router.push('/profile')}>
+            <TooltipTrigger onClick={() => router.push('/profile')} className="flex items-center gap-2.5">
               <Avatar className="ring-1 ring-divider">
                 {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
                 <AvatarFallback className="text-[10px]">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[14px] text-foreground font-medium">{user.name}</span>
+                <span className="text-[12px] text-muted-foreground">{ROLE_LABELS[user.role] ?? user.role}</span>
+              </div>
             </TooltipTrigger>
             <TooltipContent>Profile</TooltipContent>
           </Tooltip>

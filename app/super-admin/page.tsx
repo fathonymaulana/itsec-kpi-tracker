@@ -6,16 +6,16 @@ import {
   UserPlusLineDuotone as IconUserPlus,
   ShieldCheckLineDuotone as IconShieldCheck,
   KeyLineDuotone as IconKey,
-  KeyLineDuotone as IconKeyReset,
-  PenLineDuotone as IconPen,
+  KeyBold as IconKeyReset,
+  PenBold as IconPen,
   CheckCircleLineDuotone as IconCheckCircle,
   CloseCircleLineDuotone as IconCloseCircle,
   ClockCircleLineDuotone as IconClock,
   UsersGroupRoundedLineDuotone as UsersLine, UsersGroupRoundedBold as UsersBold,
   KeyBold as KeyBold,
-  MenuDotsLineDuotone as IconMenuDots,
-  UserCrossLineDuotone as IconUserCross,
-  UserCheckLineDuotone as IconUserCheck,
+  MenuDotsBold as IconMenuDots,
+  UserCrossBold as IconUserCross,
+  UserCheckBold as IconUserCheck,
   ShieldKeyholeLineDuotone as IconShieldKeyhole,
   TuningLineDuotone as IconFilters,
   DownloadLineDuotone as IconDownload,
@@ -28,7 +28,6 @@ import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -319,10 +318,9 @@ export default function SuperAdminPage() {
                           <div className="flex items-center justify-between border-t border-divider">
                             <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Status</span>
                             <div className="flex-1 py-3 flex justify-center">
-                              <Label className="gap-1.5 text-[10px] w-fit shrink-0 whitespace-nowrap" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
-                                <span className="size-1.5 rounded-full" style={{ background: 'currentColor' }} />
+                              <Badge variant={u.active ? 'success' : 'danger'} className="h-auto text-[10px]">
                                 {u.active ? 'Active' : 'Inactive'}
-                              </Label>
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -355,15 +353,14 @@ export default function SuperAdminPage() {
                               <TableCell className="text-sm text-muted-foreground">{ROLE_LABELS[u.role]}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">{u.dept_name || '—'}</TableCell>
                               <TableCell>
-                                <Label className="gap-1.5 text-xs" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
-                                  <span className="size-1.5 rounded-full" style={{ background: 'currentColor' }} />
+                                <Badge variant={u.active ? 'success' : 'danger'} className="h-auto text-xs">
                                   {u.active ? 'Active' : 'Inactive'}
-                                </Label>
+                                </Badge>
                               </TableCell>
                               <TableCell className="text-right">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger
-                                    className={`inline-flex size-7 items-center justify-center rounded-md hover:bg-muted transition-colors ${iconHoverClass}`}
+                                    className={`inline-flex size-7 items-center justify-center rounded-md border border-divider bg-panel shadow-xs hover:bg-panel-soft transition-colors ${iconHoverClass}`}
                                     title="Actions"
                                   >
                                     <IconMenuDots size={16} className="text-ink-muted" />

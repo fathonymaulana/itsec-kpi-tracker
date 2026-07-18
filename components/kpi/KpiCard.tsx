@@ -14,6 +14,7 @@ import { getStatus, getStatusColors } from '@/lib/status'
 import { resolveAllValues, getSubMetricStatuses, getPeriodStatuses } from '@/lib/kpi-primary'
 import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { useAuth, authHeaders } from '@/lib/auth'
+import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from './StatusBadge'
 import { DataSourceModal } from './DataSourceModal'
 import { ModifyRequestModal } from './ModifyRequestModal'
@@ -185,10 +186,10 @@ export function KpiCard({
           )}
           {readOnly && onRequestModify ? (
             modifyRequestStatus === 'pending' ? (
-              <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-warning bg-warning-soft border border-warning-soft-border">
+              <Badge variant="warning" className="h-auto px-2.5 py-1.5 text-xs">
                 <PendingIcon size={12} />
                 Pending Review
-              </div>
+              </Badge>
             ) : (
               <button
                 onClick={() => setModifyOpen(true)}

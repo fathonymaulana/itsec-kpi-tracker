@@ -2,14 +2,26 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CameraLineDuotone as Camera, ClockCircleLineDuotone as Clock, ShieldCheckLineDuotone as ShieldCheck, AltArrowRightLineDuotone as ChevronRight } from '@solar-icons/react-perf'
+import {
+  ClockCircleLineDuotone as Clock,
+  ShieldCheckLineDuotone as ShieldCheck,
+  AltArrowRightLineDuotone as ChevronRight,
+  RestartLineDuotone as ResetIcon,
+  GalleryLineDuotone as ChooseIcon,
+  LogoutLineDuotone as LogOutIcon,
+} from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
+
+// 168px avatar frame — ring sits just outside it. circumference = 2πr, r = 84.
+const AVATAR_RING_R = 84
+const AVATAR_RING_CIRCUMFERENCE = 2 * Math.PI * AVATAR_RING_R
 
 interface Profile {
   id: number
@@ -26,7 +38,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 export default function ProfilePage() {
-  const { user, token, ready, refreshUser } = useAuth()
+  const { user, token, ready, refreshUser, logout } = useAuth()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -35,7 +47,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [savingName, setSavingName] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [resettingAvatar, setResettingAvatar] = useState(false)
   const [submittingPin, setSubmittingPin] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   useEffect(() => {
     if (!ready) return
@@ -58,21 +73,37 @@ export default function ProfilePage() {
 
   const handleAvatarPick = () => fileInputRef.current?.click()
 
+  // XMLHttpRequest (not fetch) specifically for its upload.onprogress event — fetch has no simple
+  // equivalent — so the ring around the avatar tracks the actual upload percentage, not a fake timer.
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !token) return
     setUploadingAvatar(true)
+    setUploadProgress(0)
     try {
       const form = new FormData()
       form.append('file', file)
-      const r = await fetch('/api/users/me/avatar', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
+      const avatarUrl = await new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', '/api/users/me/avatar')
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+        xhr.upload.onprogress = (evt) => {
+          if (evt.lengthComputable) setUploadProgress(Math.round((evt.loaded / evt.total) * 100))
+        }
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText)
+            if (xhr.status >= 200 && xhr.status < 300) resolve(data.avatar_url)
+            else reject(new Error(data.error || 'Upload failed'))
+          } catch {
+            reject(new Error('Upload failed'))
+          }
+        }
+        xhr.onerror = () => reject(new Error('Upload failed'))
+        xhr.send(form)
       })
-      const data = await r.json()
-      if (!r.ok) throw new Error(data.error || 'Upload failed')
-      refreshUser({ avatar_url: data.avatar_url })
+      setUploadProgress(100)
+      refreshUser({ avatar_url: avatarUrl })
       await fetchProfile()
       toast.success('Avatar updated', { description: 'Looking good — your new photo is live.' })
     } catch (err) {
@@ -81,6 +112,33 @@ export default function ProfilePage() {
       setUploadingAvatar(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
+  }
+
+  const handleResetAvatar = async () => {
+    if (!token) return
+    setResettingAvatar(true)
+    try {
+      const r = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: null }),
+      })
+      if (!r.ok) throw new Error('Reset failed')
+      refreshUser({ avatar_url: null })
+      await fetchProfile()
+      toast.success('Profile picture reset')
+    } catch {
+      toast.error('Couldn’t reset your profile picture', { description: 'Please try again.' })
+    } finally {
+      setResettingAvatar(false)
+    }
+  }
+
+  const handleLogout = () => {
+    const firstName = user?.name?.split(' ')[0]
+    logout()
+    router.push('/login')
+    toast.success('Signed out', { description: firstName ? `See you soon, ${firstName}.` : 'You’ve been signed out safely.' })
   }
 
   const handleSaveName = async () => {
@@ -147,9 +205,20 @@ export default function ProfilePage() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="mb-2">
-          <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Profile</h1>
-          <p className="text-sm text-ink-muted mt-1">Manage your display name, avatar, and PIN.</p>
+        <div className="mb-2 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Profile</h1>
+            <p className="text-sm text-ink-muted mt-1">Manage your display name, avatar, and PIN.</p>
+          </div>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setConfirmLogout(true)}
+            className="text-danger border-danger-soft-border hover:bg-danger-soft shrink-0"
+          >
+            <LogOutIcon size={15} className="mr-1.5" />
+            Sign Out
+          </Button>
         </div>
 
         {loading ? (
@@ -163,26 +232,60 @@ export default function ProfilePage() {
             <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
               <h2 className="font-medium text-ink text-sm mb-4">Profile</h2>
 
-              <div className="flex items-center gap-4 mb-5">
-                <div className="relative">
-                  <Avatar size="lg" className="size-24">
+              <div className="flex flex-col items-center gap-4 mb-6">
+                <div className="relative size-[176px] flex items-center justify-center">
+                  {uploadingAvatar && (
+                    <svg
+                      className="absolute inset-0 -rotate-90"
+                      width={176}
+                      height={176}
+                      viewBox="0 0 176 176"
+                    >
+                      <circle cx={88} cy={88} r={AVATAR_RING_R} fill="none" stroke="var(--divider)" strokeWidth={3} />
+                      <circle
+                        cx={88}
+                        cy={88}
+                        r={AVATAR_RING_R}
+                        fill="none"
+                        stroke="#CC1F1F"
+                        strokeWidth={3}
+                        strokeLinecap="round"
+                        strokeDasharray={AVATAR_RING_CIRCUMFERENCE}
+                        strokeDashoffset={AVATAR_RING_CIRCUMFERENCE * (1 - uploadProgress / 100)}
+                        className="transition-[stroke-dashoffset] duration-150 ease-out"
+                      />
+                    </svg>
+                  )}
+                  <Avatar className="size-[168px]">
                     {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.name} />}
-                    <AvatarFallback className="text-lg">{profile.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="text-3xl">{profile.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
-                  <button
-                    onClick={handleAvatarPick}
-                    disabled={uploadingAvatar}
-                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#CC1F1F] hover:bg-[#8B1A1A] rounded-full flex items-center justify-center text-white transition-colors"
-                    title="Change avatar"
-                  >
-                    <Camera size={12} />
-                  </button>
                   <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleAvatarChange} />
                 </div>
-                <div>
+
+                <div className="text-center">
                   <div className="text-xs text-ink-muted">{ROLE_LABELS[profile.role] || profile.role}</div>
                   {profile.dept_name && <div className="text-xs text-ink-faint">{profile.dept_name}</div>}
-                  {uploadingAvatar && <div className="text-[11px] text-ink-faint mt-1">Uploading…</div>}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingAvatar || resettingAvatar || !profile.avatar_url}
+                    onClick={handleResetAvatar}
+                  >
+                    <ResetIcon size={13} className="mr-1" />
+                    {resettingAvatar ? 'Resetting…' : 'Reset profile picture'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={uploadingAvatar || resettingAvatar}
+                    onClick={handleAvatarPick}
+                  >
+                    <ChooseIcon size={13} className="mr-1" />
+                    {uploadingAvatar ? `Uploading… ${uploadProgress}%` : 'Choose profile picture'}
+                  </Button>
                 </div>
               </div>
 
@@ -239,6 +342,16 @@ export default function ProfilePage() {
         )}
         </div>
       </main>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Sign out?"
+        description="You'll need your PIN again to sign back in."
+        confirmLabel="Sign out"
+        cancelLabel="Stay signed in"
+        onConfirm={handleLogout}
+      />
     </div>
   )
 }

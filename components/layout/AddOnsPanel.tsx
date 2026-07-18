@@ -40,7 +40,7 @@ export function AddOnsPanel() {
         <div className="pt-0">
           <div className="pb-3">
             <div className="text-base font-semibold text-ink tracking-[-0.192px]">ADD-ONS</div>
-            <p className="text-sm text-ink-muted mt-1.5">Customize your experience with optional add-ons.</p>
+            <p className="text-sm text-ink-muted mt-0">Customize your experience with optional add-ons.</p>
           </div>
           <div className="py-1.5">
             <div className="bg-panel-soft border border-divider rounded-[10px] px-4 py-3.5 flex items-center justify-between gap-3">
@@ -55,7 +55,7 @@ export function AddOnsPanel() {
       </div>
 
       <div className="flex flex-col gap-3 pb-6 pl-6 pr-12 pt-0 w-full">
-        <div className="text-xs text-ink-muted uppercase tracking-wide">Others</div>
+        <div className="text-[10px] text-ink-muted uppercase tracking-wide">Others</div>
 
         <button
           onClick={() => setConfirmLogout(true)}
