@@ -319,7 +319,11 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           <PopoverContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-divider flex items-center justify-between">
               <div className="text-sm font-semibold text-ink">Notifications</div>
-              {isTaskQueue && notifItems.length > 0 && <Badge className="text-[10px]">{notifItems.length}</Badge>}
+              {isTaskQueue && notifItems.length > 0 && (
+                <Badge className="size-5 rounded-full p-0 justify-center bg-muted text-muted-foreground text-[10px]">
+                  {notifItems.length}
+                </Badge>
+              )}
             </div>
             {notifItems.length === 0 ? (
               <div className="p-8 text-center flex flex-col items-center gap-2">

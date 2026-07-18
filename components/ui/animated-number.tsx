@@ -10,18 +10,29 @@ import { cn } from '@/lib/utils'
 // digit that's already correct when the component first mounts doesn't play an entrance — it only
 // animates when its value actually changes afterward. true (the dashboard count-up case) means it
 // always plays its entrance, including on that very first mount.
+// leading-none (line-height: 1) on both the width/height reference and the animated glyph itself is
+// what makes the height:1em wrapper below an exact fit — without it, the browser's default line-height
+// (~1.2-1.5x font-size) renders a taller line box than the 1em wrapper allows, and overflow-hidden
+// was clipping the difference off the numerals.
+// GSAP's power2.inOut (ease-in-out: slow start, fast middle, slow settle) is what this app's other
+// hand-rolled easing already borrows its "professional" feel from — cubic-bezier(0.65,0,0.35,1) is
+// the closest standard CSS equivalent, and reads noticeably more deliberate than the expo-out curve
+// this used before.
+const DIGIT_EASE: [number, number, number, number] = [0.65, 0, 0.35, 1]
+const DIGIT_DURATION_S = 0.55
+
 function AnimatedDigit({ value, delay = 0, revealOnMount = false }: { value: string; delay?: number; revealOnMount?: boolean }) {
   return (
-    <span className="relative inline-block overflow-hidden" style={{ height: '1em' }}>
-      <span className="invisible">{value}</span>
+    <span className="relative inline-block overflow-hidden leading-none" style={{ height: '1em' }}>
+      <span className="invisible leading-none">{value}</span>
       <AnimatePresence mode="popLayout" initial={revealOnMount}>
         <motion.span
           key={value}
           initial={{ y: '100%', opacity: 0 }}
           animate={{ y: '0%', opacity: 1 }}
           exit={{ y: '-100%', opacity: 0 }}
-          transition={{ duration: 0.35, delay, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute inset-0"
+          transition={{ duration: DIGIT_DURATION_S, delay, ease: DIGIT_EASE }}
+          className="absolute inset-0 leading-none"
         >
           {value}
         </motion.span>
