@@ -363,7 +363,7 @@ export default function AdminPage() {
                           {/* Verification status / action row */}
                           <div className="flex items-center gap-2 px-1">
                             {verification ? (
-                              <div className={`flex items-center gap-1.5 text-[10px] md:text-xs px-2.5 py-1 rounded-full ${
+                              <div className={`flex items-center w-fit shrink-0 whitespace-nowrap gap-1.5 text-[10px] md:text-xs px-2.5 py-1 rounded-full ${
                                 verification.status === 'verified'
                                   ? 'text-success bg-success-soft border border-success-soft-border'
                                   : 'text-danger bg-danger-soft border border-danger-soft-border'
@@ -426,7 +426,7 @@ export default function AdminPage() {
                                 <div className="text-[11px] text-ink-faint mt-0.5 font-normal">{kpi.target_text}</div>
                               </div>
                               {v ? (
-                                <div className={`flex items-center gap-1.5 text-[10px] md:text-[11px] px-2 py-0.5 rounded-full ${
+                                <div className={`flex items-center w-fit shrink-0 whitespace-nowrap gap-1.5 text-[10px] md:text-[11px] px-2 py-0.5 rounded-full ${
                                   v.status === 'verified'
                                     ? 'text-success bg-success-soft'
                                     : 'text-danger bg-danger-soft'

@@ -50,7 +50,13 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   return (
     <header className="bg-panel shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
       <div className="flex items-center gap-3.5 justify-self-start">
-        <ItsecLogo className="h-5 w-auto text-ink" />
+        <button
+          onClick={() => router.push(navItems[0]?.href ?? '/login')}
+          className={cn('flex items-center', iconHoverClass)}
+          title="Go to dashboard"
+        >
+          <ItsecLogo className="h-5 w-auto text-ink" />
+        </button>
       </div>
 
       <nav className="hidden md:flex items-center h-full justify-self-center">

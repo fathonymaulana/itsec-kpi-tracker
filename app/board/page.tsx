@@ -21,7 +21,7 @@ import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { MonthRangePicker, type MonthPeriod } from '@/components/kpi/MonthRangePicker'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart'
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, type ChartConfig } from '@/components/ui/chart'
 import { getStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
@@ -62,6 +62,24 @@ const chartConfig: ChartConfig = {
   watch: { label: 'Watch', color: STATUS_COLORS.watch },
   offTrack: { label: 'Off Track', color: STATUS_COLORS.off_track },
   noData: { label: 'No Data', color: STATUS_COLORS.no_data },
+}
+
+// Custom legend (not the shared ChartLegendContent) — that component's swatch is a plain <div>
+// styled with `background-color: item.color`, and item.color there is whatever's on the matching
+// <Bar>'s `fill` prop. Since the bars now use `fill="url(#barGrad-x)"` for the gradient look,
+// `background-color: url(...)` is invalid CSS and silently drops, leaving every swatch blank — this
+// reads chartConfig's own solid color values directly instead, and renders them as circles.
+function ChartLegendCircles() {
+  return (
+    <div className="flex items-center justify-center gap-4 pt-3 flex-wrap">
+      {Object.entries(chartConfig).map(([key, cfg]) => (
+        <div key={key} className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
+          <span className="text-xs text-ink-muted">{cfg.label}</span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // Value label centered inside each stacked bar segment — skips rendering below ~20px of width so a
@@ -303,7 +321,7 @@ export default function BoardPage() {
                         <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'var(--ink-soft)' }} tickLine={false} axisLine={false} width={84} />
                         <ChartTooltip cursor={{ fill: 'var(--panel-soft-bg)' }} content={<ChartTooltipContent />} />
-                        <ChartLegend content={<ChartLegendContent />} />
+                        <ChartLegend content={<ChartLegendCircles />} />
                         <Bar dataKey="onTrack" stackId="a" fill="url(#barGrad-onTrack)" radius={[6, 6, 6, 6]}>
                           <LabelList dataKey="onTrack" content={<BarSegmentLabel />} />
                         </Bar>

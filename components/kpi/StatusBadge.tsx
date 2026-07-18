@@ -12,7 +12,7 @@ export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   return (
     <span
       style={{ color: colors.text, backgroundColor: colors.bg, borderColor: colors.border }}
-      className={`inline-flex items-center border font-medium tracking-wide ${
+      className={`inline-flex items-center w-fit shrink-0 whitespace-nowrap border font-medium tracking-wide ${
         size === 'sm'
           ? 'px-2 py-0.5 text-[10px] md:text-[11px] rounded'
           : 'px-2.5 py-1 text-[10px] md:text-xs rounded'

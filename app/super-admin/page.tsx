@@ -6,16 +6,16 @@ import {
   UserPlusLineDuotone as IconUserPlus,
   ShieldCheckLineDuotone as IconShieldCheck,
   KeyLineDuotone as IconKey,
-  KeyBold as IconKeyBold,
-  PenBold as IconPen,
+  KeyLineDuotone as IconKeyReset,
+  PenLineDuotone as IconPen,
   CheckCircleLineDuotone as IconCheckCircle,
   CloseCircleLineDuotone as IconCloseCircle,
   ClockCircleLineDuotone as IconClock,
   UsersGroupRoundedLineDuotone as UsersLine, UsersGroupRoundedBold as UsersBold,
   KeyBold as KeyBold,
-  MenuDotsBold as IconMenuDots,
-  UserCrossBold as IconUserCross,
-  UserCheckBold as IconUserCheck,
+  MenuDotsLineDuotone as IconMenuDots,
+  UserCrossLineDuotone as IconUserCross,
+  UserCheckLineDuotone as IconUserCheck,
   ShieldKeyholeLineDuotone as IconShieldKeyhole,
   TuningLineDuotone as IconFilters,
   DownloadLineDuotone as IconDownload,
@@ -288,7 +288,7 @@ export default function SuperAdminPage() {
                             </div>
                             <DropdownMenu>
                               <DropdownMenuTrigger
-                                className={`flex items-center gap-2 h-8 px-3 rounded-md bg-panel border border-divider shadow-xs text-sm font-medium text-ink shrink-0 ${iconHoverClass}`}
+                                className={`flex items-center justify-center size-8 shrink-0 rounded-md bg-panel border border-divider shadow-xs text-ink ${iconHoverClass}`}
                                 title="Actions"
                               >
                                 <IconMenuDots size={16} />
@@ -298,7 +298,7 @@ export default function SuperAdminPage() {
                                   <IconPen size={14} /> Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setResetPinFor(u)}>
-                                  <IconKeyBold size={14} /> Reset PIN
+                                  <IconKeyReset size={14} /> Reset PIN
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem variant={u.active ? 'destructive' : 'default'} onClick={() => handleToggleActive(u)}>
@@ -319,7 +319,7 @@ export default function SuperAdminPage() {
                           <div className="flex items-center justify-between border-t border-divider">
                             <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Status</span>
                             <div className="flex-1 py-3 flex justify-center">
-                              <Label className="gap-1.5 text-[10px]" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
+                              <Label className="gap-1.5 text-[10px] w-fit shrink-0 whitespace-nowrap" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
                                 <span className="size-1.5 rounded-full" style={{ background: 'currentColor' }} />
                                 {u.active ? 'Active' : 'Inactive'}
                               </Label>
@@ -373,7 +373,7 @@ export default function SuperAdminPage() {
                                       <IconPen size={14} /> Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setResetPinFor(u)}>
-                                      <IconKeyBold size={14} /> Reset PIN
+                                      <IconKeyReset size={14} /> Reset PIN
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem variant={u.active ? 'destructive' : 'default'} onClick={() => handleToggleActive(u)}>
