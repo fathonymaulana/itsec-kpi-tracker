@@ -11,7 +11,7 @@ import {
   ListLineDuotone as ListLine, ListBold as ListBold,
   TuningLineDuotone as IconFilters,
 } from '@solar-icons/react-perf'
-import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
@@ -29,7 +29,7 @@ import { getStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } fr
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
-import { AnimatedNumber } from '@/components/ui/animated-number'
+import { CountUpNumber } from '@/components/ui/animated-number'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn, iconHoverClass } from '@/lib/utils'
 
@@ -242,17 +242,6 @@ export default function BoardPage() {
 
   const pct = (n: number) => totals.total > 0 ? Math.round(n / totals.total * 100) : 0
 
-  // Per-status sparkline for the stat cards (large screens only) — built from yearSummaries (already
-  // fetched for the Table tab's Full Period Overview), which only carries each department's overall
-  // status per month, not per-KPI counts. So this counts DEPARTMENTS at that status per month, not
-  // individual KPIs like the card's headline number — a coarser but real, non-fabricated trend line.
-  const yearData = yearSummaries[year] || []
-  const monthlyDeptCounts = (statusKey: KpiStatus) =>
-    MONTHS.map((label, mi) => {
-      const m = mi + 1
-      return { month: label.slice(0, 3), value: yearData.filter(d => d.month_statuses[m] === statusKey).length }
-    })
-
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
@@ -312,38 +301,13 @@ export default function BoardPage() {
                 { label: 'Watch', statusKey: 'watch' as const, value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', border: 'var(--warning-soft-border)', Icon: Minus },
                 { label: 'Off Track', statusKey: 'off_track' as const, value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', border: 'var(--danger-soft-border)', Icon: Minus },
                 { label: 'No Data', statusKey: 'no_data' as const, value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-faint)', border: 'var(--divider)', Icon: Minus },
-              ].map(s => (
-                <div key={s.label} className="bg-panel border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-center gap-3" style={{ borderColor: s.border }}>
-                  <s.Icon size={16} style={{ color: s.color }} className="self-start mt-0.5 shrink-0" />
-                  <div className="shrink-0">
-                    <AnimatedNumber value={s.value} className="text-2xl font-semibold" style={{ color: s.color }} />
+              ].map((s, i) => (
+                <div key={s.label} className="bg-panel border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
+                  <s.Icon size={16} style={{ color: s.color }} className="mt-0.5 shrink-0" />
+                  <div>
+                    <CountUpNumber value={s.value} sequenceIndex={i * 2} className="text-2xl font-semibold" style={{ color: s.color }} />
                     <div className="text-xs text-ink-muted font-normal">{s.label}</div>
-                    <AnimatedNumber value={`${s.pct}%`} className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }} />
-                  </div>
-                  {/* Fills the empty space to the right on large screens only — a compact trend
-                      sparkline (shadcn Charts' area-chart pattern) built from yearSummaries, already
-                      fetched for the Table tab. Hovering reveals the exact monthly count via
-                      ChartTooltip, same as every other chart in this app. */}
-                  <div className="hidden lg:block flex-1 h-12 min-w-0">
-                    <ChartContainer config={{ value: { label: s.label, color: s.color } }} className="h-full w-full aspect-auto">
-                      <AreaChart data={monthlyDeptCounts(s.statusKey)} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-                        <defs>
-                          <linearGradient id={`sparkFill-${s.statusKey}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={s.color} stopOpacity={0.8} />
-                            <stop offset="95%" stopColor={s.color} stopOpacity={0.05} />
-                          </linearGradient>
-                        </defs>
-                        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" hideLabel />} />
-                        <Area
-                          type="monotone"
-                          dataKey="value"
-                          stroke={s.color}
-                          strokeWidth={2}
-                          fill={`url(#sparkFill-${s.statusKey})`}
-                          isAnimationActive={false}
-                        />
-                      </AreaChart>
-                    </ChartContainer>
+                    <CountUpNumber value={s.pct} formatter={n => `${n}%`} sequenceIndex={i * 2 + 1} className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }} />
                   </div>
                 </div>
               ))}

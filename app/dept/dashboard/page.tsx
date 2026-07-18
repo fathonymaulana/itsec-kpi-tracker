@@ -24,6 +24,7 @@ import { getPrimarySubMetric, resolvePrimaryValue, getPeriodStatuses } from '@/l
 import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
+import { CountUpNumber } from '@/components/ui/animated-number'
 
 const CURRENT_YEAR = new Date().getFullYear()
 // var(--foreground), not a literal hex — the fixed '#171717' this used to be stayed black in dark
@@ -196,15 +197,15 @@ export default function DeptDashboard() {
                 { label: 'Watch', value: watch, color: 'var(--warning-text)', Icon: Eye, caption: 'trending toward target, worth watching' },
                 { label: 'Off Track', value: offTrack, color: 'var(--danger-text)', Icon: TrendingDown, caption: 'below target — needs attention' },
                 { label: 'No Data', value: noData, color: 'var(--ink-muted)', Icon: CircleDashed, caption: 'not yet entered this month' },
-              ].map(s => {
+              ].map((s, i) => {
                 const pct = kpis.length > 0 ? Math.round((s.value / kpis.length) * 100) : 0
                 return (
                   <div key={s.label} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
                     <div className="text-sm text-ink-muted">{s.label}</div>
-                    <div className="text-[40px] leading-[48px] font-medium text-ink tracking-[-0.5px]">{s.value}</div>
+                    <CountUpNumber value={s.value} sequenceIndex={i * 2} className="text-[40px] leading-[48px] font-medium text-ink tracking-[-0.5px]" />
                     <div className="flex items-center gap-1">
                       <s.Icon size={14} style={{ color: s.color }} />
-                      <span className="text-base font-semibold" style={{ color: s.color }}>{pct}%</span>
+                      <CountUpNumber value={pct} formatter={n => `${n}%`} sequenceIndex={i * 2 + 1} className="text-base font-semibold" style={{ color: s.color }} />
                       <span className="text-xs text-ink-muted">of {kpis.length || 0}</span>
                     </div>
                     <div className="text-xs text-ink-muted mt-1">{s.caption}</div>

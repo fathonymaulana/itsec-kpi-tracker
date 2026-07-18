@@ -1,4 +1,5 @@
 'use client'
+import { useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -45,4 +46,50 @@ export function AnimatedNumber({
       {chars.map((ch, i) => (/\d/.test(ch) ? <AnimatedDigit key={i} value={ch} /> : <span key={i}>{ch}</span>))}
     </span>
   )
+}
+
+const COUNT_UP_DURATION_MS = 700
+const COUNT_UP_STEP_MS = 60
+
+// Counts up from 0 to `value` on mount, riding the same per-digit roll as AnimatedNumber for each
+// intermediate step (a controlled step interval, not requestAnimationFrame — updating every frame
+// would fire the digit-roll transition too fast to read as anything but a blur). `sequenceIndex`
+// staggers a whole page of these so number N only starts once number N-1's animation has finished —
+// every instance sharing COUNT_UP_DURATION_MS as its per-step budget is what makes
+// `sequenceIndex * COUNT_UP_DURATION_MS` line up exactly on the trailing edge of the previous one.
+export function CountUpNumber({
+  value,
+  sequenceIndex = 0,
+  formatter,
+  className,
+  style,
+}: {
+  value: number
+  sequenceIndex?: number
+  formatter?: (n: number) => string
+  className?: string
+  style?: CSSProperties
+}) {
+  const [display, setDisplay] = useState(0)
+
+  useEffect(() => {
+    const steps = Math.max(1, Math.round(COUNT_UP_DURATION_MS / COUNT_UP_STEP_MS))
+    let step = 0
+    let intervalId: ReturnType<typeof setInterval> | undefined
+    const timeoutId = setTimeout(() => {
+      intervalId = setInterval(() => {
+        step++
+        const progress = Math.min(1, step / steps)
+        const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic — decelerates into the final value
+        setDisplay(Math.round(eased * value))
+        if (progress >= 1 && intervalId) clearInterval(intervalId)
+      }, COUNT_UP_STEP_MS)
+    }, sequenceIndex * COUNT_UP_DURATION_MS)
+    return () => {
+      clearTimeout(timeoutId)
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [value, sequenceIndex])
+
+  return <AnimatedNumber value={formatter ? formatter(display) : display} className={className} style={style} />
 }

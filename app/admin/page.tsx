@@ -315,21 +315,21 @@ export default function AdminPage() {
                           {r.dept_name} · {MONTHS[r.month - 1]} {r.year} · requested by {r.requested_by_name || 'Unknown'}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
                         <Button
-                          size="sm"
+                          size="lg"
                           variant="outline"
-                          className="h-6 text-[11px] gap-1 text-success border-success-soft-border hover:bg-success-soft"
+                          className="text-success border-success-soft-border hover:bg-success-soft"
                           disabled={actionLoading === r.id}
                           onClick={() => handleReviewModify(r.id, 'approve')}
                         >
-                          <CheckCircle2 size={10} />
+                          <CheckCircle2 size={15} className="mr-1" />
                           Approve
                         </Button>
                         <Button
-                          size="sm"
+                          size="lg"
                           variant="outline"
-                          className="h-6 text-[11px] gap-1 text-danger border-danger-soft-border hover:bg-danger-soft"
+                          className="text-danger border-danger-soft-border hover:bg-danger-soft"
                           disabled={actionLoading === r.id}
                           onClick={() => { setRejectTarget(r); setRejectNote('') }}
                         >
@@ -387,23 +387,23 @@ export default function AdminPage() {
                             ) : canVerify ? (
                               <>
                                 <Button
-                                  size="sm"
+                                  size="lg"
                                   variant="outline"
-                                  className="w-auto h-9 md:h-6 px-3 md:px-2 text-sm md:text-[11px] gap-1.5 md:gap-1 text-success border-success-soft-border hover:bg-success-soft"
+                                  className="text-success border-success-soft-border hover:bg-success-soft"
                                   disabled={actionLoading === kpi.id}
                                   onClick={() => setVerifyTarget(kpi)}
                                 >
-                                  <CheckCircle2 size={13} className="md:size-2.5" />
+                                  <CheckCircle2 size={15} className="mr-1" />
                                   Verify
                                 </Button>
                                 <Button
-                                  size="sm"
+                                  size="lg"
                                   variant="outline"
-                                  className="w-auto h-9 md:h-6 px-3 md:px-2 text-sm md:text-[11px] gap-1.5 md:gap-1 text-danger border-danger-soft-border hover:bg-danger-soft"
+                                  className="text-danger border-danger-soft-border hover:bg-danger-soft"
                                   disabled={actionLoading === kpi.id}
                                   onClick={() => { setFlagTarget(kpi); setFlagNote('') }}
                                 >
-                                  <AlertTriangle size={13} className="md:size-2.5" />
+                                  <AlertTriangle size={15} className="mr-1" />
                                   Flag
                                 </Button>
                               </>

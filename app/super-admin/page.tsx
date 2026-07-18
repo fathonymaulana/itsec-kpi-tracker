@@ -407,10 +407,10 @@ export default function SuperAdminPage() {
                             </div>
                             {r.status === 'pending' && (
                               <div className="border-t border-divider flex items-center gap-2 px-6 py-4">
-                                <Button size="sm" variant="outline" className="h-8 flex-1 text-xs text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
-                                  <IconShieldCheck size={12} className="mr-1" /> Approve
+                                <Button size="lg" variant="outline" className="flex-1 text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
+                                  <IconShieldCheck size={14} className="mr-1" /> Approve
                                 </Button>
-                                <Button size="sm" variant="outline" className="h-8 flex-1 text-xs text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
+                                <Button size="lg" variant="outline" className="flex-1 text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
                                   Reject
                                 </Button>
                               </div>
@@ -449,11 +449,11 @@ export default function SuperAdminPage() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {r.status === 'pending' && (
-                                    <div className="flex items-center justify-end gap-1.5">
-                                      <Button size="sm" variant="outline" className="h-6 text-[11px] text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
-                                        <IconShieldCheck size={11} className="mr-1" /> Approve
+                                    <div className="flex items-center justify-end gap-2">
+                                      <Button size="lg" variant="outline" className="text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
+                                        <IconShieldCheck size={14} className="mr-1" /> Approve
                                       </Button>
-                                      <Button size="sm" variant="outline" className="h-6 text-[11px] text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
+                                      <Button size="lg" variant="outline" className="text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
                                         Reject
                                       </Button>
                                     </div>

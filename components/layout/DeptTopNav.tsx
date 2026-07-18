@@ -12,29 +12,46 @@ import {
   BellLineDuotone as BellLine, BellBold as BellBold,
   HamburgerMenuLineDuotone as HamburgerMenu,
   LockUnlockedLineDuotone as ModifyIcon,
+  CheckCircleLineDuotone as ApprovedIcon,
+  CloseCircleLineDuotone as RejectedIcon,
+  ShieldCheckLineDuotone as VerifiedIcon,
+  DangerTriangleLineDuotone as FlaggedIcon,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
-import { MONTHS } from '@/lib/status'
+import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { cn, iconHoverClass } from '@/lib/utils'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 
-interface ModifyRequestNotif {
-  id: number
-  kpi_name: string | null
-  dept_name: string | null
-  requested_by_name: string | null
-  requested_at: string
-  year: number
-  month: number
+type NotifKind = 'modify_pending' | 'modify_approved' | 'modify_rejected' | 'verified' | 'flagged'
+
+interface NotifItem {
+  id: string
+  kind: NotifKind
+  title: string
+  description: string
+  timestamp: string
+  href: string
 }
 
+const NOTIF_ICONS: Record<NotifKind, typeof ModifyIcon> = {
+  modify_pending: ModifyIcon,
+  modify_approved: ApprovedIcon,
+  modify_rejected: RejectedIcon,
+  verified: VerifiedIcon,
+  flagged: FlaggedIcon,
+}
+
+// corp_planning's badge is a real task-queue count (pending modify requests never disappear on
+// their own — only resolving them removes the badge). dept_head's is a plain "something happened"
+// dot instead: those events (approved/rejected/verified/flagged) are one-time FYIs, not open work,
+// so it clears the moment the bell is opened rather than needing to be individually resolved.
 const POLL_INTERVAL_MS = 20000
-const seenKey = (userId: number) => `itsec_kpi_seen_modify_requests_${userId}`
+const seenKey = (userId: number) => `itsec_kpi_seen_notifications_${userId}`
 
 type IconPair = { line: typeof HomeLine; bold: typeof HomeBold }
 
@@ -69,56 +86,149 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   const navItems = NAV_ITEMS_BY_ROLE[user?.role ?? ''] ?? []
   const [notifOpen, setNotifOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [modifyNotifs, setModifyNotifs] = useState<ModifyRequestNotif[]>([])
+  const [notifItems, setNotifItems] = useState<NotifItem[]>([])
+  const [hasUnseen, setHasUnseen] = useState(false)
+  const isTaskQueue = user?.role === 'corp_planning'
 
-  const goToModifyRequests = useCallback(() => {
+  const goTo = useCallback((href: string) => {
     setNotifOpen(false)
     setDrawerOpen(false)
-    router.push('/admin?tab=modify')
+    router.push(href)
   }, [router])
 
-  // Corporate Planning's real notification source: pending modify requests from every department,
-  // polled (no realtime/websocket infra in this app) rather than pushed. A department's request
-  // showing up in Data Verification and a notification actually reaching CorPlan about it were two
-  // disconnected things before this — the badge/list here is now driven by the same pending-requests
-  // data admin/page.tsx already reviews, not a separate notification store.
+  // Real notifications, polled (no realtime/websocket infra in this app), instead of decorative —
+  // a CorCom modify request landing in Data Verification and CorPlan actually being told about it
+  // were two disconnected things before this, and dept_head never heard back about their own
+  // requests or KPI verifications at all.
+  //
+  // corp_planning gets pending modify requests from every department: a real, always-current task
+  // queue (badge = how many still need review, same count admin/page.tsx's tab already shows).
+  // dept_head gets their own department's recently-reviewed modify requests and recently-verified/
+  // flagged KPIs: one-time FYIs rather than open work, so that list only shows what's still unseen
+  // and clears the moment the bell is opened, instead of accumulating forever.
   useEffect(() => {
-    if (!token || user?.role !== 'corp_planning') return
+    if (!token || !user) return
     let cancelled = false
 
     const poll = async () => {
       try {
-        const r = await fetch('/api/modify-requests?status=pending', { headers: authHeaders(token) })
-        const data = await r.json()
+        let items: NotifItem[] = []
+
+        if (user.role === 'corp_planning') {
+          const r = await fetch('/api/modify-requests?status=pending', { headers: authHeaders(token) })
+          const data = await r.json()
+          items = (data.requests || []).map((req: { id: number; dept_name: string | null; requested_by_name: string | null; kpi_name: string | null; month: number; year: number; requested_at: string }) => ({
+            id: `modify_pending-${req.id}`,
+            kind: 'modify_pending' as const,
+            title: `New modify request from ${req.dept_name ?? 'a department'}`,
+            description: `${req.requested_by_name ?? 'Someone'} wants to edit "${req.kpi_name ?? 'a KPI'}" for ${MONTHS[req.month - 1]} ${req.year}. Review it to approve or reject.`,
+            timestamp: req.requested_at,
+            href: '/admin?tab=modify',
+          }))
+        } else if (user.role === 'dept_head' && user.dept_id) {
+          const [modifyRes, verRes] = await Promise.all([
+            fetch(`/api/modify-requests?dept_id=${user.dept_id}`, { headers: authHeaders(token) }),
+            fetch(`/api/verifications?dept_id=${user.dept_id}&year=${getDefaultYear()}&month=${getDefaultMonth()}`, { headers: authHeaders(token) }),
+          ])
+          const modifyData = await modifyRes.json()
+          const verData = await verRes.json()
+
+          type ModifyRow = { id: number; status: string; reviewed_at: string | null; review_note: string | null; kpi_name: string | null; month: number; year: number }
+          const reviewed: NotifItem[] = (modifyData.requests || [])
+            .filter((req: ModifyRow) => req.status !== 'pending' && req.reviewed_at)
+            .map((req: ModifyRow) => req.status === 'approved' ? {
+              id: `modify_approved-${req.id}`,
+              kind: 'modify_approved' as const,
+              title: `Your request to edit "${req.kpi_name ?? 'a KPI'}" was approved`,
+              description: `${MONTHS[req.month - 1]} ${req.year} is unlocked for editing — head to Data Entry to make your change.`,
+              timestamp: req.reviewed_at as string,
+              href: '/dept',
+            } : {
+              id: `modify_rejected-${req.id}`,
+              kind: 'modify_rejected' as const,
+              title: `Your request to edit "${req.kpi_name ?? 'a KPI'}" was rejected`,
+              description: req.review_note
+                ? `${MONTHS[req.month - 1]} ${req.year} stays locked: "${req.review_note}"`
+                : `${MONTHS[req.month - 1]} ${req.year} stays locked as submitted.`,
+              timestamp: req.reviewed_at as string,
+              href: '/dept',
+            })
+
+          type VerifRow = { id: number; status: string; note: string | null; kpi_name: string | null; verified_at: string }
+          const verifications: NotifItem[] = (verData.verifications || []).map((v: VerifRow) => v.status === 'verified' ? {
+            id: `verified-${v.id}`,
+            kind: 'verified' as const,
+            title: `"${v.kpi_name ?? 'A KPI'}" was verified`,
+            description: 'Corporate Planning confirmed your figures are accurate for this period.',
+            timestamp: v.verified_at,
+            href: '/dept',
+          } : {
+            id: `flagged-${v.id}`,
+            kind: 'flagged' as const,
+            title: `"${v.kpi_name ?? 'A KPI'}" was flagged`,
+            description: v.note
+              ? `Corporate Planning flagged this for correction: "${v.note}"`
+              : 'Corporate Planning flagged this for correction — take another look in Data Entry.',
+            timestamp: v.verified_at,
+            href: '/dept',
+          })
+
+          items = [...reviewed, ...verifications]
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 10)
+        }
+
         if (cancelled) return
-        const requests: ModifyRequestNotif[] = data.requests || []
-        setModifyNotifs(requests)
 
         // localStorage, not component state — a brand-new browser/session should see the existing
-        // backlog silently (that's not "new"), but a request that arrives while the tab is open, or
-        // between visits, should still toast exactly once. `raw === null` is the "never polled on
-        // this device before" case; anything else diffs normally against what was last seen.
+        // backlog silently (that's not "new"), but anything that arrives while the tab's open or
+        // between visits should still toast exactly once. `raw === null` is "never polled on this
+        // device before"; anything else diffs normally against what was last seen.
         const key = seenKey(user.user_id)
         const raw = localStorage.getItem(key)
         const isFirstEver = raw === null
-        const seenIds = new Set<number>(raw ? JSON.parse(raw) : [])
-        const newOnes = requests.filter(req => !seenIds.has(req.id))
+        const seenIds = new Set<string>(raw ? JSON.parse(raw) : [])
+        const newOnes = items.filter(it => !seenIds.has(it.id))
+
         if (!isFirstEver) {
-          for (const req of newOnes) {
-            toast.info(`New modify request from ${req.dept_name ?? 'a department'}`, {
-              description: `${req.requested_by_name ?? 'Someone'} wants to edit "${req.kpi_name ?? 'a KPI'}" for ${MONTHS[req.month - 1]} ${req.year}. Review it in Data Verification to approve or reject.`,
-              action: { label: 'Review now', onClick: goToModifyRequests },
+          for (const it of newOnes) {
+            const toastFn = it.kind === 'modify_rejected' || it.kind === 'flagged' ? toast.warning
+              : it.kind === 'modify_approved' || it.kind === 'verified' ? toast.success
+              : toast.info
+            toastFn(it.title, {
+              description: it.description,
+              action: {
+                label: it.kind === 'modify_rejected' || it.kind === 'flagged' ? 'Fix it now' : it.kind === 'modify_pending' ? 'Review now' : 'View',
+                onClick: () => goTo(it.href),
+              },
             })
           }
         }
-        localStorage.setItem(key, JSON.stringify(requests.map(req => req.id)))
+
+        // Task-queue items stay visible until actually resolved; FYI items only show while unseen,
+        // and merely opening the bell (see below) commits them to the seen-set.
+        setNotifItems(isTaskQueue ? items : items.filter(it => !seenIds.has(it.id)))
+        setHasUnseen(newOnes.length > 0)
+        if (isTaskQueue) localStorage.setItem(key, JSON.stringify(items.map(it => it.id)))
       } catch { /* non-fatal — next poll retries */ }
     }
 
     poll()
     const id = setInterval(poll, POLL_INTERVAL_MS)
     return () => { cancelled = true; clearInterval(id) }
-  }, [token, user, goToModifyRequests])
+  }, [token, user, goTo, isTaskQueue])
+
+  // Opening the bell is what "reads" FYI-style notifications for dept_head — commits everything
+  // currently shown to the seen-set so they drop off on the next poll, instead of a task-queue item
+  // that only clears once actually resolved (approve/reject/verify/flag).
+  useEffect(() => {
+    if (!notifOpen || isTaskQueue || !user || notifItems.length === 0) return
+    const key = seenKey(user.user_id)
+    const seenIds = new Set<string>(JSON.parse(localStorage.getItem(key) || '[]'))
+    notifItems.forEach(it => seenIds.add(it.id))
+    localStorage.setItem(key, JSON.stringify(Array.from(seenIds)))
+    setHasUnseen(false)
+  }, [notifOpen, isTaskQueue, user, notifItems])
 
   return (
     <header className="bg-panel shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
@@ -140,19 +250,20 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           const Icon = active ? item.icons.bold : item.icons.line
           return (
             <Tooltip key={item.href}>
-              <TooltipTrigger
-                onClick={() => router.push(item.href)}
-                className={cn(
-                  'group/navitem relative flex flex-col items-center justify-center h-full w-32 transition-colors',
-                  active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft',
-                  iconHoverClass
-                )}
-              >
-                {/* Inactive tabs get a muted rounded highlight on hover; active tabs never do — their
-                    hover state stays exactly as the resting state, only the underline marks "current". */}
-                <span className={cn('flex items-center justify-center size-11 rounded-2xl transition-colors', !active && 'group-hover/navitem:bg-muted')}>
+              <div className="relative flex flex-col items-center justify-center h-full w-32">
+                {/* Inactive tabs get a muted rounded highlight on hover, on the button itself (not a
+                    decorative inner span); active tabs never do — their hover state stays exactly as
+                    the resting state, only the underline marks "current". */}
+                <TooltipTrigger
+                  onClick={() => router.push(item.href)}
+                  className={cn(
+                    'flex items-center justify-center size-11 rounded-2xl transition-colors',
+                    active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft hover:bg-muted',
+                    iconHoverClass
+                  )}
+                >
                   <Icon size={22} />
-                </span>
+                </TooltipTrigger>
                 {active && (
                   <motion.div
                     layoutId="dept-top-nav-underline"
@@ -160,7 +271,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
                     transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                   />
                 )}
-              </TooltipTrigger>
+              </div>
               <TooltipContent>{item.label}</TooltipContent>
             </Tooltip>
           )
@@ -201,38 +312,40 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
             title="Notifications"
           >
             {notifOpen ? <BellBold size={18} className="text-ink" /> : <BellLine size={18} className="text-ink" />}
-            {modifyNotifs.length > 0 && (
+            {(isTaskQueue ? notifItems.length > 0 : hasUnseen) && (
               <span className="absolute top-1 right-1 size-2 rounded-full bg-destructive ring-2 ring-panel" />
             )}
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-divider flex items-center justify-between">
               <div className="text-sm font-semibold text-ink">Notifications</div>
-              {modifyNotifs.length > 0 && <Badge className="text-[10px]">{modifyNotifs.length}</Badge>}
+              {isTaskQueue && notifItems.length > 0 && <Badge className="text-[10px]">{notifItems.length}</Badge>}
             </div>
-            {modifyNotifs.length === 0 ? (
+            {notifItems.length === 0 ? (
               <div className="p-8 text-center flex flex-col items-center gap-2">
                 <BellLine size={28} className="text-ink-faint" />
                 <p className="text-sm text-ink-muted">You&apos;re all caught up — no notifications yet.</p>
               </div>
             ) : (
               <div className="max-h-80 overflow-y-auto divide-y divide-divider">
-                {modifyNotifs.map(n => (
-                  <button
-                    key={n.id}
-                    onClick={goToModifyRequests}
-                    className="w-full text-left px-4 py-3 hover:bg-panel-soft transition-colors flex gap-2.5"
-                  >
-                    <ModifyIcon size={16} className="text-ink-faint shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <div className="text-sm text-ink font-medium">{n.dept_name ?? 'A department'} wants to edit a KPI</div>
-                      <div className="text-xs text-ink-muted mt-0.5 truncate">
-                        {n.requested_by_name ?? 'Someone'} — &quot;{n.kpi_name ?? 'Unknown KPI'}&quot; for {MONTHS[n.month - 1]} {n.year}
+                {notifItems.map(n => {
+                  const Icon = NOTIF_ICONS[n.kind]
+                  const iconColor = n.kind === 'modify_rejected' || n.kind === 'flagged' ? 'text-danger' : n.kind === 'modify_approved' || n.kind === 'verified' ? 'text-success' : 'text-ink-faint'
+                  return (
+                    <button
+                      key={n.id}
+                      onClick={() => goTo(n.href)}
+                      className="w-full text-left px-4 py-3 hover:bg-panel-soft transition-colors flex gap-2.5"
+                    >
+                      <Icon size={16} className={cn('shrink-0 mt-0.5', iconColor)} />
+                      <div className="min-w-0">
+                        <div className="text-sm text-ink font-medium">{n.title}</div>
+                        <div className="text-xs text-ink-muted mt-0.5 line-clamp-2">{n.description}</div>
+                        <div className="text-[10px] text-ink-faint mt-1">{new Date(n.timestamp).toLocaleString()}</div>
                       </div>
-                      <div className="text-[10px] text-ink-faint mt-1">{new Date(n.requested_at).toLocaleString()}</div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </PopoverContent>

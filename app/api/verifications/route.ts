@@ -6,13 +6,15 @@ import { requireAuth } from '@/lib/auth-server'
 // round-trips don't cross the Pacific to Vercel's default iad1 (US East) region.
 export const preferredRegion = 'sin1'
 
-// GET /api/verifications?dept_id=&year=&month=
+// GET /api/verifications?dept_id=&year=&month= — dept_head callers are always scoped to their own
+// dept_id regardless of the query string (so they can see verification/flag notifications for their
+// own submissions), matching /api/modify-requests' pattern; corp_planning can query any department.
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request, ['corp_planning'])
+  const auth = requireAuth(request, ['corp_planning', 'dept_head'])
   if (auth instanceof NextResponse) return auth
 
   const { searchParams } = new URL(request.url)
-  const dept_id = searchParams.get('dept_id')
+  const dept_id = auth.role === 'dept_head' ? auth.dept_id : searchParams.get('dept_id')
   const year = searchParams.get('year')
   const month = searchParams.get('month')
   if (!dept_id || !year || !month) return NextResponse.json({ error: 'dept_id, year, month required' }, { status: 400 })
