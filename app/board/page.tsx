@@ -30,6 +30,7 @@ import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/li
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
+import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn, iconHoverClass } from '@/lib/utils'
 
@@ -294,21 +295,26 @@ export default function BoardPage() {
               />
             </div>
 
-            {/* Summary stat cards */}
+            <MobileDatePicker year={year} onYearChange={setYear} month={month} onMonthChange={setMonth} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR + 1} className="mb-6" />
+
+            {/* Summary stat cards — same layout/sizing as the dept_head dashboard's stat cards
+                (app/dept/dashboard/page.tsx), so this reads identically across roles. */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               {[
-                { label: 'On Track', statusKey: 'on_track' as const, value: totals.on_track, pct: pct(totals.on_track), color: 'var(--success-text)', border: 'var(--success-soft-border)', Icon: TrendingUp },
-                { label: 'Watch', statusKey: 'watch' as const, value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', border: 'var(--warning-soft-border)', Icon: Minus },
-                { label: 'Off Track', statusKey: 'off_track' as const, value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', border: 'var(--danger-soft-border)', Icon: Minus },
-                { label: 'No Data', statusKey: 'no_data' as const, value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-faint)', border: 'var(--divider)', Icon: Minus },
-              ].map((s, i) => (
-                <div key={s.label} className="bg-panel border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-start gap-3" style={{ borderColor: s.border }}>
-                  <s.Icon size={16} style={{ color: s.color }} className="mt-0.5 shrink-0" />
-                  <div>
-                    <CountUpNumber value={s.value} sequenceIndex={i * 2} className="text-2xl font-semibold" style={{ color: s.color }} />
-                    <div className="text-xs text-ink-muted font-normal">{s.label}</div>
-                    <CountUpNumber value={s.pct} formatter={n => `${n}%`} sequenceIndex={i * 2 + 1} className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }} />
+                { label: 'On Track', value: totals.on_track, pct: pct(totals.on_track), color: 'var(--success-text)', Icon: TrendingUp, caption: 'performing at or above target' },
+                { label: 'Watch', value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', Icon: Minus, caption: 'trending toward target, worth watching' },
+                { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', Icon: Minus, caption: 'below target — needs attention' },
+                { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-muted)', Icon: Minus, caption: 'not yet entered this month' },
+              ].map(s => (
+                <div key={s.label} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
+                  <div className="text-sm text-ink-muted">{s.label}</div>
+                  <CountUpNumber value={s.value} className="text-[40px] leading-[48px] font-medium text-ink tracking-[-0.5px]" />
+                  <div className="flex items-center gap-1">
+                    <s.Icon size={14} style={{ color: s.color }} />
+                    <CountUpNumber value={s.pct} formatter={n => `${n}%`} className="text-base font-semibold" style={{ color: s.color }} />
+                    <span className="text-xs text-ink-muted">of {totals.total || 0}</span>
                   </div>
+                  <div className="text-xs text-ink-muted mt-1">{s.caption}</div>
                 </div>
               ))}
             </div>

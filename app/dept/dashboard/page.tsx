@@ -25,6 +25,7 @@ import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
+import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 
 const CURRENT_YEAR = new Date().getFullYear()
 // var(--foreground), not a literal hex — the fixed '#171717' this used to be stayed black in dark
@@ -190,6 +191,8 @@ export default function DeptDashboard() {
               </div>
             </div>
 
+            <MobileDatePicker year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} className="mb-6" />
+
             {/* Stat summary */}
             <div className="grid grid-cols-2 gap-3 mb-8">
               {[
@@ -197,15 +200,15 @@ export default function DeptDashboard() {
                 { label: 'Watch', value: watch, color: 'var(--warning-text)', Icon: Eye, caption: 'trending toward target, worth watching' },
                 { label: 'Off Track', value: offTrack, color: 'var(--danger-text)', Icon: TrendingDown, caption: 'below target — needs attention' },
                 { label: 'No Data', value: noData, color: 'var(--ink-muted)', Icon: CircleDashed, caption: 'not yet entered this month' },
-              ].map((s, i) => {
+              ].map(s => {
                 const pct = kpis.length > 0 ? Math.round((s.value / kpis.length) * 100) : 0
                 return (
                   <div key={s.label} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
                     <div className="text-sm text-ink-muted">{s.label}</div>
-                    <CountUpNumber value={s.value} sequenceIndex={i * 2} className="text-[40px] leading-[48px] font-medium text-ink tracking-[-0.5px]" />
+                    <CountUpNumber value={s.value} className="text-[40px] leading-[48px] font-medium text-ink tracking-[-0.5px]" />
                     <div className="flex items-center gap-1">
                       <s.Icon size={14} style={{ color: s.color }} />
-                      <CountUpNumber value={pct} formatter={n => `${n}%`} sequenceIndex={i * 2 + 1} className="text-base font-semibold" style={{ color: s.color }} />
+                      <CountUpNumber value={pct} formatter={n => `${n}%`} className="text-base font-semibold" style={{ color: s.color }} />
                       <span className="text-xs text-ink-muted">of {kpis.length || 0}</span>
                     </div>
                     <div className="text-xs text-ink-muted mt-1">{s.caption}</div>
@@ -238,7 +241,8 @@ export default function DeptDashboard() {
                       <div key={kpi.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
                         <div className="px-6 pt-4 pb-3 flex items-start justify-between gap-4">
                           <div>
-                            <div className="flex items-center gap-2">
+                            {/* Small screens only: frequency reads above the title, not below it. */}
+                            <div className="flex flex-col-reverse items-start gap-1 md:flex-row md:items-center md:gap-2">
                               <span className="font-medium text-ink text-sm">{kpi.name}</span>
                               <span className="inline-flex items-center border border-divider bg-panel-soft text-ink-muted px-2.5 py-1 text-xs rounded font-medium tracking-wide">
                                 {periodLabel(period)}

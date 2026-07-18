@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { Button } from '@/components/ui/button'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
+import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 import { cn, iconHoverClass } from '@/lib/utils'
 
 interface SubMetric {
@@ -368,6 +369,8 @@ export default function DeptPage() {
                 )}
               </div>
             </div>
+
+            <MobileDatePicker year={year} onYearChange={setYear} month={month} onMonthChange={setMonth} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR + 1} className="mb-6" />
 
             {/* Quick search — jumps to a matrix by name, doesn't hide the full entry form for anything else */}
             {kpis.length > 0 && (

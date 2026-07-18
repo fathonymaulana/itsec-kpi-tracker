@@ -154,7 +154,9 @@ export function KpiCard({
       {/* Header */}
       <div className="px-6 py-4 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Small screens only: frequency reads above the title, not below it — flex-col-reverse
+              flips the visual stack without touching DOM order, so this stays unchanged on md+. */}
+          <div className="flex flex-col-reverse items-start gap-1 md:flex-row md:items-center md:gap-2 md:flex-wrap">
             <span className="font-medium text-ink text-sm">{kpi.name}</span>
             <span className="inline-flex items-center border border-divider bg-panel-soft text-ink-muted px-2.5 py-1 text-xs rounded font-medium tracking-wide">
               {periodLabel(period)}

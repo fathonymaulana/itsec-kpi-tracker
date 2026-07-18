@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 function formatTimestamp(iso: string): string {
@@ -258,6 +259,8 @@ export default function AdminPage() {
                 Pick a department to review its submitted KPIs and verify entries for the period.
               </p>
             </div>
+
+            <MobileDatePicker year={year} onYearChange={setYear} month={month} onMonthChange={setMonth} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR + 1} className="mb-4" />
 
             <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 mb-6 flex items-center gap-3 flex-wrap">
               <Select value={selectedDept || ''} onValueChange={v => { if (v) { setSelectedDept(v); setTab('data') } }}>
