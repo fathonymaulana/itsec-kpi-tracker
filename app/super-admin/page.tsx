@@ -219,15 +219,15 @@ export default function SuperAdminPage() {
                         {activeFilterCount > 0 && <Badge className="ml-0.5 text-[10px] px-1.5">{activeFilterCount}</Badge>}
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuLabel>Role</DropdownMenuLabel>
                         <DropdownMenuRadioGroup value={roleFilter} onValueChange={v => setRoleFilter(v as typeof roleFilter)}>
+                          <DropdownMenuLabel>Role</DropdownMenuLabel>
                           <DropdownMenuRadioItem value="all">All roles</DropdownMenuRadioItem>
                           <DropdownMenuRadioItem value="dept_head">Department Head</DropdownMenuRadioItem>
                           <DropdownMenuRadioItem value="corp_planning">Corporate Planning</DropdownMenuRadioItem>
                         </DropdownMenuRadioGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuLabel>Status</DropdownMenuLabel>
                         <DropdownMenuRadioGroup value={statusFilter} onValueChange={v => setStatusFilter(v as typeof statusFilter)}>
+                          <DropdownMenuLabel>Status</DropdownMenuLabel>
                           <DropdownMenuRadioItem value="all">All statuses</DropdownMenuRadioItem>
                           <DropdownMenuRadioItem value="active">Active</DropdownMenuRadioItem>
                           <DropdownMenuRadioItem value="inactive">Inactive</DropdownMenuRadioItem>
