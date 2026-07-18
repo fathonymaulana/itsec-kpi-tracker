@@ -17,6 +17,8 @@ import {
   UserCrossBold as IconUserCross,
   UserCheckBold as IconUserCheck,
   ShieldKeyholeLineDuotone as IconShieldKeyhole,
+  TuningLineDuotone as IconFilters,
+  DownloadLineDuotone as IconDownload,
 } from '@solar-icons/react-perf'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useAuth, authHeaders } from '@/lib/auth'
@@ -33,8 +35,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { iconHoverClass } from '@/lib/utils'
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
+  DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem,
+} from '@/components/ui/dropdown-menu'
+import { iconHoverClass, cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 type Role = 'dept_head' | 'corp_planning'
@@ -52,6 +57,9 @@ export default function SuperAdminPage() {
   const [requests, setRequests] = useState<PinRequest[]>([])
   const [depts, setDepts] = useState<Dept[]>([])
   const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<'all' | Role>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [exporting, setExporting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [dialogUser, setDialogUser] = useState<AdminUser | 'new' | null>(null)
   const [resetPinFor, setResetPinFor] = useState<AdminUser | null>(null)
@@ -115,9 +123,52 @@ export default function SuperAdminPage() {
   }
 
   const pendingCount = requests.filter(r => r.status === 'pending').length
-  const filteredUsers = users.filter(u =>
-    !search.trim() || u.name.toLowerCase().includes(search.toLowerCase()) || (u.dept_name || '').toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = !search.trim() || u.name.toLowerCase().includes(search.toLowerCase()) || (u.dept_name || '').toLowerCase().includes(search.toLowerCase())
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? u.active : !u.active)
+    return matchesSearch && matchesRole && matchesStatus
+  })
+  const activeFilterCount = (roleFilter !== 'all' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0)
+
+  // Exports exactly what's currently visible (respecting search + filters) — dynamically imported
+  // so the exceljs bundle (only needed for this one action) never ships in the main page chunk.
+  const handleExportXlsx = async () => {
+    setExporting(true)
+    try {
+      const ExcelJS = (await import('exceljs')).default
+      const wb = new ExcelJS.Workbook()
+      wb.creator = 'ITSEC KPI Tracker'
+      wb.created = new Date()
+      const ws = wb.addWorksheet('Users')
+      ws.columns = [
+        { header: 'Name', key: 'name', width: 28 },
+        { header: 'Role', key: 'role', width: 20 },
+        { header: 'Department', key: 'dept', width: 20 },
+        { header: 'Status', key: 'status', width: 12 },
+      ]
+      filteredUsers.forEach(u => ws.addRow({
+        name: u.name,
+        role: ROLE_LABELS[u.role],
+        dept: u.dept_name || '—',
+        status: u.active ? 'Active' : 'Inactive',
+      }))
+      ws.getRow(1).font = { bold: true }
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `itsec-kpi-tracker-users-${new Date().toISOString().slice(0, 10)}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Export ready', { description: `${filteredUsers.length} user${filteredUsers.length === 1 ? '' : 's'} exported to XLSX.` })
+    } catch {
+      toast.error('Couldn’t export that', { description: 'Please try again.' })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   if (!ready || !user || user.role !== 'corp_planning') return <PageSkeleton leftAside={false} />
 
@@ -134,27 +185,82 @@ export default function SuperAdminPage() {
             </div>
 
             <Tabs value={tab} onValueChange={v => v && setTab(v as 'users' | 'requests')}>
-              <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-                <TabsList variant="line">
-                  <TabsTrigger value="users">
-                    {tab === 'users' ? <UsersBold data-icon="inline-start" size={14} /> : <UsersLine data-icon="inline-start" size={14} />}
-                    Users
-                  </TabsTrigger>
-                  <TabsTrigger value="requests">
-                    {tab === 'requests' ? <KeyBold data-icon="inline-start" size={14} /> : <IconKey data-icon="inline-start" size={14} />}
-                    PIN Requests{pendingCount > 0 && <Badge className="ml-1.5 text-[10px] px-1.5">{pendingCount}</Badge>}
-                  </TabsTrigger>
-                </TabsList>
-                {tab === 'users' && (
+              {/* Row 1: tabs alone. Row 2: search (left) and the action group (right), justified
+                  apart — sized and typeset to match the reference (h-10, text-sm throughout). */}
+              <TabsList variant="line" className="mb-4">
+                <TabsTrigger value="users">
+                  {tab === 'users' ? <UsersBold data-icon="inline-start" size={14} /> : <UsersLine data-icon="inline-start" size={14} />}
+                  Users
+                </TabsTrigger>
+                <TabsTrigger value="requests">
+                  {tab === 'requests' ? <KeyBold data-icon="inline-start" size={14} /> : <IconKey data-icon="inline-start" size={14} />}
+                  PIN Requests{pendingCount > 0 && <Badge className="ml-1.5 text-[10px] px-1.5">{pendingCount}</Badge>}
+                </TabsTrigger>
+              </TabsList>
+
+              {tab === 'users' && (
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+                  <Input
+                    placeholder="Search users…"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="h-10 w-full max-w-xs rounded-lg border-divider text-sm"
+                  />
                   <div className="flex items-center gap-2 shrink-0">
-                    <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="h-9 w-56 rounded-lg border-divider" />
-                    <Button size="sm" className={`h-9 rounded-lg bg-primary hover:bg-primary/80 text-primary-foreground ${iconHoverClass}`} onClick={() => setDialogUser('new')}>
-                      <IconUserPlus size={14} className="mr-1" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        className={cn(
+                          'inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-divider bg-panel text-sm font-medium text-ink hover:bg-panel-soft transition-colors',
+                          iconHoverClass
+                        )}
+                      >
+                        <IconFilters size={15} />
+                        Filters
+                        {activeFilterCount > 0 && <Badge className="ml-0.5 text-[10px] px-1.5">{activeFilterCount}</Badge>}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuLabel>Role</DropdownMenuLabel>
+                        <DropdownMenuRadioGroup value={roleFilter} onValueChange={v => setRoleFilter(v as typeof roleFilter)}>
+                          <DropdownMenuRadioItem value="all">All roles</DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="dept_head">Department Head</DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="corp_planning">Corporate Planning</DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Status</DropdownMenuLabel>
+                        <DropdownMenuRadioGroup value={statusFilter} onValueChange={v => setStatusFilter(v as typeof statusFilter)}>
+                          <DropdownMenuRadioItem value="all">All statuses</DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="active">Active</DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="inactive">Inactive</DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                        {activeFilterCount > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => { setRoleFilter('all'); setStatusFilter('all') }}>
+                              Clear filters
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      variant="outline"
+                      disabled={exporting || filteredUsers.length === 0}
+                      className={cn('h-10 px-4 rounded-lg border-divider text-sm font-medium text-ink', iconHoverClass)}
+                      onClick={handleExportXlsx}
+                    >
+                      <IconDownload size={15} className="mr-1.5" />
+                      {exporting ? 'Exporting…' : 'Export XLSX'}
+                    </Button>
+                    <Button
+                      className={cn('h-10 px-4 rounded-lg bg-primary hover:bg-primary/80 text-primary-foreground text-sm font-medium', iconHoverClass)}
+                      onClick={() => setDialogUser('new')}
+                    >
+                      <IconUserPlus size={15} className="mr-1.5" />
                       Add User
                     </Button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {loading ? (
                 <div className="h-64 bg-panel border border-divider rounded-3xl animate-pulse" />

@@ -107,6 +107,12 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        // Fluid like the fontSize scale above — rounded-3xl/2xl are the dominant "big card" radius
+        // for dashboard/matrix/data-review/verification/modify-request containers app-wide, and on
+        // narrow phone screens the full 24px/16px corners eat into already-tight card padding. Caps
+        // at the original fixed values, so desktop is pixel-identical to before this change.
+        '2xl': 'clamp(0.75rem, 0.684rem + 0.33vw, 1rem)',
+        '3xl': 'clamp(1rem, 0.868rem + 0.66vw, 1.5rem)',
       },
       boxShadow: {
         // Tailwind v3 has no "xs" shadow size by default — this matches v4's own --shadow-xs value.

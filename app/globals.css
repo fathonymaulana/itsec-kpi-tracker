@@ -160,8 +160,14 @@
   body {
     @apply bg-background text-foreground;
   }
-  html {
-    @apply font-sans;
+  /* Belt-and-suspenders against horizontal page scroll on mobile — every page's own root div
+     already has overflow-hidden, but position:fixed descendants (dialogs, the mobile nav drawer)
+     aren't clipped by an ordinary ancestor's overflow-hidden, only by the viewport itself, and some
+     mobile browsers still register their transformed off-screen position as part of the document's
+     scrollable area. Clipping at the html/body level is the standard fix for that class of bug. */
+  html, body {
+    @apply font-sans overflow-x-hidden;
+    max-width: 100vw;
   }
 
   /* Thin, trackless scrollbars — only the thumb grows on hover (via animating its transparent

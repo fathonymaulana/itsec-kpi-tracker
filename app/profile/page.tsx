@@ -131,7 +131,7 @@ export default function ProfilePage() {
     <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav />
 
-      <main className="flex-1 overflow-y-auto px-6 py-8">
+      <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
         <div className="max-w-xl mx-auto w-full space-y-4">
         <Breadcrumb className="mb-2">
           <BreadcrumbList>

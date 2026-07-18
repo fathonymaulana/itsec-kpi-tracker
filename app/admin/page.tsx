@@ -378,21 +378,21 @@ export default function AdminPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-6 text-[11px] gap-1 text-success border-success-soft-border hover:bg-success-soft"
+                                  className="w-auto h-9 md:h-6 px-3 md:px-2 text-sm md:text-[11px] gap-1.5 md:gap-1 text-success border-success-soft-border hover:bg-success-soft"
                                   disabled={actionLoading === kpi.id}
                                   onClick={() => handleVerify(kpi.id, 'verified')}
                                 >
-                                  <CheckCircle2 size={10} />
+                                  <CheckCircle2 size={13} className="md:size-2.5" />
                                   Verify
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-6 text-[11px] gap-1 text-danger border-danger-soft-border hover:bg-danger-soft"
+                                  className="w-auto h-9 md:h-6 px-3 md:px-2 text-sm md:text-[11px] gap-1.5 md:gap-1 text-danger border-danger-soft-border hover:bg-danger-soft"
                                   disabled={actionLoading === kpi.id}
                                   onClick={() => handleVerify(kpi.id, 'flagged', 'Needs correction')}
                                 >
-                                  <AlertTriangle size={10} />
+                                  <AlertTriangle size={13} className="md:size-2.5" />
                                   Flag
                                 </Button>
                               </>
