@@ -64,11 +64,9 @@ const chartConfig: ChartConfig = {
   noData: { label: 'No Data', color: STATUS_COLORS.no_data },
 }
 
-// Custom legend (not the shared ChartLegendContent) — that component's swatch is a plain <div>
-// styled with `background-color: item.color`, and item.color there is whatever's on the matching
-// <Bar>'s `fill` prop. Since the bars now use `fill="url(#barGrad-x)"` for the gradient look,
-// `background-color: url(...)` is invalid CSS and silently drops, leaving every swatch blank — this
-// reads chartConfig's own solid color values directly instead, and renders them as circles.
+// Custom legend (not the shared ChartLegendContent) — that component's default swatch is a small
+// square rather than a circle, so this reads chartConfig's own solid color values directly and
+// renders them as circles instead, per the requested legend style.
 function ChartLegendCircles() {
   return (
     <div className="flex items-center justify-center gap-4 pt-3 flex-wrap">
@@ -304,34 +302,23 @@ export default function BoardPage() {
                     <h3 className="font-medium text-ink text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
                     <ChartContainer config={chartConfig} className="h-[380px] w-full aspect-auto">
                       <BarChart data={chartData} layout="vertical" barSize={34} barCategoryGap="28%" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                        {/* Same gradient-over-flat-color technique for every segment: a subtle light-to-
-                            darker fade along the bar (the "glossy" look), built from each series' own
-                            theme-aware CSS var — the gradient rides along with whatever --success-text/
-                            --warning-text/etc. resolve to per theme, so this needs no separate light/dark
-                            gradient definitions of its own. */}
-                        <defs>
-                          {(['onTrack', 'watch', 'offTrack', 'noData'] as const).map(key => (
-                            <linearGradient key={key} id={`barGrad-${key}`} x1="0" y1="0" x2="1" y2="0">
-                              <stop offset="0%" stopColor={`var(--color-${key})`} stopOpacity={0.75} />
-                              <stop offset="100%" stopColor={`var(--color-${key})`} stopOpacity={1} />
-                            </linearGradient>
-                          ))}
-                        </defs>
                         <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--divider)" />
                         <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'var(--ink-soft)' }} tickLine={false} axisLine={false} width={84} />
                         <ChartTooltip cursor={{ fill: 'var(--panel-soft-bg)' }} content={<ChartTooltipContent />} />
                         <ChartLegend content={<ChartLegendCircles />} />
-                        <Bar dataKey="onTrack" stackId="a" fill="url(#barGrad-onTrack)" radius={[6, 6, 6, 6]}>
+                        {/* Solid fills from chartConfig's own theme-aware CSS vars (ChartContainer auto-
+                            generates --color-onTrack etc. from chartConfig) — no gradient defs needed. */}
+                        <Bar dataKey="onTrack" stackId="a" fill="var(--color-onTrack)" radius={[6, 6, 6, 6]}>
                           <LabelList dataKey="onTrack" content={<BarSegmentLabel />} />
                         </Bar>
-                        <Bar dataKey="watch" stackId="a" fill="url(#barGrad-watch)" radius={[6, 6, 6, 6]}>
+                        <Bar dataKey="watch" stackId="a" fill="var(--color-watch)" radius={[6, 6, 6, 6]}>
                           <LabelList dataKey="watch" content={<BarSegmentLabel />} />
                         </Bar>
-                        <Bar dataKey="offTrack" stackId="a" fill="url(#barGrad-offTrack)" radius={[6, 6, 6, 6]}>
+                        <Bar dataKey="offTrack" stackId="a" fill="var(--color-offTrack)" radius={[6, 6, 6, 6]}>
                           <LabelList dataKey="offTrack" content={<BarSegmentLabel />} />
                         </Bar>
-                        <Bar dataKey="noData" stackId="a" fill="url(#barGrad-noData)" radius={[6, 6, 6, 6]}>
+                        <Bar dataKey="noData" stackId="a" fill="var(--color-noData)" radius={[6, 6, 6, 6]}>
                           <LabelList dataKey="noData" content={<BarSegmentLabel />} />
                         </Bar>
                       </BarChart>

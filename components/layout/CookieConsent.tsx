@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Cookie } from 'lucide-react' // no Solar Icons equivalent for a cookie glyph — kept as the one intentional exception
 import { AltArrowDownLineDuotone as ChevronDown, CloseCircleLineDuotone as X } from '@solar-icons/react-perf'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { getCookie, setCookie } from '@/lib/cookies'
 import { cn, iconHoverClass } from '@/lib/utils'
 
@@ -92,13 +93,15 @@ export function CookieConsent() {
               <span className="text-[10px] text-ink-faint font-normal">Essential only — nothing to opt out of.</span>
             </div>
           </div>
-          <button
-            onClick={dismiss}
-            className={cn('shrink-0 text-ink-faint hover:text-ink-soft p-1', iconHoverClass)}
-            title="Dismiss"
-          >
-            <X size={14} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={dismiss}
+              className={cn('shrink-0 text-ink-faint hover:text-ink-soft p-1', iconHoverClass)}
+            >
+              <X size={14} />
+            </TooltipTrigger>
+            <TooltipContent>Dismiss</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>

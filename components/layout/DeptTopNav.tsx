@@ -14,6 +14,7 @@ import {
 import { useAuth } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { cn, iconHoverClass } from '@/lib/utils'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
@@ -50,13 +51,15 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   return (
     <header className="bg-panel shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
       <div className="flex items-center gap-3.5 justify-self-start">
-        <button
-          onClick={() => router.push(navItems[0]?.href ?? '/login')}
-          className={cn('flex items-center', iconHoverClass)}
-          title="Go to dashboard"
-        >
-          <ItsecLogo className="h-5 w-auto text-ink" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger
+            onClick={() => router.push(navItems[0]?.href ?? '/login')}
+            className={cn('flex items-center', iconHoverClass)}
+          >
+            <ItsecLogo className="h-5 w-auto text-ink" />
+          </TooltipTrigger>
+          <TooltipContent>Go to dashboard</TooltipContent>
+        </Tooltip>
       </div>
 
       <nav className="hidden md:flex items-center h-full justify-self-center">
@@ -64,51 +67,56 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           const active = pathname === item.href
           const Icon = active ? item.icons.bold : item.icons.line
           return (
-            <button
-              key={item.href}
-              onClick={() => router.push(item.href)}
-              className={cn(
-                'relative flex flex-col items-center justify-center h-full w-32 transition-colors',
-                active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft',
-                iconHoverClass
-              )}
-              title={item.label}
-            >
-              <Icon size={22} />
-              {active && (
-                <motion.div
-                  layoutId="dept-top-nav-underline"
-                  className="absolute bottom-0 left-0 right-0 h-[3px] bg-ink"
-                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                />
-              )}
-            </button>
+            <Tooltip key={item.href}>
+              <TooltipTrigger
+                onClick={() => router.push(item.href)}
+                className={cn(
+                  'relative flex flex-col items-center justify-center h-full w-32 transition-colors',
+                  active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft',
+                  iconHoverClass
+                )}
+              >
+                <Icon size={22} />
+                {active && (
+                  <motion.div
+                    layoutId="dept-top-nav-underline"
+                    className="absolute bottom-0 left-0 right-0 h-[3px] bg-ink"
+                    transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                  />
+                )}
+              </TooltipTrigger>
+              <TooltipContent>{item.label}</TooltipContent>
+            </Tooltip>
           )
         })}
       </nav>
 
       <div className="hidden md:flex items-center gap-2 justify-self-end">
         {onToggleLeftPanel && (
-          <button
-            onClick={onToggleLeftPanel}
-            className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
-            title="Toggle left panel"
-          >
-            {leftPanelOpen
-              ? <SidebarBold size={18} className="text-ink -scale-x-100" />
-              : <SidebarLine size={18} className="text-ink -scale-x-100" />}
-          </button>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onToggleLeftPanel}
+              className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
+            >
+              {leftPanelOpen
+                ? <SidebarBold size={18} className="text-ink -scale-x-100" />
+                : <SidebarLine size={18} className="text-ink -scale-x-100" />}
+            </TooltipTrigger>
+            <TooltipContent>{leftPanelOpen ? 'Hide left panel' : 'Show left panel'}</TooltipContent>
+          </Tooltip>
         )}
         {onToggleRightPanel && (
-          <button
-            onClick={onToggleRightPanel}
-            className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
-            title="Toggle right panel"
-          >
-            {rightPanelOpen
-              ? <SidebarBold size={18} className="text-ink" />
-              : <SidebarLine size={18} className="text-ink" />}
-          </button>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onToggleRightPanel}
+              className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
+            >
+              {rightPanelOpen
+                ? <SidebarBold size={18} className="text-ink" />
+                : <SidebarLine size={18} className="text-ink" />}
+            </TooltipTrigger>
+            <TooltipContent>{rightPanelOpen ? 'Hide right panel' : 'Show right panel'}</TooltipContent>
+          </Tooltip>
         )}
 
         <Popover open={notifOpen} onOpenChange={setNotifOpen}>
@@ -132,25 +140,30 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
         <div className="w-px h-6 bg-divider mx-1" />
 
         {user && (
-          <button onClick={() => router.push('/profile')} title="Profile">
-            <Avatar className="ring-1 ring-divider">
-              {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
-              <AvatarFallback className="text-[10px]">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-          </button>
+          <Tooltip>
+            <TooltipTrigger onClick={() => router.push('/profile')}>
+              <Avatar className="ring-1 ring-divider">
+                {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
+                <AvatarFallback className="text-[10px]">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </TooltipTrigger>
+            <TooltipContent>Profile</TooltipContent>
+          </Tooltip>
         )}
       </div>
 
       {/* Small screens: nav links + panel toggles + notifications + add-ons all collapse behind
           this single CTA — the AnimatedAside hosting AddOnsPanel is `hidden lg:block`, so without
           this drawer dark mode/sign out would be unreachable below that breakpoint. */}
-      <button
-        onClick={() => setDrawerOpen(true)}
-        className={cn('flex md:hidden col-start-3 size-9 rounded-full bg-panel-soft items-center justify-center justify-self-end', iconHoverClass)}
-        title="Menu"
-      >
-        <HamburgerMenu size={18} className="text-ink" />
-      </button>
+      <Tooltip>
+        <TooltipTrigger
+          onClick={() => setDrawerOpen(true)}
+          className={cn('flex md:hidden col-start-3 size-9 rounded-full bg-panel-soft items-center justify-center justify-self-end', iconHoverClass)}
+        >
+          <HamburgerMenu size={18} className="text-ink" />
+        </TooltipTrigger>
+        <TooltipContent>Menu</TooltipContent>
+      </Tooltip>
 
       <MobileNavDrawer
         open={drawerOpen}

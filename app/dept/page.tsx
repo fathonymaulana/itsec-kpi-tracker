@@ -17,6 +17,7 @@ import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { Button } from '@/components/ui/button'
 import { iconHoverClass } from '@/lib/utils'
@@ -350,12 +351,15 @@ export default function DeptPage() {
             {/* Quick search — jumps to a matrix by name, doesn't hide the full entry form for anything else */}
             {kpis.length > 0 && (
               <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl flex items-center gap-4 px-4 py-3.5 mb-6">
-                <button onClick={() => router.push('/profile')} title="Profile" className="shrink-0">
-                  <Avatar size="lg" className="size-10 ring-1 ring-[#e5e5e5]">
-                    {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
-                    <AvatarFallback className="text-xs">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                </button>
+                <Tooltip>
+                  <TooltipTrigger onClick={() => router.push('/profile')} className="shrink-0">
+                    <Avatar size="lg" className="size-10 ring-1 ring-[#e5e5e5]">
+                      {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
+                      <AvatarFallback className="text-xs">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent>Profile</TooltipContent>
+                </Tooltip>
                 <div className="flex-1 min-w-0">
                   <input
                     value={searchInput}

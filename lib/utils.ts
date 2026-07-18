@@ -5,11 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Drop onto any clickable element that contains an icon for a small, consistent hover lift —
-// no JS needed, just a CSS transition on the descendant svg triggered by the parent's :hover.
-// Uses the same expo-out cubic-bezier as the app's Framer Motion panels (AnimatedAside) so every
-// hand-rolled CSS transition and every Framer Motion animation in the app reads as one consistent
-// "professional" motion language; the slight rotate + press-down give it more character than a
-// flat scale, and active:scale-95 adds tactile feedback on click.
+// Drop onto any clickable element that contains an icon for a restrained hover/press lift — no
+// scale, no rotate (explicitly asked against both). Just a small upward translate on hover that
+// settles back down on press, using the same expo-out cubic-bezier as the app's Framer Motion
+// panels (AnimatedAside) so every hand-rolled CSS transition reads as the same motion language.
+// Icon-only buttons additionally pair this with a Tooltip (components/ui/tooltip.tsx) for the
+// actual "what does this do" affordance, rather than leaning on the motion itself to communicate.
 export const iconHoverClass =
-  "[&_svg]:transition-transform [&_svg]:duration-300 [&_svg]:ease-[cubic-bezier(0.16,1,0.3,1)] hover:[&_svg]:scale-[1.12] hover:[&_svg]:-rotate-6 active:[&_svg]:scale-95"
+  "[&_svg]:transition-transform [&_svg]:duration-300 [&_svg]:ease-[cubic-bezier(0.16,1,0.3,1)] hover:[&_svg]:-translate-y-0.5 active:[&_svg]:translate-y-0"

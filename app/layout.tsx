@@ -5,6 +5,7 @@ import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import { AuthProvider } from '@/lib/auth'
 import { CookieConsent } from '@/components/layout/CookieConsent'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 export const metadata: Metadata = {
   title: 'ITSEC KPI Tracker',
@@ -42,11 +43,13 @@ export default function RootLayout({
           body color/background (rather than its own explicit override) stayed light-themed
           everywhere in dark mode. */}
       <body className="font-sans bg-app text-ink antialiased">
-        <AuthProvider>
-          {children}
-          <CookieConsent />
-        </AuthProvider>
-        <Toaster position="bottom-right" visibleToasts={4} />
+        <TooltipProvider delay={200}>
+          <AuthProvider>
+            {children}
+            <CookieConsent />
+          </AuthProvider>
+          <Toaster position="bottom-right" visibleToasts={4} />
+        </TooltipProvider>
       </body>
     </html>
   )
