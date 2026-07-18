@@ -91,37 +91,41 @@ function LoginForm() {
     <div className="h-screen overflow-hidden bg-white dark:bg-[#141414] flex flex-col relative z-0">
       {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
           element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive.
-          Two separate art-directed assets (not one image reused at different sizes): the wide banner
-          crop reads well stretched across a desktop viewport, but the same crop shrunk down to phone
-          width loses too much detail, so a tighter close-up crop is swapped in below md instead —
-          Next/Image has no single-tag way to pick a different src per breakpoint, so this is two
-          <Image> instances toggled via md:hidden/hidden md:block, matching every other responsive
-          swap in this app. Sized bigger on mobile (h-[58vh]) than desktop (md:h-[52vh]) per earlier
-          feedback that the mobile band specifically needed to read larger. object-cover fills the
-          band edge-to-edge with no side letterboxing — object-contain was tried first to guarantee
-          the graphic was never cropped, but that traded cropping for visible empty margins on the
-          sides at wide viewport ratios, which reads worse than the graphic being cropped top/bottom
-          the way the reference design itself shows it. dark:invert flips the artwork's black strokes
-          to white (and vice versa) for dark mode — neither source PNG has a separate dark variant, so
+          Two separate art-directed assets: a wide banner crop for desktop, a tighter close-up crop
+          for mobile (the same wide crop shrunk to phone width lost too much detail) — toggled via
+          md:hidden/hidden md:block since Next/Image has no single-tag way to pick a different src
+          per breakpoint.
+
+          The container's aspect-ratio is locked to each image's own exact ratio (1604:1004 mobile,
+          7704:2800 desktop) instead of an arbitrary vh height — this is what actually resolves the
+          cover-vs-contain tradeoff that kept bouncing back and forth: cover always crops one axis
+          to fill a box of unrelated proportions, contain always leaves empty margins on one axis.
+          Neither is needed once the box's own ratio exactly matches the image's — there's nothing
+          left to crop or pad, so object-fit becomes a no-op and both height and width render fully
+          intact. Desktop stays at the viewport's full width, which already lands the derived height
+          in a good "big but not overwhelming" range on typical screens. Mobile deliberately renders
+          the box at 200% of viewport width (centered, overflowing left/right, clipped by the page's
+          own overflow-hidden) — at 100% width the same math produces a noticeably short band, and
+          widening the box is how you make an aspect-ratio-locked image taller without introducing
+          any internal cropping: the "overflow" is the box extending past the screen edges, not the
+          artwork being cut within its own box. dark:invert flips the artwork's black strokes to
+          white (and vice versa) for dark mode — neither source PNG has a separate dark variant, so
           this is a CSS filter instead; invert() only touches RGB channels, so the transparent
-          background is unaffected. The mobile crop uses a raised object-position (-25% instead of
-          plain object-top's 0%) — at mobile's tall, narrow aspect the close-up crop's cover-fit was
-          still cutting through the middle of a loop shape; object-position accepts values past 0%,
-          which pushes the visible window higher up the source image than the "top" keyword can. */}
-      <div className="absolute inset-x-0 top-0 h-[58vh] md:h-[52vh] -z-10 overflow-hidden pointer-events-none select-none">
+          background is unaffected. */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200%] aspect-[1604/1004] md:left-0 md:translate-x-0 md:w-full md:aspect-[7704/2800] -z-10 overflow-hidden pointer-events-none select-none">
         <Image
           src="/login-wordmark-mobile.png"
           alt=""
           fill
           priority
-          className="object-cover object-[50%_-25%] dark:invert md:hidden"
+          className="object-contain dark:invert md:hidden"
         />
         <Image
           src="/login-wordmark-desktop.png"
           alt=""
           fill
           priority
-          className="object-cover object-top dark:invert hidden md:block"
+          className="object-contain dark:invert hidden md:block"
         />
       </div>
 
