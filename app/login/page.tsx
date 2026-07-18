@@ -70,8 +70,8 @@ function LoginForm() {
       await login(parseInt(selected, 10), pin)
       const stored = JSON.parse(localStorage.getItem('itsec_kpi_user') || '{}')
       const role = stored.role
-      if (role === 'dept_head') router.push('/dept')
-      else router.push('/admin')
+      if (role === 'dept_head') router.push('/dept/dashboard')
+      else router.push('/board')
       // Intentionally leave `loading` true here instead of a `finally` — this component unmounts
       // once the route change lands, so resetting it on success would only be visible as a flash
       // back to "Sign in" in the moment before that happens. Only the failure path resets it, so
@@ -227,6 +227,10 @@ function LoginForm() {
               Contact Corporate Planning if you have forgotten your PIN.
             </p>
           </div>
+
+          <p className="text-[10px] text-muted-foreground text-center w-full">
+            © 2026 PT ITSEC ASIA®. All rights reserved. ITSEC KPI TRACKER® is among the trademarks of PT ITSEC ASIA®, and may only be used with explicit written permission.
+          </p>
         </div>
       </div>
 

@@ -213,7 +213,7 @@ export default function SuperAdminPage() {
                           <div className="flex items-center justify-between border-t border-divider">
                             <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Status</span>
                             <div className="flex-1 py-3 flex justify-center">
-                              <Label className="gap-1.5 text-sm" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
+                              <Label className="gap-1.5 text-[10px]" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
                                 <span className="size-1.5 rounded-full" style={{ background: 'currentColor' }} />
                                 {u.active ? 'Active' : 'Inactive'}
                               </Label>

@@ -10,7 +10,7 @@ import {
   ChartLineDuotone as ChartLine, ChartBold as ChartBold,
   ListLineDuotone as ListLine, ListBold as ListBold,
 } from '@solar-icons/react-perf'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
@@ -62,6 +62,20 @@ const chartConfig: ChartConfig = {
   watch: { label: 'Watch', color: STATUS_COLORS.watch },
   offTrack: { label: 'Off Track', color: STATUS_COLORS.off_track },
   noData: { label: 'No Data', color: STATUS_COLORS.no_data },
+}
+
+// Value label centered inside each stacked bar segment — skips rendering below ~20px of width so a
+// 2-3 digit number never overflows a sliver-thin segment. White text reads correctly on every status
+// color in both themes since each segment is a solid, fairly saturated fill either way.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function BarSegmentLabel(props: any) {
+  const { x, y, width, height, value } = props
+  if (!value || width < 20) return null
+  return (
+    <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={13} fontWeight={600}>
+      {value}
+    </text>
+  )
 }
 
 export default function BoardPage() {
@@ -270,17 +284,38 @@ export default function BoardPage() {
                 {!loading && chartData.length > 0 && (
                   <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
                     <h3 className="font-medium text-ink text-sm mb-4">Department KPI Status — {MONTHS[month - 1]} {year}</h3>
-                    <ChartContainer config={chartConfig} className="h-[320px] w-full aspect-auto">
-                      <BarChart data={chartData} layout="vertical" barSize={18} barCategoryGap="30%" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                        <CartesianGrid horizontal={false} stroke="var(--divider)" />
+                    <ChartContainer config={chartConfig} className="h-[380px] w-full aspect-auto">
+                      <BarChart data={chartData} layout="vertical" barSize={34} barCategoryGap="28%" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                        {/* Same gradient-over-flat-color technique for every segment: a subtle light-to-
+                            darker fade along the bar (the "glossy" look), built from each series' own
+                            theme-aware CSS var — the gradient rides along with whatever --success-text/
+                            --warning-text/etc. resolve to per theme, so this needs no separate light/dark
+                            gradient definitions of its own. */}
+                        <defs>
+                          {(['onTrack', 'watch', 'offTrack', 'noData'] as const).map(key => (
+                            <linearGradient key={key} id={`barGrad-${key}`} x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor={`var(--color-${key})`} stopOpacity={0.75} />
+                              <stop offset="100%" stopColor={`var(--color-${key})`} stopOpacity={1} />
+                            </linearGradient>
+                          ))}
+                        </defs>
+                        <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--divider)" />
                         <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'var(--ink-soft)' }} tickLine={false} axisLine={false} width={84} />
                         <ChartTooltip cursor={{ fill: 'var(--panel-soft-bg)' }} content={<ChartTooltipContent />} />
                         <ChartLegend content={<ChartLegendContent />} />
-                        <Bar dataKey="onTrack" stackId="a" fill="var(--color-onTrack)" radius={[3, 3, 3, 3]} />
-                        <Bar dataKey="watch" stackId="a" fill="var(--color-watch)" radius={[3, 3, 3, 3]} />
-                        <Bar dataKey="offTrack" stackId="a" fill="var(--color-offTrack)" radius={[3, 3, 3, 3]} />
-                        <Bar dataKey="noData" stackId="a" fill="var(--color-noData)" radius={[3, 3, 3, 3]} />
+                        <Bar dataKey="onTrack" stackId="a" fill="url(#barGrad-onTrack)" radius={[6, 6, 6, 6]}>
+                          <LabelList dataKey="onTrack" content={<BarSegmentLabel />} />
+                        </Bar>
+                        <Bar dataKey="watch" stackId="a" fill="url(#barGrad-watch)" radius={[6, 6, 6, 6]}>
+                          <LabelList dataKey="watch" content={<BarSegmentLabel />} />
+                        </Bar>
+                        <Bar dataKey="offTrack" stackId="a" fill="url(#barGrad-offTrack)" radius={[6, 6, 6, 6]}>
+                          <LabelList dataKey="offTrack" content={<BarSegmentLabel />} />
+                        </Bar>
+                        <Bar dataKey="noData" stackId="a" fill="url(#barGrad-noData)" radius={[6, 6, 6, 6]}>
+                          <LabelList dataKey="noData" content={<BarSegmentLabel />} />
+                        </Bar>
                       </BarChart>
                     </ChartContainer>
                   </div>
