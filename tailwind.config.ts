@@ -122,21 +122,6 @@ const config: Config = {
         // Tailwind v3 has no "xs" shadow size by default — this matches v4's own --shadow-xs value.
         xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
       },
-      keyframes: {
-        // A stand-in for true Lottie shape-morphing (not achievable by transforming a static SVG) —
-        // an elastic overshoot-and-settle "pop" that reads as a more alive, designed micro-interaction
-        // than a flat hover scale. Ends back at neutral so it composes cleanly with repeated triggers.
-        'icon-pop': {
-          '0%':   { transform: 'scale(1) rotate(0deg)' },
-          '30%':  { transform: 'scale(1.22) rotate(-12deg)' },
-          '55%':  { transform: 'scale(0.92) rotate(8deg)' },
-          '75%':  { transform: 'scale(1.08) rotate(-4deg)' },
-          '100%': { transform: 'scale(1) rotate(0deg)' },
-        },
-      },
-      animation: {
-        'icon-pop': 'icon-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 1',
-      },
     },
   },
   plugins: [dataAttributeVariants, animate],

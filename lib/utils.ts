@@ -5,10 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Drop onto any clickable element that contains an icon for a designed, elastic "pop and wiggle"
-// micro-interaction — no JS needed. `animate-icon-pop` (tailwind.config.ts) plays once whenever the
-// hover: or active: variant starts matching, which is exactly a CSS animation restarting on selector
-// re-match: hover: covers mouse hover on large screens, active: covers tap on touch devices (which
-// never sustain :hover), matching each input method to its own trigger without JS device detection.
+// Drop onto any clickable element that contains an icon for a small, consistent hover lift —
+// no JS needed, just a CSS transition on the descendant svg triggered by the parent's :hover.
+// Uses the same expo-out cubic-bezier as the app's Framer Motion panels (AnimatedAside) so every
+// hand-rolled CSS transition and every Framer Motion animation in the app reads as one consistent
+// "professional" motion language; the slight rotate + press-down give it more character than a
+// flat scale, and active:scale-95 adds tactile feedback on click.
 export const iconHoverClass =
-  "[&_svg]:origin-center hover:[&_svg]:animate-icon-pop active:[&_svg]:animate-icon-pop"
+  "[&_svg]:transition-transform [&_svg]:duration-300 [&_svg]:ease-[cubic-bezier(0.16,1,0.3,1)] hover:[&_svg]:scale-[1.12] hover:[&_svg]:-rotate-6 active:[&_svg]:scale-95"
