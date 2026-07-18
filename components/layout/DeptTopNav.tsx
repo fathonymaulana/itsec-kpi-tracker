@@ -250,20 +250,20 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           const Icon = active ? item.icons.bold : item.icons.line
           return (
             <Tooltip key={item.href}>
-              <div className="relative flex flex-col items-center justify-center h-full w-32">
-                {/* Inactive tabs get a muted rounded highlight on hover, on the button itself (not a
-                    decorative inner span); active tabs never do — their hover state stays exactly as
-                    the resting state, only the underline marks "current". */}
-                <TooltipTrigger
-                  onClick={() => router.push(item.href)}
-                  className={cn(
-                    'flex items-center justify-center size-11 rounded-2xl transition-colors',
-                    active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft hover:bg-muted',
-                    iconHoverClass
-                  )}
-                >
-                  <Icon size={22} />
-                </TooltipTrigger>
+              {/* The button IS the full tab slot (h-full w-32) — hover/cursor/tooltip and the muted
+                  highlight all need to cover that whole area, not just a small icon-sized inner
+                  element, so nothing about the hover state depends on where exactly the pointer lands
+                  inside the tab. Active tabs never get the muted hover — their hover state stays
+                  exactly as the resting state, only the underline marks "current". */}
+              <TooltipTrigger
+                onClick={() => router.push(item.href)}
+                className={cn(
+                  'relative flex flex-col items-center justify-center h-full w-32 rounded-2xl transition-colors cursor-pointer',
+                  active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft hover:bg-muted',
+                  iconHoverClass
+                )}
+              >
+                <Icon size={22} />
                 {active && (
                   <motion.div
                     layoutId="dept-top-nav-underline"
@@ -271,7 +271,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
                     transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                   />
                 )}
-              </div>
+              </TooltipTrigger>
               <TooltipContent>{item.label}</TooltipContent>
             </Tooltip>
           )
