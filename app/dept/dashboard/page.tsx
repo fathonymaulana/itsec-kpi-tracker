@@ -26,6 +26,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
+import { cn } from '@/lib/utils'
 
 const CURRENT_YEAR = new Date().getFullYear()
 // var(--foreground), not a literal hex — the fixed '#171717' this used to be stayed black in dark
@@ -153,13 +154,26 @@ export default function DeptDashboard() {
         onToggleRightPanel={() => setRightPanelOpen(v => !v)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      {/* The scroll container spans edge-to-edge (both asides float above it, absolutely
+          positioned) so its native scrollbar renders at the true right edge of the viewport
+          instead of at whatever edge the right aside happened to be pushed to — only this center
+          layer scrolls; the asides are pinned via position:absolute, not part of the scroll flow.
+          Padding (not the asides' own layout) reserves their space, animated with the same
+          duration/easing as AnimatedAside's own width tween so they move in lockstep. */}
+      <div className="flex-1 relative overflow-hidden">
         {/* Left: clock + year picker */}
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block" contentClassName="p-12 overflow-y-auto">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="p-12 overflow-y-auto">
           <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
         </AnimatedAside>
 
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-8">
+        <div
+          className={cn(
+            'h-full overflow-y-auto overflow-x-hidden transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+            leftPanelOpen ? 'md:pl-[350px]' : 'pl-0',
+            rightPanelOpen ? 'lg:pr-[400px]' : 'pr-0'
+          )}
+        >
+        <main className="min-w-0 px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
@@ -367,9 +381,10 @@ export default function DeptDashboard() {
             )}
           </div>
         </main>
+        </div>
 
         {/* Right: add-ons */}
-        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block" contentClassName="overflow-y-auto">
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="absolute inset-y-0 right-0 z-10 hidden lg:block" contentClassName="overflow-y-auto">
           <AddOnsPanel />
         </AnimatedAside>
       </div>

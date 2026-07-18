@@ -317,9 +317,13 @@ export default function DeptPage() {
         onToggleRightPanel={() => setRightPanelOpen(v => !v)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      {/* The scroll container spans edge-to-edge (both asides float above it, absolutely
+          positioned) so its native scrollbar renders at the true right edge of the viewport. The
+          sticky Save/Submit footer bar gets the same reserved padding as the scroll area so its
+          buttons don't sit underneath the asides either. */}
+      <div className="flex-1 relative overflow-hidden">
         {/* Left: clock + date picker */}
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block" contentClassName="p-12 overflow-y-auto">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="p-12 overflow-y-auto">
           <DateSidebar
             year={year}
             onYearChange={setYear}
@@ -331,8 +335,14 @@ export default function DeptPage() {
         </AnimatedAside>
 
         {/* Center: data entry */}
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-8">
+        <main className="h-full min-w-0 flex flex-col overflow-hidden">
+          <div
+            className={cn(
+              'flex-1 overflow-y-auto pl-6 pr-6 py-8 transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+              leftPanelOpen && 'md:pl-[374px]',
+              rightPanelOpen && 'lg:pr-[424px]'
+            )}
+          >
           <div className="max-w-3xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
@@ -447,7 +457,13 @@ export default function DeptPage() {
           </div>
 
           {/* Save/Submit action bar — pinned flush to the bottom of the screen, not floating over content */}
-          <div className="shrink-0 border-t border-divider bg-app px-6 py-4 flex justify-end gap-3">
+          <div
+            className={cn(
+              'shrink-0 border-t border-divider bg-app pl-6 pr-6 py-4 flex justify-end gap-3 transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+              leftPanelOpen && 'md:pl-[374px]',
+              rightPanelOpen && 'lg:pr-[424px]'
+            )}
+          >
             <Button
               variant="outline"
               className={`h-12 px-5 rounded-2xl gap-2 border-divider bg-panel text-ink ${iconHoverClass}`}
@@ -473,7 +489,7 @@ export default function DeptPage() {
         </main>
 
         {/* Right: add-ons */}
-        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block" contentClassName="overflow-y-auto">
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="absolute inset-y-0 right-0 z-10 hidden lg:block" contentClassName="overflow-y-auto">
           <AddOnsPanel />
         </AnimatedAside>
       </div>

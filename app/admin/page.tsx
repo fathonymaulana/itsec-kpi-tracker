@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
+import { cn } from '@/lib/utils'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 function formatTimestamp(iso: string): string {
@@ -237,8 +238,10 @@ export default function AdminPage() {
         onToggleRightPanel={() => setRightPanelOpen(v => !v)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="hidden md:block" contentClassName="p-12 overflow-y-auto">
+      {/* The scroll container spans edge-to-edge (both asides float above it, absolutely
+          positioned) so its native scrollbar renders at the true right edge of the viewport. */}
+      <div className="flex-1 relative overflow-hidden">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="p-12 overflow-y-auto">
           <DateSidebar
             year={year}
             onYearChange={setYear}
@@ -249,7 +252,14 @@ export default function AdminPage() {
           />
         </AnimatedAside>
 
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-8">
+        <div
+          className={cn(
+            'h-full overflow-y-auto overflow-x-hidden transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+            leftPanelOpen ? 'md:pl-[350px]' : 'pl-0',
+            rightPanelOpen ? 'lg:pr-[400px]' : 'pr-0'
+          )}
+        >
+        <main className="min-w-0 px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">
@@ -462,8 +472,9 @@ export default function AdminPage() {
             </Tabs>
           </div>
         </main>
+        </div>
 
-        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="hidden lg:block" contentClassName="overflow-y-auto">
+        <AnimatedAside open={rightPanelOpen} width={400} side="right" className="absolute inset-y-0 right-0 z-10 hidden lg:block" contentClassName="overflow-y-auto">
           <AddOnsPanel />
         </AnimatedAside>
       </div>
