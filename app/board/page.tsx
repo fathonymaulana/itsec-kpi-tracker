@@ -309,7 +309,7 @@ export default function BoardPage() {
             </div>
 
             <Tabs value={view} onValueChange={v => v && setView(v as 'charts' | 'table')}>
-              <TabsList variant="line" className="mb-4">
+              <TabsList variant="pill" className="mb-4">
                 <TabsTrigger value="charts">
                   {view === 'charts' ? <ChartBold data-icon="inline-start" size={14} /> : <ChartLine data-icon="inline-start" size={14} />}
                   Charts
@@ -411,7 +411,7 @@ export default function BoardPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                              className={cn('border-divider bg-panel text-ink', iconHoverClass)}
+                              className={cn('rounded-full border-divider bg-panel text-ink', iconHoverClass)}
                             >
                               <FileSearch size={13} />
                               View KPI details & sources
@@ -450,7 +450,7 @@ export default function BoardPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                            className={cn('border-divider bg-panel text-ink shadow-xs', iconHoverClass)}
+                            className={cn('rounded-full border-divider bg-panel text-ink shadow-xs', iconHoverClass)}
                           >
                             <FileSearch size={14} />
                             View details
@@ -502,7 +502,7 @@ export default function BoardPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                                className={cn('border-divider bg-panel text-ink', iconHoverClass)}
+                                className={cn('rounded-full border-divider bg-panel text-ink', iconHoverClass)}
                               >
                                 <FileSearch size={13} />
                                 View details & sources

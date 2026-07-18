@@ -22,9 +22,15 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { getDefaultMonth, getDefaultYear, MONTHS } from '@/lib/status'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+function formatTimestamp(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+}
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -61,6 +67,9 @@ export default function AdminPage() {
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const [rejectTarget, setRejectTarget] = useState<ModifyRequest | null>(null)
   const [rejectNote, setRejectNote] = useState('')
+  const [verifyTarget, setVerifyTarget] = useState<Kpi | null>(null)
+  const [flagTarget, setFlagTarget] = useState<Kpi | null>(null)
+  const [flagNote, setFlagNote] = useState('')
 
   const canVerify = user?.role === 'corp_planning'
 
@@ -268,7 +277,7 @@ export default function AdminPage() {
 
             {/* Tabs — Modify Requests is global (any department), so it works with no department selected */}
             <Tabs value={tab} onValueChange={v => v && setTab(v as TabKey)}>
-            <TabsList variant="line" className="mb-4">
+            <TabsList variant="pill" className="mb-4">
               {([
                 { key: 'data', label: 'Data Review', icon: ChevronRight, boldIcon: ChevronRightBold },
                 { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield, boldIcon: ShieldBold },
@@ -361,18 +370,16 @@ export default function AdminPage() {
                             readOnly
                           />
                           {/* Verification status / action row */}
-                          <div className="flex items-center gap-2 px-1">
+                          <div className="flex items-center gap-2 px-1 flex-wrap">
                             {verification ? (
-                              <div className={`flex items-center w-fit shrink-0 whitespace-nowrap gap-1.5 text-[10px] md:text-xs px-2.5 py-1 rounded-full ${
-                                verification.status === 'verified'
-                                  ? 'text-success bg-success-soft border border-success-soft-border'
-                                  : 'text-danger bg-danger-soft border border-danger-soft-border'
-                              }`}>
-                                {verification.status === 'verified'
-                                  ? <><CheckCircle2 size={10} /> Verified</>
-                                  : <><AlertTriangle size={10} /> Flagged</>}
-                                {verification.note && <span className="ml-1 text-[10px]">— {verification.note}</span>}
-                              </div>
+                              <>
+                                <Badge variant={verification.status === 'verified' ? 'success' : 'danger'} className="h-auto px-2.5 py-1 text-[10px] md:text-xs">
+                                  {verification.status === 'verified' ? <CheckCircle2 size={10} /> : <AlertTriangle size={10} />}
+                                  {verification.status === 'verified' ? 'Verified' : 'Flagged'}
+                                </Badge>
+                                <span className="text-[10px] text-ink-faint">{formatTimestamp(verification.verified_at)}</span>
+                                {verification.note && <span className="text-[10px] text-ink-muted">— {verification.note}</span>}
+                              </>
                             ) : canVerify ? (
                               <>
                                 <Button
@@ -380,7 +387,7 @@ export default function AdminPage() {
                                   variant="outline"
                                   className="w-auto h-9 md:h-6 px-3 md:px-2 text-sm md:text-[11px] gap-1.5 md:gap-1 text-success border-success-soft-border hover:bg-success-soft"
                                   disabled={actionLoading === kpi.id}
-                                  onClick={() => handleVerify(kpi.id, 'verified')}
+                                  onClick={() => setVerifyTarget(kpi)}
                                 >
                                   <CheckCircle2 size={13} className="md:size-2.5" />
                                   Verify
@@ -390,7 +397,7 @@ export default function AdminPage() {
                                   variant="outline"
                                   className="w-auto h-9 md:h-6 px-3 md:px-2 text-sm md:text-[11px] gap-1.5 md:gap-1 text-danger border-danger-soft-border hover:bg-danger-soft"
                                   disabled={actionLoading === kpi.id}
-                                  onClick={() => handleVerify(kpi.id, 'flagged', 'Needs correction')}
+                                  onClick={() => { setFlagTarget(kpi); setFlagNote('') }}
                                 >
                                   <AlertTriangle size={13} className="md:size-2.5" />
                                   Flag
@@ -426,16 +433,15 @@ export default function AdminPage() {
                                 <div className="text-[11px] text-ink-faint mt-0.5 font-normal">{kpi.target_text}</div>
                               </div>
                               {v ? (
-                                <div className={`flex items-center w-fit shrink-0 whitespace-nowrap gap-1.5 text-[10px] md:text-[11px] px-2 py-0.5 rounded-full ${
-                                  v.status === 'verified'
-                                    ? 'text-success bg-success-soft'
-                                    : 'text-danger bg-danger-soft'
-                                }`}>
-                                  {v.status === 'verified' ? <CheckCircle2 size={10} /> : <AlertTriangle size={10} />}
-                                  <span className="capitalize">{v.status}</span>
+                                <div className="flex flex-col items-end gap-1">
+                                  <Badge variant={v.status === 'verified' ? 'success' : 'danger'} className="h-auto px-2 py-0.5 text-[10px] md:text-[11px]">
+                                    {v.status === 'verified' ? <CheckCircle2 size={10} /> : <AlertTriangle size={10} />}
+                                    <span className="capitalize">{v.status}</span>
+                                  </Badge>
+                                  <span className="text-[9px] text-ink-faint">{formatTimestamp(v.verified_at)}</span>
                                 </div>
                               ) : (
-                                <span className="text-[10px] md:text-[11px] text-ink-faint">Pending</span>
+                                <Badge variant="warning" className="h-auto px-2 py-0.5 text-[10px] md:text-[11px]">Pending</Badge>
                               )}
                             </div>
                           )
@@ -479,6 +485,46 @@ export default function AdminPage() {
               className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white"
             >
               Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!verifyTarget}
+        onOpenChange={o => !o && setVerifyTarget(null)}
+        title={`Verify — ${verifyTarget?.name}`}
+        description={`Confirm ${selectedDeptObj?.name}'s figures for this KPI are accurate for ${MONTHS[month - 1]} ${year}. This is recorded with your name and a timestamp.`}
+        confirmLabel="Verify"
+        cancelLabel="Cancel"
+        destructive={false}
+        onConfirm={() => { if (verifyTarget) handleVerify(verifyTarget.id, 'verified') }}
+      />
+
+      <Dialog open={!!flagTarget} onOpenChange={o => !o && setFlagTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Flag — {flagTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-xs text-ink-muted mb-3">Let {selectedDeptObj?.name} know what needs correcting — this note is recorded with a timestamp and shown on their entry.</p>
+            <label className="block text-xs font-medium text-ink-soft mb-1.5">Reason</label>
+            <textarea
+              value={flagNote}
+              onChange={e => setFlagNote(e.target.value)}
+              placeholder="e.g. The reported figure doesn't match the linked source document."
+              rows={3}
+              className="w-full rounded-lg border border-divider text-sm p-3 resize-none focus:outline-none focus:border-[#CC1F1F]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFlagTarget(null)}>Cancel</Button>
+            <Button
+              disabled={!flagNote.trim() || actionLoading === flagTarget?.id}
+              onClick={() => { if (flagTarget) { handleVerify(flagTarget.id, 'flagged', flagNote.trim()); setFlagTarget(null) } }}
+              className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white"
+            >
+              Flag
             </Button>
           </DialogFooter>
         </DialogContent>

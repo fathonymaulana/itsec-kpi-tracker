@@ -1,8 +1,10 @@
 'use client'
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   LinkMinimalisticLineDuotone as Link2,
+  DownloadLineDuotone as IconDownload,
   AltArrowDownLineDuotone as ChevronDown,
   AltArrowUpLineDuotone as ChevronUp,
   LockUnlockedLineDuotone as RequestModifyIcon,
@@ -11,6 +13,7 @@ import {
 import { getStatus, getStatusColors } from '@/lib/status'
 import { resolveAllValues, getSubMetricStatuses, getPeriodStatuses } from '@/lib/kpi-primary'
 import { parsePeriod, periodLabel } from '@/lib/frequency'
+import { useAuth, authHeaders } from '@/lib/auth'
 import { StatusBadge } from './StatusBadge'
 import { DataSourceModal } from './DataSourceModal'
 import { ModifyRequestModal } from './ModifyRequestModal'
@@ -68,6 +71,34 @@ export function KpiCard({
   const [collapsed, setCollapsed] = useState(false)
   const [dsOpen, setDsOpen] = useState(false)
   const [modifyOpen, setModifyOpen] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const { token } = useAuth()
+
+  // A plain <a href download> only honors `download` for same-origin URLs — for external source
+  // links (Google Drive, Dropbox, SharePoint, etc.) the browser just navigates instead of saving a
+  // file. Routing through our own proxy (Content-Disposition: attachment) makes it same-origin from
+  // the browser's perspective, so the file actually downloads regardless of where it's hosted.
+  const handleDownloadSource = async () => {
+    if (!dataSource?.url || !token) return
+    setDownloading(true)
+    try {
+      const r = await fetch(`/api/download-source?url=${encodeURIComponent(dataSource.url)}`, { headers: authHeaders(token) })
+      if (!r.ok) throw new Error('Download failed')
+      const blob = await r.blob()
+      const cd = r.headers.get('content-disposition') || ''
+      const filename = cd.match(/filename="?([^"]+)"?/)?.[1] || 'source-file'
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      toast.error('Couldn’t download that source', { description: 'Try opening the link directly instead.' })
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   // Input sub-metrics in order (non-calc)
   const inputSMs = kpi.sub_metrics.filter(sm => !sm.is_calculated)
@@ -142,17 +173,15 @@ export function KpiCard({
             </button>
           )}
           {readOnly && dataSource?.url && (
-            <a
-              href={dataSource.url}
-              target="_blank"
-              rel="noreferrer"
-              download
-              className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-soft border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors"
-              title="View or download the data source this department submitted"
+            <button
+              onClick={handleDownloadSource}
+              disabled={downloading}
+              className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-soft border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              title="Download the data source file this department submitted"
             >
-              <Link2 size={12} />
-              View Source
-            </a>
+              <IconDownload size={12} />
+              {downloading ? 'Downloading…' : 'Download Source'}
+            </button>
           )}
           {readOnly && onRequestModify ? (
             modifyRequestStatus === 'pending' ? (

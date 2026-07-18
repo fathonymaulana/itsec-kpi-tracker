@@ -19,6 +19,12 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Semantic status variants — success/warning/danger CSS vars already back every "soft"
+        // status pill across the app (StatusBadge, verification badges), so this just formalizes
+        // them as proper Badge variants instead of one-off inline styles at each call site.
+        success: "border-success-soft-border bg-success-soft text-success",
+        warning: "border-warning-soft-border bg-warning-soft text-warning",
+        danger: "border-danger-soft-border bg-danger-soft text-danger",
       },
     },
     defaultVariants: {
