@@ -9,6 +9,8 @@ import {
   BuildingsLineDuotone as Building2,
   ShieldLineDuotone as Shield, ShieldBold as ShieldBold,
   LockUnlockedLineDuotone as LockUnlocked, LockUnlockedBold as LockUnlockedBold,
+  InboxLineDuotone as IconInbox,
+  ClipboardListLineDuotone as IconClipboardList,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
@@ -16,6 +18,7 @@ import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { getDefaultMonth, getDefaultYear, MONTHS } from '@/lib/status'
 import { Button } from '@/components/ui/button'
@@ -285,7 +288,11 @@ export default function AdminPage() {
             {tab === 'modify' && (
               <div className="space-y-2">
                 {modifyRequests.length === 0 ? (
-                  <div className="text-center py-16 text-ink-faint text-sm">No pending modify requests.</div>
+                  <EmptyState
+                    icon={IconInbox}
+                    title="No pending modify requests"
+                    description="When a department asks to change a locked, already-submitted month, it'll show up here for review."
+                  />
                 ) : modifyRequests.map(r => (
                   <div key={r.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -336,7 +343,11 @@ export default function AdminPage() {
                     {loading ? (
                       [...Array(4)].map((_, i) => <div key={i} className="h-24 bg-panel border border-divider rounded-3xl animate-pulse" />)
                     ) : kpis.length === 0 ? (
-                      <div className="text-center py-16 text-ink-faint text-sm">No data for this period.</div>
+                      <EmptyState
+                        icon={IconClipboardList}
+                        title="No data for this period"
+                        description="This department hasn't entered any actuals for the selected month yet."
+                      />
                     ) : kpis.map(kpi => {
                       const verification = getKpiVerification(kpi.id)
                       return (
@@ -399,7 +410,11 @@ export default function AdminPage() {
                 {tab === 'verifications' && (
                   <div>
                     {kpis.length === 0 ? (
-                      <div className="text-center py-16 text-ink-faint text-sm">No KPIs loaded.</div>
+                      <EmptyState
+                        icon={IconClipboardList}
+                        title="No KPIs to verify"
+                        description="This department hasn't entered any actuals for the selected month yet."
+                      />
                     ) : (
                       <div className="space-y-2">
                         {kpis.map(kpi => {

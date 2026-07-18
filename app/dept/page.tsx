@@ -14,6 +14,7 @@ import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
@@ -391,10 +392,15 @@ export default function DeptPage() {
                   </span>
                 </div>
                 {visibleKpis.length === 0 ? (
-                  <div className="text-center py-16 text-ink-faint text-sm">
-                    No KPI matches &quot;{appliedSearch}&quot;.{' '}
-                    <button onClick={() => { setSearchInput(''); setAppliedSearch('') }} className="text-[#CC1F1F] hover:underline">Clear search</button>
-                  </div>
+                  <EmptyState
+                    icon={Search}
+                    title={`No KPI matches "${appliedSearch}"`}
+                    description="Try a different name, or clear the search to see every matrix again."
+                  >
+                    <button onClick={() => { setSearchInput(''); setAppliedSearch('') }} className="text-xs font-medium text-[#CC1F1F] hover:underline mt-3">
+                      Clear search
+                    </button>
+                  </EmptyState>
                 ) : visibleKpis.map(kpi => (
                   <KpiCard
                     key={kpi.id}

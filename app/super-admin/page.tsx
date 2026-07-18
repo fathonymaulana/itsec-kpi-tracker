@@ -16,7 +16,9 @@ import {
   MenuDotsBold as IconMenuDots,
   UserCrossBold as IconUserCross,
   UserCheckBold as IconUserCheck,
+  ShieldKeyholeLineDuotone as IconShieldKeyhole,
 } from '@solar-icons/react-perf'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
@@ -317,7 +319,11 @@ export default function SuperAdminPage() {
 
                     <div className="hidden md:block bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
                       {requests.length === 0 ? (
-                        <div className="text-center py-16 text-ink-faint text-sm">No PIN change requests.</div>
+                        <EmptyState
+                          icon={IconShieldKeyhole}
+                          title="No PIN change requests"
+                          description="When someone submits a new PIN from their profile, it'll show up here for approval."
+                        />
                       ) : (
                         <Table>
                           <TableHeader>
