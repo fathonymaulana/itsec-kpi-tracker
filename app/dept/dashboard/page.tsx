@@ -279,7 +279,36 @@ export default function DeptDashboard() {
                 </TabsContent>
 
                 <TabsContent value="table">
-                  <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden overflow-x-auto">
+                  {/* Mobile/tablet: one card per KPI, matching the Figma "Table Card Responsive"
+                      pattern used everywhere else — muted header (KPI + frequency), one divided
+                      label/value row per month. The 13-column table below stays desktop-only. */}
+                  <div className="flex md:hidden flex-col gap-3">
+                    {kpisWithData.map(({ kpi, unit, monthValues, period }) => (
+                      <div key={kpi.id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
+                        <div className="bg-panel-soft flex items-center justify-between px-6 py-4 gap-3">
+                          <div className="min-w-0 flex flex-col gap-1.5">
+                            <span className="text-[10px] text-ink-faint">KPI</span>
+                            <span className="text-sm font-medium text-ink truncate">{kpi.name}</span>
+                          </div>
+                          <span className="inline-flex items-center border border-divider bg-panel text-ink-muted px-2.5 py-1 text-xs rounded font-medium tracking-wide shrink-0">
+                            {periodLabel(period)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-divider">
+                          <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Target</span>
+                          <span className="flex-1 py-3 text-sm font-medium text-ink text-center">{kpi.target_text}</span>
+                        </div>
+                        {MONTHS.map((m, i) => (
+                          <div key={m} className="flex items-center justify-between border-t border-divider">
+                            <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">{m}</span>
+                            <span className="flex-1 py-3 text-sm font-medium text-ink text-center">{formatValue(monthValues[i].raw, unit)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden md:block bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>

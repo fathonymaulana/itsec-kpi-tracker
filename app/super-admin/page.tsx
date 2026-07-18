@@ -159,29 +159,31 @@ export default function SuperAdminPage() {
               ) : (
                 <>
                   <TabsContent value="users">
-                    {/* Mobile/tablet: one card per user — the 5-column table below is desktop-only,
-                        since squeezing role/department/status/actions into a table row at narrow
-                        widths reads far worse than a stacked card. */}
+                    {/* Mobile/tablet: one card per user, matching the Figma "Table Card Responsive"
+                        pattern used everywhere else — muted header (identity + actions), one
+                        divided label/value row per attribute. The 5-column table below stays
+                        desktop-only, since squeezing role/department/status/actions into a table
+                        row at narrow widths reads far worse than a stacked card. */}
                     <div className="flex md:hidden flex-col gap-3">
                       {filteredUsers.map(u => (
-                        <div key={u.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex flex-col gap-3">
-                          <div className="flex items-start justify-between gap-3">
+                        <div key={u.id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
+                          <div className="bg-panel-soft flex items-center justify-between px-6 py-4 gap-3">
                             <div className="flex items-center gap-3 min-w-0">
                               <Avatar size="sm">
                                 {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.name} />}
                                 <AvatarFallback className="text-[10px]">{u.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                               </Avatar>
-                              <div className="min-w-0">
-                                <div className="text-sm font-medium text-ink truncate">{u.name}</div>
-                                <div className="text-xs text-ink-muted truncate">{ROLE_LABELS[u.role]}{u.dept_name ? ` · ${u.dept_name}` : ''}</div>
+                              <div className="min-w-0 flex flex-col gap-1.5">
+                                <span className="text-[10px] text-ink-faint">User</span>
+                                <span className="text-sm font-medium text-ink truncate">{u.name}</span>
                               </div>
                             </div>
                             <DropdownMenu>
                               <DropdownMenuTrigger
-                                className={`inline-flex size-7 shrink-0 items-center justify-center rounded-md hover:bg-muted transition-colors ${iconHoverClass}`}
+                                className={`flex items-center gap-2 h-8 px-3 rounded-md bg-panel border border-divider shadow-xs text-sm font-medium text-ink shrink-0 ${iconHoverClass}`}
                                 title="Actions"
                               >
-                                <IconMenuDots size={16} className="text-ink-muted" />
+                                <IconMenuDots size={16} />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => setDialogUser(u)}>
@@ -198,10 +200,23 @@ export default function SuperAdminPage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                          <Label className="gap-1.5 text-xs self-start" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
-                            <span className="size-1.5 rounded-full" style={{ background: 'currentColor' }} />
-                            {u.active ? 'Active' : 'Inactive'}
-                          </Label>
+                          <div className="flex items-center justify-between border-t border-divider">
+                            <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Role</span>
+                            <span className="flex-1 py-3 text-sm font-medium text-ink text-center">{ROLE_LABELS[u.role]}</span>
+                          </div>
+                          <div className="flex items-center justify-between border-t border-divider">
+                            <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Department</span>
+                            <span className="flex-1 py-3 text-sm font-medium text-ink text-center">{u.dept_name || '—'}</span>
+                          </div>
+                          <div className="flex items-center justify-between border-t border-divider">
+                            <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Status</span>
+                            <div className="flex-1 py-3 flex justify-center">
+                              <Label className="gap-1.5 text-sm" style={{ color: u.active ? 'var(--success-text)' : 'var(--danger-text)' }}>
+                                <span className="size-1.5 rounded-full" style={{ background: 'currentColor' }} />
+                                {u.active ? 'Active' : 'Inactive'}
+                              </Label>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -271,22 +286,26 @@ export default function SuperAdminPage() {
                     {requests.length > 0 && (
                       <div className="flex md:hidden flex-col gap-3 mb-3">
                         {requests.map(r => (
-                          <div key={r.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex flex-col gap-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="text-sm font-medium text-ink truncate">{r.user?.name || 'Unknown'}</div>
-                                <div className="text-xs text-ink-muted mt-0.5">{new Date(r.requested_at).toLocaleString()}</div>
+                          <div key={r.id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
+                            <div className="bg-panel-soft flex items-center justify-between px-6 py-4 gap-3">
+                              <div className="min-w-0 flex flex-col gap-1.5">
+                                <span className="text-[10px] text-ink-faint">User</span>
+                                <span className="text-sm font-medium text-ink truncate">{r.user?.name || 'Unknown'}</span>
                               </div>
                               {r.status === 'pending' && <Badge className="text-[10px] gap-1 shrink-0"><IconClock size={10} /> Pending</Badge>}
                               {r.status === 'approved' && <Badge variant="default" className="text-[10px] gap-1 shrink-0"><IconCheckCircle size={10} /> Approved</Badge>}
                               {r.status === 'rejected' && <Badge variant="destructive" className="text-[10px] gap-1 shrink-0"><IconCloseCircle size={10} /> Rejected</Badge>}
                             </div>
+                            <div className="flex items-center justify-between border-t border-divider">
+                              <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Requested</span>
+                              <span className="flex-1 py-3 text-sm font-medium text-ink text-center">{new Date(r.requested_at).toLocaleString()}</span>
+                            </div>
                             {r.status === 'pending' && (
-                              <div className="flex items-center gap-1.5">
-                                <Button size="sm" variant="outline" className="h-7 flex-1 text-[11px] text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
-                                  <IconShieldCheck size={11} className="mr-1" /> Approve
+                              <div className="border-t border-divider flex items-center gap-2 px-6 py-4">
+                                <Button size="sm" variant="outline" className="h-8 flex-1 text-xs text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
+                                  <IconShieldCheck size={12} className="mr-1" /> Approve
                                 </Button>
-                                <Button size="sm" variant="outline" className="h-7 flex-1 text-[11px] text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
+                                <Button size="sm" variant="outline" className="h-8 flex-1 text-xs text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
                                   Reject
                                 </Button>
                               </div>

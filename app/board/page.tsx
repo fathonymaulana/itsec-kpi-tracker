@@ -455,7 +455,39 @@ export default function BoardPage() {
                     maxYear={CURRENT_YEAR + 1}
                   />
                 </div>
-                <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
+                {/* Mobile/tablet: one card per department, matching the Figma "Table Card
+                    Responsive" pattern used everywhere else — muted header (department name),
+                    one divided label/value row per period with a status dot instead of text. */}
+                <div className="flex md:hidden flex-col gap-3">
+                  {summaries.map(dept => (
+                    <div key={dept.dept_id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
+                      <div className="bg-panel-soft flex items-center px-6 py-4">
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[10px] text-ink-faint">Department</span>
+                          <span className="text-sm font-medium text-ink">{dept.department_name}</span>
+                        </div>
+                      </div>
+                      {rangePeriods.map(p => {
+                        const status = statusForPeriod(dept.dept_id, p)
+                        const color = status ? STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? '#D1D5DB' : '#E5E5E5'
+                        return (
+                          <div key={`${p.year}-${p.month}`} className="flex items-center justify-between border-t border-divider">
+                            <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">{MONTHS[p.month - 1].slice(0, 3)} {p.year}</span>
+                            <div className="flex-1 py-3 flex justify-center">
+                              <span
+                                title={status ?? 'no data'}
+                                className="inline-block size-2.5 rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow>
