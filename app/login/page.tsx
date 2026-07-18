@@ -88,7 +88,7 @@ function LoginForm() {
     // `relative z-0` (not just `relative`) is required here: without an explicit z-index, this div
     // never becomes a stacking context of its own, so the -z-10 wordmark image below escapes to the
     // page's root stacking context instead and paints behind the <body> background — invisible.
-    <div className="h-screen overflow-hidden bg-white dark:bg-[#141414] flex flex-col relative z-0">
+    <div className="h-screen overflow-hidden bg-white dark:bg-black flex flex-col relative z-0">
       {/* Decorative wordmark banner, pinned to the very top of the page — behind every other
           element (-z-10) so the login form always reads on top of it. Purely visual/non-interactive.
           Two separate art-directed assets: a wide banner crop for desktop, a tighter close-up crop
