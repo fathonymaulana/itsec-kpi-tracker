@@ -101,18 +101,20 @@ function LoginForm() {
           band edge-to-edge with no side letterboxing — object-contain was tried first to guarantee
           the graphic was never cropped, but that traded cropping for visible empty margins on the
           sides at wide viewport ratios, which reads worse than the graphic being cropped top/bottom
-          the way the reference design itself shows it. object-top keeps the crop anchored to the top
-          of the artwork (matching that reference) rather than centering it vertically. dark:invert
-          flips the artwork's black strokes to white (and vice versa) for dark mode — neither source
-          PNG has a separate dark variant, so this is a CSS filter instead; invert() only touches RGB
-          channels, so the transparent background is unaffected. */}
+          the way the reference design itself shows it. dark:invert flips the artwork's black strokes
+          to white (and vice versa) for dark mode — neither source PNG has a separate dark variant, so
+          this is a CSS filter instead; invert() only touches RGB channels, so the transparent
+          background is unaffected. The mobile crop uses a raised object-position (-25% instead of
+          plain object-top's 0%) — at mobile's tall, narrow aspect the close-up crop's cover-fit was
+          still cutting through the middle of a loop shape; object-position accepts values past 0%,
+          which pushes the visible window higher up the source image than the "top" keyword can. */}
       <div className="absolute inset-x-0 top-0 h-[58vh] md:h-[52vh] -z-10 overflow-hidden pointer-events-none select-none">
         <Image
           src="/login-wordmark-mobile.png"
           alt=""
           fill
           priority
-          className="object-cover object-top dark:invert md:hidden"
+          className="object-cover object-[50%_-25%] dark:invert md:hidden"
         />
         <Image
           src="/login-wordmark-desktop.png"
