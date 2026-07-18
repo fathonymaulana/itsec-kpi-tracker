@@ -50,21 +50,21 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
-function DialogOverlay({
-  className,
-  ...props
-}: DialogPrimitive.Backdrop.Props) {
-  return (
-    <DialogPrimitive.Backdrop
-      data-slot="dialog-overlay"
-      className={cn(
-        "fixed inset-0 isolate z-50 bg-black/80 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-        className
-      )}
-      {...props}
-    />
-  )
-}
+const DialogOverlay = React.forwardRef<HTMLDivElement, DialogPrimitive.Backdrop.Props>(
+  function DialogOverlay({ className, ...props }, ref) {
+    return (
+      <DialogPrimitive.Backdrop
+        ref={ref}
+        data-slot="dialog-overlay"
+        // No CSS animate-in/out classes here anymore — GSAP now drives the backdrop's fade as part
+        // of the same timeline as the popup (see DialogContent), so a second, independent CSS
+        // animation running alongside it would just fight the timing rather than help it.
+        className={cn("fixed inset-0 isolate z-50 bg-black/80", className)}
+        {...props}
+      />
+    )
+  }
+)
 
 function DialogContent({
   className,
@@ -75,38 +75,46 @@ function DialogContent({
   showCloseButton?: boolean
 }) {
   const popupRef = React.useRef<HTMLDivElement>(null)
+  const overlayRef = React.useRef<HTMLDivElement>(null)
   const ctx = React.useContext(DialogAnimationContext)
 
-  // Entrance: Base UI's Popup only mounts once the dialog opens, so a plain mount-time tween is all
-  // a fresh open needs — no state tracking required.
+  // Entrance: a single timeline (not two independent tweens) so the backdrop and popup read as one
+  // choreographed motion instead of two things that happen to move at the same time — the backdrop
+  // leads in by a hair, the popup follows almost immediately. expo.out is this app's established
+  // "professional" curve (see AnimatedAside) — fast off the mark, no overshoot, settles smoothly —
+  // used here for consistency with every other panel/overlay animation in the app.
   useGSAP(() => {
     if (!popupRef.current) return
-    gsap.fromTo(
+    const tl = gsap.timeline()
+    if (overlayRef.current) {
+      tl.fromTo(overlayRef.current, { opacity: 0 }, { opacity: 1, duration: 0.28, ease: "sine.out" }, 0)
+    }
+    tl.fromTo(
       popupRef.current,
-      { opacity: 0, scale: 0.94, y: 10 },
-      { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: "power3.out" }
+      { opacity: 0, scale: 0.92, y: 18 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "expo.out" },
+      0.04
     )
   }, [])
 
   // Exit: fires when the Dialog wrapper's `open` flips to false. The Popup is still mounted at this
   // point (see preventUnmountOnClose above), so there's a real element to tween before it's gone —
-  // ctx.actionsRef.current.unmount() in onComplete is what actually removes it from the tree.
+  // actions.unmount() in the timeline's onComplete is what actually removes it from the tree. Exits
+  // are deliberately quicker than the entrance (expo.in, short durations) — a fast, decisive dismiss
+  // reads as more responsive than mirroring the entrance's pace in reverse.
   useGSAP(() => {
     if (ctx?.open === false && popupRef.current) {
-      gsap.to(popupRef.current, {
-        opacity: 0,
-        scale: 0.96,
-        y: 8,
-        duration: 0.2,
-        ease: "power2.in",
-        onComplete: () => ctx.actionsRef.current?.unmount(),
-      })
+      const tl = gsap.timeline({ onComplete: () => ctx.actionsRef.current?.unmount() })
+      tl.to(popupRef.current, { opacity: 0, scale: 0.95, y: 10, duration: 0.22, ease: "expo.in" }, 0)
+      if (overlayRef.current) {
+        tl.to(overlayRef.current, { opacity: 0, duration: 0.2, ease: "sine.in" }, 0)
+      }
     }
   }, [ctx?.open])
 
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay ref={overlayRef} />
       <DialogPrimitive.Popup
         ref={popupRef}
         data-slot="dialog-content"

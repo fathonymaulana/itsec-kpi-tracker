@@ -41,19 +41,21 @@ export function MobileNavDrawer({ open, onClose, navItems, onNavigate }: MobileN
     if (open) setRendered(true)
   }, [open])
 
+  // A single timeline per direction (not independent tweens) so the backdrop and panel read as one
+  // choreographed motion rather than two things that happen to move at once. expo.out/expo.in match
+  // Dialog's entrance/exit curves for consistency across every overlay in the app. Entrance is
+  // unhurried (0.5s) for a smooth, deliberate slide; exit is quicker (0.34s) so dismissing feels
+  // responsive rather than mirroring the entrance's pace in reverse.
   useGSAP(() => {
     if (!rendered || !backdropRef.current || !panelRef.current) return
     if (open) {
-      gsap.fromTo(backdropRef.current, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: 'power1.out' })
-      gsap.fromTo(panelRef.current, { x: '100%' }, { x: '0%', duration: 0.42, ease: 'expo.out' })
+      const tl = gsap.timeline()
+      tl.fromTo(backdropRef.current, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'sine.out' }, 0)
+      tl.fromTo(panelRef.current, { x: '100%' }, { x: '0%', duration: 0.5, ease: 'expo.out' }, 0)
     } else {
-      gsap.to(backdropRef.current, { opacity: 0, duration: 0.28, ease: 'power1.in' })
-      gsap.to(panelRef.current, {
-        x: '100%',
-        duration: 0.32,
-        ease: 'power3.in',
-        onComplete: () => setRendered(false),
-      })
+      const tl = gsap.timeline({ onComplete: () => setRendered(false) })
+      tl.to(panelRef.current, { x: '100%', duration: 0.34, ease: 'expo.in' }, 0)
+      tl.to(backdropRef.current, { opacity: 0, duration: 0.26, ease: 'sine.in' }, 0.05)
     }
   }, [open, rendered])
 
