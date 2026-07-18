@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { AltArrowLeftLineDuotone as ChevronLeft, AltArrowRightLineDuotone as ChevronRight } from '@solar-icons/react-perf'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { AnimatedNumber } from '@/components/ui/animated-number'
 import { MONTHS } from '@/lib/status'
 import { cn } from '@/lib/utils'
 
@@ -44,7 +45,7 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
       {/* Clock */}
       <div className="rounded-3xl bg-gradient-to-br from-[#E8433A] via-[#CC1F1F] to-[#7a1414] flex flex-col items-center justify-center gap-1.5 py-8 px-4 text-center">
         <div className="flex items-baseline gap-1.5 text-white">
-          <span className="text-5xl font-bold tracking-tight">{time}</span>
+          <AnimatedNumber value={time} className="text-5xl font-bold tracking-tight" />
           <span className="text-2xl">WIB</span>
         </div>
         <p className="text-white text-base">{dateLabel}</p>

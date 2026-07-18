@@ -176,7 +176,7 @@ export default function SuperAdminPage() {
       <DeptTopNav rightPanelOpen={rightPanelOpen} onToggleRightPanel={() => setRightPanelOpen(v => !v)} />
 
       <div className="flex-1 flex overflow-hidden">
-        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-8">
           <div className="max-w-5xl mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Users</h1>
@@ -276,9 +276,9 @@ export default function SuperAdminPage() {
                         <div key={u.id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
                           <div className="bg-panel-soft flex items-center justify-between px-6 py-4 gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                              <Avatar size="sm">
+                              <Avatar>
                                 {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.name} />}
-                                <AvatarFallback className="text-[10px]">{u.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                <AvatarFallback className="text-xs">{u.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                               </Avatar>
                               <div className="min-w-0 flex flex-col gap-1.5">
                                 <span className="text-[10px] text-ink-faint">User</span>
@@ -343,9 +343,9 @@ export default function SuperAdminPage() {
                             <TableRow key={u.id}>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <Avatar size="sm">
+                                  <Avatar>
                                     {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.name} />}
-                                    <AvatarFallback className="text-[10px]">{u.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                    <AvatarFallback className="text-xs">{u.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                                   </Avatar>
                                   <span className="text-sm">{u.name}</span>
                                 </div>

@@ -173,16 +173,28 @@ export function KpiCard({
               {dataSource?.url ? 'Source' : 'Add Source'}
             </button>
           )}
-          {readOnly && dataSource?.url && (
-            <button
-              onClick={handleDownloadSource}
-              disabled={downloading}
-              className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-soft border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors disabled:opacity-50 disabled:pointer-events-none"
-              title="Download the data source file this department submitted"
-            >
-              <IconDownload size={12} />
-              {downloading ? 'Downloading…' : 'Download Source'}
-            </button>
+          {readOnly && (
+            dataSource?.url ? (
+              <button
+                onClick={handleDownloadSource}
+                disabled={downloading}
+                className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-soft border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                title="Download the data source file this department submitted"
+              >
+                <IconDownload size={12} />
+                {downloading ? 'Downloading…' : 'Download Source'}
+              </button>
+            ) : (
+              // Always render a source indicator in the reviewer view — an empty gap here reads as
+              // "maybe I'm missing a button" rather than "this department genuinely didn't attach one."
+              <span
+                className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-faint border-divider"
+                title="This department didn't attach a data source for this KPI"
+              >
+                <Link2 size={12} />
+                No source provided
+              </span>
+            )
           )}
           {readOnly && onRequestModify ? (
             modifyRequestStatus === 'pending' ? (

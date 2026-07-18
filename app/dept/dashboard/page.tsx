@@ -157,7 +157,7 @@ export default function DeptDashboard() {
           <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
         </AnimatedAside>
 
-        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>

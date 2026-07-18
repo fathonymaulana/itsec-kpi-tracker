@@ -7,6 +7,17 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* For strips meant to scroll horizontally on their own (e.g. an overflowing pill TabsList on
+     narrow screens) — the scroll affordance still works via touch/trackpad, it just doesn't clutter
+     a small, already-tight control with a visible scrollbar track. */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer base {

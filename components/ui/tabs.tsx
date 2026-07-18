@@ -24,7 +24,12 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none data-[variant=pill]:rounded-full",
+  // max-w-full + overflow-x-auto is a defensive fallback, not the primary layout — when a tab strip
+  // has more tabs/labels than a narrow screen can fit, it scrolls within its own bounds instead of
+  // widening its ancestors and dragging the whole page into horizontal scroll (which briefly
+  // happened on Data Verification's 3-tab pill bar). scrollbar-hide keeps that scroll affordance from
+  // looking like a stray scrollbar on what reads as a small, self-contained control.
+  "group/tabs-list inline-flex w-fit max-w-full items-center justify-center overflow-x-auto scrollbar-hide rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none data-[variant=pill]:rounded-full",
   {
     variants: {
       variant: {

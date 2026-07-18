@@ -244,7 +244,7 @@ export default function AdminPage() {
           />
         </AnimatedAside>
 
-        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">

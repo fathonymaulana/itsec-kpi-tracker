@@ -11,7 +11,7 @@ import {
   ListLineDuotone as ListLine, ListBold as ListBold,
   TuningLineDuotone as IconFilters,
 } from '@solar-icons/react-perf'
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
+import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
@@ -29,6 +29,7 @@ import { getStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } fr
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
+import { AnimatedNumber } from '@/components/ui/animated-number'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn, iconHoverClass } from '@/lib/utils'
 
@@ -273,7 +274,7 @@ export default function BoardPage() {
           />
         </AnimatedAside>
 
-        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-8">
           <div className="max-w-5xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
@@ -315,18 +316,33 @@ export default function BoardPage() {
                 <div key={s.label} className="bg-panel border shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-4 flex items-center gap-3" style={{ borderColor: s.border }}>
                   <s.Icon size={16} style={{ color: s.color }} className="self-start mt-0.5 shrink-0" />
                   <div className="shrink-0">
-                    <div className="text-2xl font-semibold" style={{ color: s.color }}>{s.value}</div>
+                    <AnimatedNumber value={s.value} className="text-2xl font-semibold" style={{ color: s.color }} />
                     <div className="text-xs text-ink-muted font-normal">{s.label}</div>
-                    <div className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }}>{s.pct}%</div>
+                    <AnimatedNumber value={`${s.pct}%`} className="text-[11px] mt-0.5 font-normal" style={{ color: s.color }} />
                   </div>
                   {/* Fills the empty space to the right on large screens only — a compact trend
-                      sparkline (shadcn Charts, i.e. the same ChartContainer used everywhere else in
-                      this app) built from yearSummaries, already fetched for the Table tab. */}
+                      sparkline (shadcn Charts' area-chart pattern) built from yearSummaries, already
+                      fetched for the Table tab. Hovering reveals the exact monthly count via
+                      ChartTooltip, same as every other chart in this app. */}
                   <div className="hidden lg:block flex-1 h-12 min-w-0">
                     <ChartContainer config={{ value: { label: s.label, color: s.color } }} className="h-full w-full aspect-auto">
-                      <LineChart data={monthlyDeptCounts(s.statusKey)} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-                        <Line type="monotone" dataKey="value" stroke={s.color} strokeWidth={2} dot={false} isAnimationActive={false} />
-                      </LineChart>
+                      <AreaChart data={monthlyDeptCounts(s.statusKey)} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+                        <defs>
+                          <linearGradient id={`sparkFill-${s.statusKey}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={s.color} stopOpacity={0.8} />
+                            <stop offset="95%" stopColor={s.color} stopOpacity={0.05} />
+                          </linearGradient>
+                        </defs>
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" hideLabel />} />
+                        <Area
+                          type="monotone"
+                          dataKey="value"
+                          stroke={s.color}
+                          strokeWidth={2}
+                          fill={`url(#sparkFill-${s.statusKey})`}
+                          isAnimationActive={false}
+                        />
+                      </AreaChart>
                     </ChartContainer>
                   </div>
                 </div>
