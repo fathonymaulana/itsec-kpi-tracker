@@ -25,6 +25,9 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, type Ch
 import { getStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
+import { DownloadReportButton } from '@/components/ui/download-report-button'
+import { Button } from '@/components/ui/button'
+import { cn, iconHoverClass } from '@/lib/utils'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -257,11 +260,33 @@ export default function BoardPage() {
 
         <main className="flex-1 min-w-0 overflow-y-auto px-6 py-8">
           <div className="max-w-5xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Dashboard</h1>
-              <p className="text-sm text-ink-muted mt-1">
-                Every department&apos;s KPI status for {MONTHS[month - 1]} {year}, at a glance.
-              </p>
+            <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Dashboard</h1>
+                <p className="text-sm text-ink-muted mt-1">
+                  Every department&apos;s KPI status for {MONTHS[month - 1]} {year}, at a glance.
+                </p>
+              </div>
+              <DownloadReportButton
+                title={`Department KPI Status — ${MONTHS[month - 1]} ${year}`}
+                filename={`department-kpi-status-${year}-${String(month).padStart(2, '0')}`}
+                columns={[
+                  { key: 'department_name', label: 'Department', width: 28 },
+                  { key: 'total', label: 'Total KPIs' },
+                  { key: 'on_track', label: 'On Track' },
+                  { key: 'watch', label: 'Watch' },
+                  { key: 'off_track', label: 'Off Track' },
+                  { key: 'no_data', label: 'No Data' },
+                ]}
+                rows={summaries.map(d => ({
+                  department_name: d.department_name,
+                  total: d.total,
+                  on_track: d.on_track,
+                  watch: d.watch,
+                  off_track: d.off_track,
+                  no_data: d.no_data,
+                }))}
+              />
             </div>
 
             {/* Summary stat cards */}
@@ -382,13 +407,15 @@ export default function BoardPage() {
                                 ))}
                               </div>
                             )}
-                            <button
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                              className="flex items-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors"
+                              className={cn('border-divider bg-panel text-ink', iconHoverClass)}
                             >
-                              <FileSearch size={11} />
+                              <FileSearch size={13} />
                               View KPI details & sources
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -419,13 +446,15 @@ export default function BoardPage() {
                             <span className="text-[10px] leading-[14px] text-ink-faint">Department</span>
                             <span className="text-sm font-medium text-ink">{dept.department_name}</span>
                           </div>
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                            className="flex items-center gap-2 h-8 px-3 rounded-md bg-panel border border-divider shadow-xs text-sm font-medium text-ink"
+                            className={cn('border-divider bg-panel text-ink shadow-xs', iconHoverClass)}
                           >
-                            <FileSearch size={16} />
+                            <FileSearch size={14} />
                             View details
-                          </button>
+                          </Button>
                         </div>
                         {rows.map(r => (
                           <div key={r.label} className="flex items-center justify-between border-t border-divider">
@@ -469,13 +498,15 @@ export default function BoardPage() {
                             <TableCell className="text-right text-ink-muted">{dept.no_data}</TableCell>
                             <TableCell className="text-right font-medium text-ink">{onPct}%</TableCell>
                             <TableCell className="text-right">
-                              <button
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                                className="inline-flex items-center gap-1.5 text-[11px] text-[#CC1F1F] hover:text-[#8B1A1A] transition-colors"
+                                className={cn('border-divider bg-panel text-ink', iconHoverClass)}
                               >
-                                <FileSearch size={11} />
+                                <FileSearch size={13} />
                                 View details & sources
-                              </button>
+                              </Button>
                             </TableCell>
                           </TableRow>
                         )

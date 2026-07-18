@@ -188,12 +188,11 @@ export default function ProfilePage() {
 
               <label className="block text-xs font-medium text-ink-soft mb-1.5">Display Name</label>
               <div className="flex gap-2">
-                <Input value={name} onChange={e => setName(e.target.value)} className="flex-1" />
+                <Input value={name} onChange={e => setName(e.target.value)} className="h-10 rounded-lg text-sm flex-1" />
                 <Button
-                  size="sm"
+                  size="lg"
                   disabled={savingName || !name.trim() || name.trim() === profile.name}
                   onClick={handleSaveName}
-                  className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white"
                 >
                   {savingName ? 'Saving…' : 'Save'}
                 </Button>
@@ -221,13 +220,13 @@ export default function ProfilePage() {
                       value={newPin}
                       onChange={e => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       placeholder="• • • •"
-                      className="flex-1 text-center tracking-widest"
+                      className="h-10 rounded-lg text-sm flex-1 text-center tracking-widest"
                     />
                     <Button
-                      size="sm"
+                      size="lg"
                       disabled={submittingPin || newPin.length !== 4}
                       onClick={handleSubmitPin}
-                      className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white shrink-0"
+                      className="shrink-0"
                     >
                       <ShieldCheck size={13} className="mr-1" />
                       {submittingPin ? 'Submitting…' : 'Request Change'}

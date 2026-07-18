@@ -19,10 +19,11 @@ import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { getStatus, getDefaultMonth, MONTHS, type KpiStatus } from '@/lib/status'
+import { getStatus, getStatusLabel, getDefaultMonth, MONTHS, type KpiStatus } from '@/lib/status'
 import { getPrimarySubMetric, resolvePrimaryValue, getPeriodStatuses } from '@/lib/kpi-primary'
 import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
+import { DownloadReportButton } from '@/components/ui/download-report-button'
 
 const CURRENT_YEAR = new Date().getFullYear()
 // var(--foreground), not a literal hex — the fixed '#171717' this used to be stayed black in dark
@@ -167,7 +168,25 @@ export default function DeptDashboard() {
                     : 'Once KPIs are configured for your department, their trends will show up here.'}
                 </p>
               </div>
-              <span className="text-xs text-ink-muted shrink-0 mt-1">{kpis.length} KPIs</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-xs text-ink-muted mt-1">{kpis.length} KPIs</span>
+                <DownloadReportButton
+                  title={`${user.dept_name} — KPI Status (${MONTHS[currentMonth - 1]} ${year})`}
+                  filename={`${(user.dept_name || 'department').toLowerCase().replace(/\s+/g, '-')}-kpi-status-${year}-${String(currentMonth).padStart(2, '0')}`}
+                  columns={[
+                    { key: 'kpi', label: 'KPI', width: 32 },
+                    { key: 'target', label: 'Target', width: 28 },
+                    { key: 'value', label: 'Current Value' },
+                    { key: 'status', label: 'Status' },
+                  ]}
+                  rows={kpisWithData.map(({ kpi, unit, currentV }) => ({
+                    kpi: kpi.name,
+                    target: kpi.target_text,
+                    value: formatValue(currentV, unit),
+                    status: getStatusLabel(statusFor(kpi, allActuals, currentMonth).status),
+                  }))}
+                />
+              </div>
             </div>
 
             {/* Stat summary */}

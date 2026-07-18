@@ -18,9 +18,11 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Input } from '@/components/ui/input'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { Button } from '@/components/ui/button'
-import { iconHoverClass } from '@/lib/utils'
+import { DownloadReportButton } from '@/components/ui/download-report-button'
+import { cn, iconHoverClass } from '@/lib/utils'
 
 interface SubMetric {
   id: number
@@ -339,6 +341,25 @@ export default function DeptPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <DownloadReportButton
+                  title={`${user.dept_name} — Data Entry (${MONTHS[month - 1]} ${year})`}
+                  filename={`${(user.dept_name || 'department').toLowerCase().replace(/\s+/g, '-')}-data-entry-${year}-${String(month).padStart(2, '0')}`}
+                  columns={[
+                    { key: 'kpi', label: 'KPI', width: 32 },
+                    { key: 'target', label: 'Target', width: 28 },
+                    { key: 'value', label: 'Entered Value(s)', width: 32 },
+                  ]}
+                  rows={kpis.map(kpi => ({
+                    kpi: kpi.name,
+                    target: kpi.target_text,
+                    value: kpi.sub_metrics
+                      .map(sm => {
+                        const v = savedActuals[sm.id]?.value
+                        return `${sm.name}: ${v !== undefined ? `${v}${sm.unit ? ' ' + sm.unit : ''}` : '—'}`
+                      })
+                      .join('; '),
+                  }))}
+                />
                 {submitted && (
                   <div className="flex items-center gap-1.5 text-xs text-success bg-success-soft border border-success-soft-border px-3 py-1 rounded-full">
                     <CheckCircle2 size={12} />
@@ -361,21 +382,18 @@ export default function DeptPage() {
                   <TooltipContent>Profile</TooltipContent>
                 </Tooltip>
                 <div className="flex-1 min-w-0">
-                  <input
+                  <Input
                     value={searchInput}
                     onChange={e => setSearchInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && runSearch()}
                     placeholder="Search matrix name..."
-                    className="w-full bg-panel-soft border border-divider rounded-2xl px-4 py-2.5 text-base text-ink placeholder:text-ink-muted focus:outline-none focus:border-[#CC1F1F]"
+                    className="h-10 rounded-lg border-divider text-sm"
                   />
                 </div>
-                <button
-                  onClick={runSearch}
-                  className={`h-12 px-5 rounded-2xl bg-primary hover:bg-primary/80 text-primary-foreground text-sm font-medium flex items-center gap-2 shrink-0 transition-colors ${iconHoverClass}`}
-                >
+                <Button size="lg" onClick={runSearch} className={cn('shrink-0', iconHoverClass)}>
                   Start Search
                   <Search size={16} />
-                </button>
+                </Button>
               </div>
             )}
 

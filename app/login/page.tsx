@@ -236,8 +236,6 @@ function LoginForm() {
 
       {/* Footer */}
       <div className="shrink-0 pb-5 flex items-center justify-center gap-2 text-xs text-ink-faint relative">
-        <span>© {new Date().getFullYear()} ITSEC KPI Tracker</span>
-        <span aria-hidden>·</span>
         <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-ink-muted transition-colors">
           Privacy Policy
         </a>
