@@ -9,8 +9,33 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+// Base UI unmounts the Popup the instant `open` goes false, which would kill a GSAP exit tween
+// mid-flight — there'd be nothing left in the DOM to animate. `actionsRef` + `preventUnmountOnClose`
+// is Base UI's documented escape hatch for exactly this: the Popup stays mounted (still receiving
+// `open`, now false) until something calls `actions.unmount()`, so DialogContent can play its own
+// GSAP exit tween on the way out and unmount only once that tween completes. The open flag itself is
+// threaded through context since Dialog (Root) and DialogContent are composed separately by callers.
+const DialogAnimationContext = React.createContext<{
+  open: boolean
+  actionsRef: React.RefObject<DialogPrimitive.Root.Actions | null>
+} | null>(null)
+
+function Dialog({ open, onOpenChange, ...props }: DialogPrimitive.Root.Props) {
+  const actionsRef = React.useRef<DialogPrimitive.Root.Actions>(null)
+  return (
+    <DialogAnimationContext.Provider value={{ open: !!open, actionsRef }}>
+      <DialogPrimitive.Root
+        data-slot="dialog"
+        open={open}
+        actionsRef={actionsRef}
+        onOpenChange={(nextOpen, eventDetails) => {
+          if (!nextOpen) eventDetails.preventUnmountOnClose()
+          onOpenChange?.(nextOpen, eventDetails)
+        }}
+        {...props}
+      />
+    </DialogAnimationContext.Provider>
+  )
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
@@ -50,9 +75,10 @@ function DialogContent({
   showCloseButton?: boolean
 }) {
   const popupRef = React.useRef<HTMLDivElement>(null)
+  const ctx = React.useContext(DialogAnimationContext)
 
-  // Base UI's Popup only mounts once the dialog is open, so a plain mount-time tween is all a fresh
-  // open needs — no state tracking required. Exit keeps the lighter CSS fade/zoom-out below.
+  // Entrance: Base UI's Popup only mounts once the dialog opens, so a plain mount-time tween is all
+  // a fresh open needs — no state tracking required.
   useGSAP(() => {
     if (!popupRef.current) return
     gsap.fromTo(
@@ -62,6 +88,22 @@ function DialogContent({
     )
   }, [])
 
+  // Exit: fires when the Dialog wrapper's `open` flips to false. The Popup is still mounted at this
+  // point (see preventUnmountOnClose above), so there's a real element to tween before it's gone —
+  // ctx.actionsRef.current.unmount() in onComplete is what actually removes it from the tree.
+  useGSAP(() => {
+    if (ctx?.open === false && popupRef.current) {
+      gsap.to(popupRef.current, {
+        opacity: 0,
+        scale: 0.96,
+        y: 8,
+        duration: 0.2,
+        ease: "power2.in",
+        onComplete: () => ctx.actionsRef.current?.unmount(),
+      })
+    }
+  }, [ctx?.open])
+
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -69,7 +111,7 @@ function DialogContent({
         ref={popupRef}
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-panel p-4 text-sm text-popover-foreground ring-1 ring-[var(--modal-border)] duration-100 outline-none sm:max-w-sm data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-panel p-4 text-sm text-popover-foreground ring-1 ring-[var(--modal-border)] outline-none sm:max-w-sm",
           className
         )}
         {...props}

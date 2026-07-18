@@ -383,8 +383,12 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
   const [pin, setPin] = useState('')
   const [saving, setSaving] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  // Starts open, flips to false on any dismiss gesture — the parent only actually unmounts this
+  // component (via onClose, wired to onOpenChangeComplete below) once Dialog's GSAP exit tween has
+  // played, rather than the instant a Cancel click or Escape press fires.
+  const [open, setOpen] = useState(true)
   const isDirty = pin.length > 0 || name.trim() !== (initial?.name || '') || role !== (initial?.role || 'dept_head') || deptId !== (initial?.dept_id || '')
-  const handleCancel = () => { if (isDirty) setConfirmDiscard(true); else onClose() }
+  const handleCancel = () => { if (isDirty) setConfirmDiscard(true); else setOpen(false) }
 
   const handleSubmit = async () => {
     if (!token || !name.trim()) return
@@ -416,7 +420,7 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
   }
 
   return (
-    <Dialog open onOpenChange={o => !o && onClose()}>
+    <Dialog open={open} onOpenChange={o => !o && setOpen(false)} onOpenChangeComplete={o => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{initial ? 'Edit User' : 'Add User'}</DialogTitle>
@@ -473,7 +477,7 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
         description="What you've entered here hasn't been saved yet."
         confirmLabel="Discard"
         cancelLabel="Keep editing"
-        onConfirm={onClose}
+        onConfirm={() => setOpen(false)}
       />
     </Dialog>
   )
@@ -488,7 +492,8 @@ function ResetPinDialog({ targetUser, token, onClose, onSaved }: {
   const [pin, setPin] = useState('')
   const [saving, setSaving] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
-  const handleCancel = () => { if (pin.length > 0) setConfirmDiscard(true); else onClose() }
+  const [open, setOpen] = useState(true)
+  const handleCancel = () => { if (pin.length > 0) setConfirmDiscard(true); else setOpen(false) }
 
   const handleSubmit = async () => {
     if (!token || pin.length !== 4) return
@@ -510,7 +515,7 @@ function ResetPinDialog({ targetUser, token, onClose, onSaved }: {
   }
 
   return (
-    <Dialog open onOpenChange={o => !o && onClose()}>
+    <Dialog open={open} onOpenChange={o => !o && setOpen(false)} onOpenChangeComplete={o => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Reset PIN — {targetUser.name}</DialogTitle>
@@ -538,7 +543,7 @@ function ResetPinDialog({ targetUser, token, onClose, onSaved }: {
         description="The PIN you typed won't be saved."
         confirmLabel="Discard"
         cancelLabel="Keep editing"
-        onConfirm={onClose}
+        onConfirm={() => setOpen(false)}
       />
     </Dialog>
   )
