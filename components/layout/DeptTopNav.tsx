@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   Home2LineDuotone as HomeLine, Home2Bold as HomeBold,
   ClipboardListLineDuotone as ClipboardListLine, ClipboardListBold as ClipboardListBold,
@@ -10,14 +11,30 @@ import {
   SidebarMinimalisticLineDuotone as SidebarLine, SidebarMinimalisticBold as SidebarBold,
   BellLineDuotone as BellLine, BellBold as BellBold,
   HamburgerMenuLineDuotone as HamburgerMenu,
+  LockUnlockedLineDuotone as ModifyIcon,
 } from '@solar-icons/react-perf'
-import { useAuth } from '@/lib/auth'
+import { useAuth, authHeaders } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { MONTHS } from '@/lib/status'
 import { cn, iconHoverClass } from '@/lib/utils'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
+
+interface ModifyRequestNotif {
+  id: number
+  kpi_name: string | null
+  dept_name: string | null
+  requested_by_name: string | null
+  requested_at: string
+  year: number
+  month: number
+}
+
+const POLL_INTERVAL_MS = 20000
+const seenKey = (userId: number) => `itsec_kpi_seen_modify_requests_${userId}`
 
 type IconPair = { line: typeof HomeLine; bold: typeof HomeBold }
 
@@ -48,10 +65,60 @@ interface DeptTopNavProps {
 export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, onToggleRightPanel }: DeptTopNavProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const navItems = NAV_ITEMS_BY_ROLE[user?.role ?? ''] ?? []
   const [notifOpen, setNotifOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [modifyNotifs, setModifyNotifs] = useState<ModifyRequestNotif[]>([])
+
+  const goToModifyRequests = useCallback(() => {
+    setNotifOpen(false)
+    setDrawerOpen(false)
+    router.push('/admin?tab=modify')
+  }, [router])
+
+  // Corporate Planning's real notification source: pending modify requests from every department,
+  // polled (no realtime/websocket infra in this app) rather than pushed. A department's request
+  // showing up in Data Verification and a notification actually reaching CorPlan about it were two
+  // disconnected things before this — the badge/list here is now driven by the same pending-requests
+  // data admin/page.tsx already reviews, not a separate notification store.
+  useEffect(() => {
+    if (!token || user?.role !== 'corp_planning') return
+    let cancelled = false
+
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/modify-requests?status=pending', { headers: authHeaders(token) })
+        const data = await r.json()
+        if (cancelled) return
+        const requests: ModifyRequestNotif[] = data.requests || []
+        setModifyNotifs(requests)
+
+        // localStorage, not component state — a brand-new browser/session should see the existing
+        // backlog silently (that's not "new"), but a request that arrives while the tab is open, or
+        // between visits, should still toast exactly once. `raw === null` is the "never polled on
+        // this device before" case; anything else diffs normally against what was last seen.
+        const key = seenKey(user.user_id)
+        const raw = localStorage.getItem(key)
+        const isFirstEver = raw === null
+        const seenIds = new Set<number>(raw ? JSON.parse(raw) : [])
+        const newOnes = requests.filter(req => !seenIds.has(req.id))
+        if (!isFirstEver) {
+          for (const req of newOnes) {
+            toast.info(`New modify request from ${req.dept_name ?? 'a department'}`, {
+              description: `${req.requested_by_name ?? 'Someone'} wants to edit "${req.kpi_name ?? 'a KPI'}" for ${MONTHS[req.month - 1]} ${req.year}. Review it in Data Verification to approve or reject.`,
+              action: { label: 'Review now', onClick: goToModifyRequests },
+            })
+          }
+        }
+        localStorage.setItem(key, JSON.stringify(requests.map(req => req.id)))
+      } catch { /* non-fatal — next poll retries */ }
+    }
+
+    poll()
+    const id = setInterval(poll, POLL_INTERVAL_MS)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [token, user, goToModifyRequests])
 
   return (
     <header className="bg-panel shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
@@ -76,12 +143,16 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
               <TooltipTrigger
                 onClick={() => router.push(item.href)}
                 className={cn(
-                  'relative flex flex-col items-center justify-center h-full w-32 transition-colors',
+                  'group/navitem relative flex flex-col items-center justify-center h-full w-32 transition-colors',
                   active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft',
                   iconHoverClass
                 )}
               >
-                <Icon size={22} />
+                {/* Inactive tabs get a muted rounded highlight on hover; active tabs never do — their
+                    hover state stays exactly as the resting state, only the underline marks "current". */}
+                <span className={cn('flex items-center justify-center size-11 rounded-2xl transition-colors', !active && 'group-hover/navitem:bg-muted')}>
+                  <Icon size={22} />
+                </span>
                 {active && (
                   <motion.div
                     layoutId="dept-top-nav-underline"
@@ -126,19 +197,44 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
 
         <Popover open={notifOpen} onOpenChange={setNotifOpen}>
           <PopoverTrigger
-            className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
+            className={cn('relative size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
             title="Notifications"
           >
             {notifOpen ? <BellBold size={18} className="text-ink" /> : <BellLine size={18} className="text-ink" />}
+            {modifyNotifs.length > 0 && (
+              <span className="absolute top-1 right-1 size-2 rounded-full bg-destructive ring-2 ring-panel" />
+            )}
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-divider">
+            <div className="px-4 py-3 border-b border-divider flex items-center justify-between">
               <div className="text-sm font-semibold text-ink">Notifications</div>
+              {modifyNotifs.length > 0 && <Badge className="text-[10px]">{modifyNotifs.length}</Badge>}
             </div>
-            <div className="p-8 text-center flex flex-col items-center gap-2">
-              <BellLine size={28} className="text-ink-faint" />
-              <p className="text-sm text-ink-muted">You&apos;re all caught up — no notifications yet.</p>
-            </div>
+            {modifyNotifs.length === 0 ? (
+              <div className="p-8 text-center flex flex-col items-center gap-2">
+                <BellLine size={28} className="text-ink-faint" />
+                <p className="text-sm text-ink-muted">You&apos;re all caught up — no notifications yet.</p>
+              </div>
+            ) : (
+              <div className="max-h-80 overflow-y-auto divide-y divide-divider">
+                {modifyNotifs.map(n => (
+                  <button
+                    key={n.id}
+                    onClick={goToModifyRequests}
+                    className="w-full text-left px-4 py-3 hover:bg-panel-soft transition-colors flex gap-2.5"
+                  >
+                    <ModifyIcon size={16} className="text-ink-faint shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <div className="text-sm text-ink font-medium">{n.dept_name ?? 'A department'} wants to edit a KPI</div>
+                      <div className="text-xs text-ink-muted mt-0.5 truncate">
+                        {n.requested_by_name ?? 'Someone'} — &quot;{n.kpi_name ?? 'Unknown KPI'}&quot; for {MONTHS[n.month - 1]} {n.year}
+                      </div>
+                      <div className="text-[10px] text-ink-faint mt-1">{new Date(n.requested_at).toLocaleString()}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </PopoverContent>
         </Popover>
 

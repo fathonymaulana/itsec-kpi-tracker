@@ -73,10 +73,14 @@ export default function AdminPage() {
 
   const canVerify = user?.role === 'corp_planning'
 
-  // Deep-link from the board's "View KPI details" links: /admin?dept=CorCom
+  // Deep-link from the board's "View KPI details" links (?dept=CorCom) and from navbar
+  // notifications (?tab=modify), which don't know or care which department to preselect.
   useEffect(() => {
-    const deptFromUrl = new URLSearchParams(window.location.search).get('dept')
+    const params = new URLSearchParams(window.location.search)
+    const deptFromUrl = params.get('dept')
     if (deptFromUrl) setSelectedDept(deptFromUrl)
+    const tabFromUrl = params.get('tab')
+    if (tabFromUrl === 'data' || tabFromUrl === 'verifications' || tabFromUrl === 'modify') setTab(tabFromUrl)
   }, [])
 
   useEffect(() => {
