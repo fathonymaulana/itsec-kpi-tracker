@@ -234,7 +234,7 @@ export default function ProfilePage() {
           }
         >
           {profile && (
-          <>
+          <div className="space-y-4">
             {/* Profile card */}
             <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
               <h2 className="font-medium text-ink text-sm mb-4">Profile</h2>
@@ -354,7 +354,7 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-          </>
+          </div>
           )}
         </CrossfadeSwap>
         </div>

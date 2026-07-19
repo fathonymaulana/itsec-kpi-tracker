@@ -23,7 +23,8 @@ import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
-import { cn, iconHoverClass, discordIconClass } from '@/lib/utils'
+import { cn, iconHoverClass } from '@/lib/utils'
+import { playNotificationSound } from '@/lib/notification-sound'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 
@@ -192,7 +193,8 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
         const seenIds = new Set<string>(raw ? JSON.parse(raw) : [])
         const newOnes = items.filter(it => !seenIds.has(it.id))
 
-        if (!isFirstEver) {
+        if (!isFirstEver && newOnes.length > 0) {
+          playNotificationSound()
           for (const it of newOnes) {
             const toastFn = it.kind === 'modify_rejected' || it.kind === 'flagged' ? toast.warning
               : it.kind === 'modify_approved' || it.kind === 'verified' ? toast.success
@@ -285,7 +287,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           <Tooltip>
             <TooltipTrigger
               onClick={onToggleLeftPanel}
-              className={cn('size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass, discordIconClass)}
+              className={cn('size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass)}
             >
               {leftPanelOpen
                 ? <SidebarBold size={18} className="text-ink -scale-x-100" />
@@ -298,7 +300,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           <Tooltip>
             <TooltipTrigger
               onClick={onToggleRightPanel}
-              className={cn('size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass, discordIconClass)}
+              className={cn('size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass)}
             >
               {rightPanelOpen
                 ? <SidebarBold size={18} className="text-ink" />
@@ -310,7 +312,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
 
         <Popover open={notifOpen} onOpenChange={setNotifOpen}>
           <PopoverTrigger
-            className={cn('relative size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass, discordIconClass)}
+            className={cn('relative size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass)}
             title="Notifications"
           >
             {notifOpen ? <BellBold size={18} className="text-ink" /> : <BellLine size={18} className="text-ink" />}
@@ -382,7 +384,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
       <Tooltip>
         <TooltipTrigger
           onClick={() => setDrawerOpen(true)}
-          className={cn('flex md:hidden col-start-3 size-9 bg-panel-soft items-center justify-center justify-self-end', iconHoverClass, discordIconClass)}
+          className={cn('flex md:hidden col-start-3 size-9 bg-panel-soft items-center justify-center justify-self-end', iconHoverClass)}
         >
           <HamburgerMenu size={18} className="text-ink" />
         </TooltipTrigger>

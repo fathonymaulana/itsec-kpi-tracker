@@ -417,6 +417,7 @@ export default function BoardPage() {
                       </div>
                     }
                   >
+                  <div className="space-y-2">
                   {summaries.map(dept => {
                     const expanded = expandedDepts.has(dept.dept_id)
                     const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
@@ -480,6 +481,7 @@ export default function BoardPage() {
                       </div>
                     )
                   })}
+                  </div>
                   </CrossfadeSwap>
                 </div>
               </TabsContent>
