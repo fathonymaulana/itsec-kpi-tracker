@@ -61,13 +61,36 @@ export function AnimatedNumber({
   )
 }
 
-const STEP_MS = 35
+// A JS evaluator for the exact same cubic-bezier used for the digit-roll transition, so the overall
+// count-up progress and each individual digit's motion feel like one coordinated curve rather than
+// two different easings layered on top of each other. Same Newton-Raphson approach browsers use
+// internally for CSS cubic-bezier() timing functions.
+function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
+  const a = (a1: number, a2: number) => 1 - 3 * a2 + 3 * a1
+  const b = (a1: number, a2: number) => 3 * a2 - 6 * a1
+  const c = (a1: number) => 3 * a1
+  const calc = (t: number, a1: number, a2: number) => ((a(a1, a2) * t + b(a1, a2)) * t + c(a1)) * t
+  const slope = (t: number, a1: number, a2: number) => 3 * a(a1, a2) * t * t + 2 * b(a1, a2) * t + c(a1)
+  return (x: number) => {
+    let t = x
+    for (let i = 0; i < 4; i++) {
+      const s = slope(t, x1, x2)
+      if (s === 0) break
+      t -= (calc(t, x1, x2) - x) / s
+    }
+    return calc(t, y1, y2)
+  }
+}
+const countEase = cubicBezier(...DIGIT_EASE)
 
-// Dashboard stat-card numbers: one single count from 0 up to `value`, one integer at a time
-// (0,1,2,...,value) — not a separate animation phase per digit position. Each digit position just
-// renders whatever character that integer happens to have, so the ones place naturally ticks on
-// every step while the tens place only changes at each ten's boundary — exactly how a real
-// mechanical counter behaves, with no separate delay/sequencing logic needed to make that happen.
+// Dashboard stat-card numbers: a single count from 0 up to `value` that always finishes in a fixed
+// total duration regardless of how large the target is — a fixed "1 integer per tick" pace (the
+// previous approach) meant small numbers felt fine but larger ones dragged on. requestAnimationFrame
+// interpolates displayed value along the same eased curve driving each digit's own roll, so early
+// frames land close together and later ones can jump by more than 1 — visually identical to how a
+// real mechanical counter behaves when it's given a fixed time budget to reach a big number.
+const COUNT_DURATION_MS = 300
+
 export function CountUpNumber({
   value,
   formatter,
@@ -83,19 +106,21 @@ export function CountUpNumber({
 
   useEffect(() => {
     if (value <= 0) { setDisplay(value); return }
-    let step = 0
-    const id = setInterval(() => {
-      step += 1
-      setDisplay(step)
-      if (step >= value) clearInterval(id)
-    }, STEP_MS)
-    return () => clearInterval(id)
+    let raf: number
+    const start = performance.now()
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / COUNT_DURATION_MS)
+      setDisplay(Math.round(countEase(progress) * value))
+      if (progress < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
   }, [value])
 
   const chars = (formatter ? formatter(display) : String(display)).split('')
   return (
     <span className={cn('inline-flex items-baseline tabular-nums font-sans', className)} style={style}>
-      {chars.map((ch, i) => (/\d/.test(ch) ? <AnimatedDigit key={i} value={ch} duration={0.18} revealOnMount /> : <span key={i} className="leading-none">{ch}</span>))}
+      {chars.map((ch, i) => (/\d/.test(ch) ? <AnimatedDigit key={i} value={ch} duration={0.12} revealOnMount /> : <span key={i} className="leading-none">{ch}</span>))}
     </span>
   )
 }
