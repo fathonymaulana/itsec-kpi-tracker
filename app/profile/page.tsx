@@ -269,22 +269,22 @@ export default function ProfilePage() {
                   {profile.dept_name && <div className="text-xs text-ink-faint">{profile.dept_name}</div>}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap justify-center">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="lg"
                     disabled={uploadingAvatar || resettingAvatar || !profile.avatar_url}
                     onClick={handleResetAvatar}
                   >
-                    <ResetIcon size={13} className="mr-1" />
+                    <ResetIcon size={15} className="mr-1.5" />
                     {resettingAvatar ? 'Resetting…' : 'Reset profile picture'}
                   </Button>
                   <Button
-                    size="sm"
+                    size="lg"
                     disabled={uploadingAvatar || resettingAvatar}
                     onClick={handleAvatarPick}
                   >
-                    <ChooseIcon size={13} className="mr-1" />
+                    <ChooseIcon size={15} className="mr-1.5" />
                     {uploadingAvatar ? `Uploading… ${uploadProgress}%` : 'Choose profile picture'}
                   </Button>
                 </div>

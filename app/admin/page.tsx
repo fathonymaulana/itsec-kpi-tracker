@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { fireApproveConfetti } from '@/lib/confetti'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 import { cn } from '@/lib/utils'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -334,7 +335,7 @@ export default function AdminPage() {
                           variant="outline"
                           className="text-success border-success-soft-border hover:bg-success-soft"
                           disabled={actionLoading === r.id}
-                          onClick={() => handleReviewModify(r.id, 'approve')}
+                          onClick={e => { fireApproveConfetti(e.currentTarget); handleReviewModify(r.id, 'approve') }}
                         >
                           <CheckCircle2 size={15} className="mr-1" />
                           Approve

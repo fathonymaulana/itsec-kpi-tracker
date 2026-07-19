@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { iconHoverClass, cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { fireApproveConfetti } from '@/lib/confetti'
 
 type Role = 'dept_head' | 'corp_planning'
 interface AdminUser { id: number; name: string; avatar_url: string | null; role: Role; dept_id: string | null; dept_name: string | null; active: boolean; created_at: string }
@@ -416,7 +417,7 @@ export default function SuperAdminPage() {
                             </div>
                             {r.status === 'pending' && (
                               <div className="border-t border-divider flex items-center gap-2 px-6 py-4">
-                                <Button size="lg" variant="outline" className="flex-1 text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
+                                <Button size="lg" variant="outline" className="flex-1 text-success border-success-soft-border hover:bg-success-soft" onClick={e => { fireApproveConfetti(e.currentTarget); handleReview(r.id, 'approve') }}>
                                   <IconShieldCheck size={14} className="mr-1" /> Approve
                                 </Button>
                                 <Button size="lg" variant="outline" className="flex-1 text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
@@ -459,7 +460,7 @@ export default function SuperAdminPage() {
                                 <TableCell className="text-right">
                                   {r.status === 'pending' && (
                                     <div className="flex items-center justify-end gap-2">
-                                      <Button size="lg" variant="outline" className="text-success border-success-soft-border hover:bg-success-soft" onClick={() => handleReview(r.id, 'approve')}>
+                                      <Button size="lg" variant="outline" className="text-success border-success-soft-border hover:bg-success-soft" onClick={e => { fireApproveConfetti(e.currentTarget); handleReview(r.id, 'approve') }}>
                                         <IconShieldCheck size={14} className="mr-1" /> Approve
                                       </Button>
                                       <Button size="lg" variant="outline" className="text-danger border-danger-soft-border hover:bg-danger-soft" onClick={() => handleReview(r.id, 'reject')}>
