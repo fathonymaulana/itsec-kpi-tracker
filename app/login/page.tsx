@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Spinner } from '@/components/ui/spinner'
 import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
+import { ItsecMonogramE } from '@/components/layout/ItsecMonogram'
 import { cn } from '@/lib/utils'
 
 interface DirectoryUser {
@@ -134,7 +135,8 @@ function LoginForm() {
         {/* Form card, standalone — no headline above it, per the whitespace-first layout */}
         <div className="flex flex-col gap-6 items-start w-full max-w-[373px] shrink-0">
           <div className="bg-panel border border-divider shadow-2xl rounded-3xl w-full p-8 flex flex-col gap-6">
-            <ItsecLogo className="h-5 w-auto text-ink self-center" />
+            <ItsecLogo className="hidden sm:block h-5 w-auto text-ink self-center" />
+            <ItsecMonogramE className="sm:hidden h-6 w-auto text-ink self-center" />
             <p className="text-[20px] font-semibold text-ink self-center">Sign in to your account</p>
             <form onSubmit={handleSubmit} className="contents">
               {preselectedUser && (

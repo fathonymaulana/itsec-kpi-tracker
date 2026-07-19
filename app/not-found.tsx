@@ -4,6 +4,7 @@ import { CompassLineDuotone as Compass, AltArrowLeftLineDuotone as ArrowLeft } f
 import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
+import { ItsecMonogramE } from '@/components/layout/ItsecMonogram'
 
 const HOME_HREF: Record<string, string> = {
   dept_head: '/dept/dashboard',
@@ -19,7 +20,8 @@ export default function NotFound() {
       <header className="bg-panel border-b border-divider">
         <div className="max-w-3xl mx-auto px-6 py-5">
           <Link href={homeHref} className="flex items-center gap-2 w-fit">
-            <ItsecLogo className="h-4 w-auto text-ink" />
+            <ItsecLogo className="hidden sm:block h-4 w-auto text-ink" />
+            <ItsecMonogramE className="sm:hidden h-5 w-auto text-ink" />
           </Link>
         </div>
       </header>
