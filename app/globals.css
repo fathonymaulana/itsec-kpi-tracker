@@ -220,4 +220,30 @@
   [data-sonner-toast] {
     transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   }
+
+  /* Sonner's default toast is a single flex row (icon, content, action button all vertically
+     centered side by side) — cramped once the action button needs its own breathing room below
+     a multi-line description instead of squeezed beside it. Grid re-lays the same three elements
+     into icon+content on row one and the action button on row two, indented to align under the
+     text (empty first column) with a visible gap above it. */
+  [data-sonner-toast][data-styled='true'] {
+    display: grid !important;
+    grid-template-columns: auto 1fr;
+    align-items: start !important;
+    row-gap: 4px;
+  }
+  [data-sonner-toast][data-styled='true'] [data-icon] {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  [data-sonner-toast][data-styled='true'] [data-content] {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  [data-sonner-toast][data-styled='true'] [data-button] {
+    grid-row: 2;
+    grid-column: 2;
+    justify-self: start;
+    margin: 12px 0 0 0 !important;
+  }
 }

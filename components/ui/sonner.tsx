@@ -56,7 +56,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           error: "!border-[#CC1F1F]/30",
           warning: "!border-[#B45309]/30",
           info: "!border-[#2563eb]/30",
-          actionButton: "!bg-primary !text-primary-foreground",
+          actionButton: "!bg-transparent !text-ink !border !border-divider !rounded-full hover:!bg-panel-soft",
           cancelButton: "!bg-panel-soft !text-ink-soft",
         },
       }}
