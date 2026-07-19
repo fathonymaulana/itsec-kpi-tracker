@@ -19,7 +19,7 @@ import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { getStatus, getStatusLabel, getDefaultMonth, MONTHS, type KpiStatus } from '@/lib/status'
+import { getStatus, getDefaultMonth, MONTHS, type KpiStatus } from '@/lib/status'
 import { getPrimarySubMetric, resolvePrimaryValue, getPeriodStatuses } from '@/lib/kpi-primary'
 import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
@@ -188,20 +188,18 @@ export default function DeptDashboard() {
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xs text-ink-muted mt-1">{kpis.length} KPIs</span>
                 <DownloadReportButton
-                  title={`${user.dept_name} — KPI Status (${MONTHS[currentMonth - 1]} ${year})`}
-                  filename={`${(user.dept_name || 'department').toLowerCase().replace(/\s+/g, '-')}-kpi-status-${year}-${String(currentMonth).padStart(2, '0')}`}
+                  title={`${user.dept_name} — KPI Status (${year})`}
+                  filename={`${(user.dept_name || 'department').toLowerCase().replace(/\s+/g, '-')}-kpi-status-${year}`}
                   columns={[
                     { key: 'kpi', label: 'KPI', width: 32 },
                     { key: 'target', label: 'Target', width: 28 },
-                    { key: 'value', label: 'Current Value' },
-                    { key: 'status', label: 'Status' },
+                    ...MONTHS.map((m, i) => ({ key: `m${i + 1}`, label: m.slice(0, 3), width: 12 })),
                   ]}
-                  rows={kpisWithData.map(({ kpi, unit, currentV }) => ({
-                    kpi: kpi.name,
-                    target: kpi.target_text,
-                    value: formatValue(currentV, unit),
-                    status: getStatusLabel(statusFor(kpi, allActuals, currentMonth).status),
-                  }))}
+                  rows={kpisWithData.map(({ kpi, unit, monthValues }) => {
+                    const row: Record<string, string | number> = { kpi: kpi.name, target: kpi.target_text }
+                    monthValues.forEach((mv, i) => { row[`m${i + 1}`] = formatValue(mv.raw, unit) })
+                    return row
+                  })}
                 />
               </div>
             </div>
