@@ -27,7 +27,6 @@ import { cn, iconHoverClass } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { playNotificationSound } from '@/lib/notification-sound'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
-import { ItsecMonogramE } from '@/components/layout/ItsecMonogram'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 
 type NotifKind = 'modify_pending' | 'modify_approved' | 'modify_rejected' | 'verified' | 'flagged'
@@ -244,8 +243,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
             onClick={() => router.push(navItems[0]?.href ?? '/login')}
             className={cn('flex items-center', iconHoverClass)}
           >
-            <ItsecLogo className="hidden sm:block h-4 w-auto text-ink" />
-            <ItsecMonogramE className="sm:hidden h-5 w-auto text-ink" />
+            <ItsecLogo className="h-4 w-auto text-ink" />
           </TooltipTrigger>
           <TooltipContent>Go to dashboard</TooltipContent>
         </Tooltip>
