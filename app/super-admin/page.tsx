@@ -6,16 +6,15 @@ import {
   UserPlusLineDuotone as IconUserPlus,
   ShieldCheckLineDuotone as IconShieldCheck,
   KeyLineDuotone as IconKey,
-  KeyBold as IconKeyReset,
-  PenBold as IconPen,
+  PenLineDuotone as IconPen,
   CheckCircleLineDuotone as IconCheckCircle,
   CloseCircleLineDuotone as IconCloseCircle,
   ClockCircleLineDuotone as IconClock,
   UsersGroupRoundedLineDuotone as UsersLine, UsersGroupRoundedBold as UsersBold,
   KeyBold as KeyBold,
   MenuDotsBold as IconMenuDots,
-  UserCrossBold as IconUserCross,
-  UserCheckBold as IconUserCheck,
+  UserCrossLineDuotone as IconUserCross,
+  UserCheckLineDuotone as IconUserCheck,
   ShieldKeyholeLineDuotone as IconShieldKeyhole,
   TuningLineDuotone as IconFilters,
   DownloadLineDuotone as IconDownload,
@@ -302,7 +301,7 @@ export default function SuperAdminPage() {
                                   <IconPen size={14} /> Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setResetPinFor(u)}>
-                                  <IconKeyReset size={14} /> Reset PIN
+                                  <IconKey size={14} /> Reset PIN
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem variant={u.active ? 'destructive' : 'default'} onClick={() => handleToggleActive(u)}>
@@ -375,7 +374,7 @@ export default function SuperAdminPage() {
                                       <IconPen size={14} /> Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setResetPinFor(u)}>
-                                      <IconKeyReset size={14} /> Reset PIN
+                                      <IconKey size={14} /> Reset PIN
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem variant={u.active ? 'destructive' : 'default'} onClick={() => handleToggleActive(u)}>
