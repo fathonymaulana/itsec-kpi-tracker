@@ -287,7 +287,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           <Tooltip>
             <TooltipTrigger
               onClick={onToggleLeftPanel}
-              className={cn('size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass)}
+              className={cn('size-9 rounded-lg flex items-center justify-center transition-colors hover:bg-panel-soft', iconHoverClass)}
             >
               {leftPanelOpen
                 ? <SidebarBold size={18} className="text-ink -scale-x-100" />
@@ -300,7 +300,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           <Tooltip>
             <TooltipTrigger
               onClick={onToggleRightPanel}
-              className={cn('size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass)}
+              className={cn('size-9 rounded-lg flex items-center justify-center transition-colors hover:bg-panel-soft', iconHoverClass)}
             >
               {rightPanelOpen
                 ? <SidebarBold size={18} className="text-ink" />
@@ -312,7 +312,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
 
         <Popover open={notifOpen} onOpenChange={setNotifOpen}>
           <PopoverTrigger
-            className={cn('relative size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass)}
+            className={cn('relative size-9 rounded-lg flex items-center justify-center transition-colors hover:bg-panel-soft', iconHoverClass)}
             title="Notifications"
           >
             {notifOpen ? <BellBold size={18} className="text-ink" /> : <BellLine size={18} className="text-ink" />}
@@ -384,7 +384,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
       <Tooltip>
         <TooltipTrigger
           onClick={() => setDrawerOpen(true)}
-          className={cn('flex md:hidden col-start-3 size-9 bg-panel-soft items-center justify-center justify-self-end', iconHoverClass)}
+          className={cn('flex md:hidden col-start-3 size-9 rounded-lg items-center justify-center justify-self-end transition-colors hover:bg-panel-soft', iconHoverClass)}
         >
           <HamburgerMenu size={18} className="text-ink" />
         </TooltipTrigger>

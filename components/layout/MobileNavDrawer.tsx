@@ -69,7 +69,7 @@ export function MobileNavDrawer({ open, onClose, navItems, onNavigate }: MobileN
           <span className="text-base font-semibold text-ink tracking-[-0.192px]">Menu</span>
           <button
             onClick={onClose}
-            className={cn('size-9 bg-panel-soft flex items-center justify-center', iconHoverClass)}
+            className={cn('size-9 rounded-lg flex items-center justify-center transition-colors hover:bg-panel-soft', iconHoverClass)}
             title="Close menu"
           >
             <CloseIcon size={18} className="text-ink" />
