@@ -477,10 +477,10 @@ export default function BoardPage() {
                               </div>
                             )}
                             <Button
-                              variant="default"
+                              variant="outline"
                               size="sm"
                               onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                              className={iconHoverClass}
+                              className={cn('text-destructive', iconHoverClass)}
                             >
                               <FileSearch />
                               View KPI details & sources
@@ -521,9 +521,9 @@ export default function BoardPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                            className={cn('rounded-full border-divider bg-panel text-ink shadow-xs', iconHoverClass)}
+                            className={cn('text-destructive', iconHoverClass)}
                           >
-                            <FileSearch size={14} />
+                            <FileSearch />
                             View details
                           </Button>
                         </div>
@@ -573,9 +573,9 @@ export default function BoardPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                                className={cn('rounded-full border-divider bg-panel text-ink', iconHoverClass)}
+                                className={cn('text-destructive', iconHoverClass)}
                               >
-                                <FileSearch size={13} />
+                                <FileSearch />
                                 View details & sources
                               </Button>
                             </TableCell>
