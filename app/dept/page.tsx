@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { Button } from '@/components/ui/button'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
+import { Badge } from '@/components/ui/badge'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 import { cn, iconHoverClass } from '@/lib/utils'
 
@@ -372,10 +373,10 @@ export default function DeptPage() {
                   }))}
                 />
                 {submitted && (
-                  <div className="flex items-center gap-1.5 text-xs text-success bg-success-soft border border-success-soft-border px-3 py-1 rounded-full">
+                  <Badge variant="success" className="h-auto px-3 py-1 text-xs">
                     <CheckCircle2 size={12} />
                     Submitted
-                  </div>
+                  </Badge>
                 )}
               </div>
             </div>

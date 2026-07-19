@@ -17,6 +17,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Badge } from '@/components/ui/badge'
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 
 // 168px avatar frame — ring sits just outside it. circumference = 2πr, r = 84.
@@ -308,9 +309,14 @@ export default function ProfilePage() {
               <p className="text-xs text-ink-muted mb-4">Changing your PIN requires Corporate Planning&apos;s approval — your current PIN keeps working until then.</p>
 
               {profile.pending_pin_request ? (
-                <div className="flex items-center gap-2 text-xs text-warning bg-warning-soft border border-warning-soft-border px-3 py-2.5 rounded">
-                  <Clock size={13} className="shrink-0" />
-                  Waiting on Corporate Planning&apos;s approval — requested {new Date(profile.pending_pin_request.requested_at).toLocaleString()}
+                <div className="flex items-start gap-2 bg-warning-soft border border-warning-soft-border rounded-lg px-3 py-2.5">
+                  <Badge variant="warning" className="h-auto px-2 py-0.5 text-[10px] shrink-0 mt-0.5">
+                    <Clock size={11} />
+                    Pending
+                  </Badge>
+                  <p className="text-xs text-warning">
+                    Waiting on Corporate Planning&apos;s approval — requested {new Date(profile.pending_pin_request.requested_at).toLocaleString()}
+                  </p>
                 </div>
               ) : (
                 <div>

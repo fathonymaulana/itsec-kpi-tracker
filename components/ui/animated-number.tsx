@@ -63,7 +63,7 @@ export function AnimatedNumber({
   )
 }
 
-const STEP_DURATION_S = 0.4
+const STEP_DURATION_S = 0.12
 
 // One digit position counting up from 0 to `target`, one integer at a time (0,1,2,...,target) — not
 // a single reveal of the final value. `startDelay` is when THIS digit position begins; it only

@@ -433,9 +433,9 @@ export default function BoardPage() {
                                 { v: dept.off_track, c: 'var(--danger-text)', bg: 'var(--danger-soft-bg)' },
                                 { v: dept.no_data, c: 'var(--ink-faint)', bg: 'var(--panel-soft-bg)' },
                               ].map((s, i) => s.v > 0 && (
-                                <span key={i} className="size-5 shrink-0 flex items-center justify-center text-[10px] font-medium rounded-full" style={{ color: s.c, background: s.bg }}>
+                                <Badge key={i} className="size-5 shrink-0 p-0 justify-center rounded-full text-[10px] font-medium" style={{ color: s.c, background: s.bg }}>
                                   {s.v}
-                                </span>
+                                </Badge>
                               ))}
                             </div>
                             {expanded ? <ChevronUp size={14} className="text-ink-faint" /> : <ChevronDown size={14} className="text-ink-faint" />}
