@@ -7,6 +7,7 @@ import {
   PlainLineDuotone as Send,
   CheckCircleLineDuotone as CheckCircle2,
   MagnifierLineDuotone as Search,
+  DangerTriangleLineDuotone as AlertTriangle,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
@@ -62,6 +63,14 @@ interface ModifyRequest {
   review_note: string | null
 }
 
+interface Verification {
+  id: number
+  kpi_id: number
+  status: 'pending' | 'verified' | 'flagged'
+  note: string
+  verified_at: string
+}
+
 const CURRENT_YEAR = new Date().getFullYear()
 
 export default function DeptPage() {
@@ -81,6 +90,7 @@ export default function DeptPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [isDirty, setIsDirty] = useState(false)
   const [modifyRequests, setModifyRequests] = useState<ModifyRequest[]>([])
+  const [verifications, setVerifications] = useState<Verification[]>([])
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [leftPanelOpen, setLeftPanelOpen] = useState(true)
@@ -171,13 +181,25 @@ export default function DeptPage() {
     } catch { /* non-fatal */ }
   }, [user, token, year, month])
 
+  // Corporate Planning's verify/flag decisions were only reaching the dept_head via a notification
+  // toast before this — nothing on the matrix item itself showed whether a given KPI had been
+  // reviewed at all, so the actual status lived only in a transient popup instead of on the page.
+  const fetchVerifications = useCallback(async () => {
+    if (!user || !token || !user.dept_id) return
+    try {
+      const r = await fetch(`/api/verifications?dept_id=${user.dept_id}&year=${year}&month=${month}`, { headers: authHeaders(token) })
+      const data = await r.json()
+      setVerifications(data.verifications || [])
+    } catch { /* non-fatal */ }
+  }, [user, token, year, month])
+
   useEffect(() => {
     if (!hasFetchedRef.current && user) { fetchKpis(); hasFetchedRef.current = true }
   }, [user, fetchKpis])
 
   useEffect(() => {
-    if (user) { fetchActuals(); fetchYearActuals(); checkSubmission(); fetchModifyRequests() }
-  }, [user, fetchActuals, fetchYearActuals, checkSubmission, fetchModifyRequests])
+    if (user) { fetchActuals(); fetchYearActuals(); checkSubmission(); fetchModifyRequests(); fetchVerifications() }
+  }, [user, fetchActuals, fetchYearActuals, checkSubmission, fetchModifyRequests, fetchVerifications])
 
   const handleValueChange = (subMetricId: number, val: string) => {
     setValues(prev => ({ ...prev, [subMetricId]: val }))
@@ -276,14 +298,14 @@ export default function DeptPage() {
     }
   }
 
-  // Most recent request per KPI — a fresh pending one always wins; an older rejected one only shows
-  // if there's nothing more recent, so a re-request cleanly replaces the "Request Again" state.
-  const getModifyStatus = (kpiId: number): 'pending' | 'rejected' | null => {
+  // Most recent request per KPI — a fresh pending one always wins; an older approved/rejected one
+  // only shows if there's nothing more recent, so a re-request cleanly replaces that state.
+  const getModifyRequest = (kpiId: number): ModifyRequest | null => {
     const forKpi = modifyRequests.filter(r => r.kpi_id === kpiId)
-    if (forKpi.some(r => r.status === 'pending')) return 'pending'
-    if (forKpi.some(r => r.status === 'rejected')) return 'rejected'
-    return null
+    return forKpi.find(r => r.status === 'pending') ?? forKpi.find(r => r.status === 'rejected') ?? forKpi.find(r => r.status === 'approved') ?? null
   }
+
+  const getVerification = (kpiId: number): Verification | undefined => verifications.find(v => v.kpi_id === kpiId)
 
   const handleRequestModify = async (kpiId: number, reason: string) => {
     if (!token) return
@@ -437,21 +459,39 @@ export default function DeptPage() {
                       Clear search
                     </button>
                   </EmptyState>
-                ) : visibleKpis.map(kpi => (
-                  <KpiCard
-                    key={kpi.id}
-                    kpi={kpi}
-                    values={values}
-                    yearActuals={yearActuals}
-                    month={month}
-                    dataSource={dataSources[kpi.id]}
-                    onValueChange={handleValueChange}
-                    onDataSourceSave={handleDataSourceSave}
-                    readOnly={submitted}
-                    modifyRequestStatus={submitted ? getModifyStatus(kpi.id) : undefined}
-                    onRequestModify={submitted ? handleRequestModify : undefined}
-                  />
-                ))}
+                ) : visibleKpis.map(kpi => {
+                  const modifyRequest = submitted ? getModifyRequest(kpi.id) : null
+                  const verification = submitted ? getVerification(kpi.id) : undefined
+                  return (
+                    <div key={kpi.id} className="space-y-2">
+                      <KpiCard
+                        kpi={kpi}
+                        values={values}
+                        yearActuals={yearActuals}
+                        month={month}
+                        dataSource={dataSources[kpi.id]}
+                        onValueChange={handleValueChange}
+                        onDataSourceSave={handleDataSourceSave}
+                        readOnly={submitted}
+                        modifyRequestStatus={modifyRequest?.status ?? null}
+                        modifyReviewNote={modifyRequest?.review_note ?? null}
+                        onRequestModify={submitted ? handleRequestModify : undefined}
+                      />
+                      {/* Mirrors admin/page.tsx's own verification badge exactly, so both sides of a
+                          review see the identical status + timestamp for the same KPI/period. */}
+                      {verification && (
+                        <div className="flex items-center gap-2 px-1 flex-wrap">
+                          <Badge variant={verification.status === 'verified' ? 'success' : 'danger'} className="h-auto px-2.5 py-1 text-[10px] md:text-xs">
+                            {verification.status === 'verified' ? <CheckCircle2 size={10} /> : <AlertTriangle size={10} />}
+                            {verification.status === 'verified' ? 'Verified' : 'Flagged'}
+                          </Badge>
+                          <span className="text-[10px] text-ink-faint">{new Date(verification.verified_at).toLocaleString()}</span>
+                          {verification.note && <span className="text-[10px] text-ink-muted">— {verification.note}</span>}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

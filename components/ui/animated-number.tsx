@@ -4,9 +4,7 @@ import type { CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-// GSAP's power2.inOut (ease-in-out: slow start, fast middle, slow settle) is the reference curve
-// asked for — cubic-bezier(0.65,0,0.35,1) is the closest standard CSS equivalent.
-const DIGIT_EASE: [number, number, number, number] = [0.65, 0, 0.35, 1]
+const DIGIT_EASE: [number, number, number, number] = [0.62, 0.05, 0.01, 0.99]
 
 // One digit's own independent "odometer" slot — the old digit slides up and fades out while the
 // new one slides up from below to replace it, each digit position transitioning independently
@@ -63,34 +61,13 @@ export function AnimatedNumber({
   )
 }
 
-const STEP_DURATION_S = 0.12
+const STEP_MS = 35
 
-// One digit position counting up from 0 to `target`, one integer at a time (0,1,2,...,target) — not
-// a single reveal of the final value. `startDelay` is when THIS digit position begins; it only
-// starts ticking after that, so a parent can chain positions left-to-right (see CountUpNumber below).
-function CountingDigit({ target, startDelay }: { target: number; startDelay: number }) {
-  const [step, setStep] = useState(0)
-  const [started, setStarted] = useState(startDelay === 0)
-
-  useEffect(() => {
-    if (startDelay === 0) return
-    const t = setTimeout(() => setStarted(true), startDelay * 1000)
-    return () => clearTimeout(t)
-  }, [startDelay])
-
-  useEffect(() => {
-    if (!started || step >= target) return
-    const t = setTimeout(() => setStep(s => s + 1), STEP_DURATION_S * 1000)
-    return () => clearTimeout(t)
-  }, [started, step, target])
-
-  return <AnimatedDigit value={String(step)} duration={STEP_DURATION_S} revealOnMount />
-}
-
-// Dashboard stat-card numbers: ticks each digit position up from 0 to its target value one integer
-// at a time (41 plays 0,1,2,3,4 on the tens digit, THEN 0,1 on the ones digit — not a single reveal
-// of "41"), with every CountUpNumber on the page starting together (no cross-card/cross-number delay,
-// only the within-number left-to-right digit sequencing).
+// Dashboard stat-card numbers: one single count from 0 up to `value`, one integer at a time
+// (0,1,2,...,value) — not a separate animation phase per digit position. Each digit position just
+// renders whatever character that integer happens to have, so the ones place naturally ticks on
+// every step while the tens place only changes at each ten's boundary — exactly how a real
+// mechanical counter behaves, with no separate delay/sequencing logic needed to make that happen.
 export function CountUpNumber({
   value,
   formatter,
@@ -102,17 +79,23 @@ export function CountUpNumber({
   className?: string
   style?: CSSProperties
 }) {
-  const chars = (formatter ? formatter(value) : String(value)).split('')
-  let cumulativeDelay = 0
+  const [display, setDisplay] = useState(0)
+
+  useEffect(() => {
+    if (value <= 0) { setDisplay(value); return }
+    let step = 0
+    const id = setInterval(() => {
+      step += 1
+      setDisplay(step)
+      if (step >= value) clearInterval(id)
+    }, STEP_MS)
+    return () => clearInterval(id)
+  }, [value])
+
+  const chars = (formatter ? formatter(display) : String(display)).split('')
   return (
     <span className={cn('inline-flex items-baseline tabular-nums font-sans', className)} style={style}>
-      {chars.map((ch, i) => {
-        if (!/\d/.test(ch)) return <span key={i} className="leading-none">{ch}</span>
-        const target = parseInt(ch, 10)
-        const startDelay = cumulativeDelay
-        cumulativeDelay += target * STEP_DURATION_S
-        return <CountingDigit key={i} target={target} startDelay={startDelay} />
-      })}
+      {chars.map((ch, i) => (/\d/.test(ch) ? <AnimatedDigit key={i} value={ch} duration={0.18} revealOnMount /> : <span key={i} className="leading-none">{ch}</span>))}
     </span>
   )
 }

@@ -9,6 +9,8 @@ import {
   AltArrowUpLineDuotone as ChevronUp,
   LockUnlockedLineDuotone as RequestModifyIcon,
   ClockCircleLineDuotone as PendingIcon,
+  CheckCircleLineDuotone as ApprovedIcon,
+  CloseCircleLineDuotone as RejectedIcon,
 } from '@solar-icons/react-perf'
 import { getStatus, getStatusColors } from '@/lib/status'
 import { resolveAllValues, getSubMetricStatuses, getPeriodStatuses } from '@/lib/kpi-primary'
@@ -53,7 +55,10 @@ interface KpiCardProps {
   // When set, a locked (readOnly) card shows a "Request Modify" CTA instead of collapse/expand —
   // only meaningful on the dept_head's own Data Entry page, not on Corporate Planning's read-only
   // review view, so this is opt-in rather than inferred from readOnly alone.
-  modifyRequestStatus?: 'pending' | 'rejected' | null
+  modifyRequestStatus?: 'pending' | 'approved' | 'rejected' | null
+  // Corporate Planning's rejection reason — shown right on the card so acting on it doesn't require
+  // digging back through a notification that may have already been dismissed.
+  modifyReviewNote?: string | null
   onRequestModify?: (kpiId: number, reason: string) => void
 }
 
@@ -67,6 +72,7 @@ export function KpiCard({
   onValueChange,
   onDataSourceSave,
   modifyRequestStatus,
+  modifyReviewNote,
   onRequestModify,
 }: KpiCardProps) {
   const [collapsed, setCollapsed] = useState(false)
@@ -204,6 +210,26 @@ export function KpiCard({
                 <PendingIcon size={12} />
                 Pending Review
               </Badge>
+            ) : modifyRequestStatus === 'approved' ? (
+              <Badge variant="success" className="h-auto px-2.5 py-1.5 text-xs">
+                <ApprovedIcon size={12} />
+                Request Approved
+              </Badge>
+            ) : modifyRequestStatus === 'rejected' ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="danger" className="h-auto px-2.5 py-1.5 text-xs" title={modifyReviewNote ?? undefined}>
+                  <RejectedIcon size={12} />
+                  Request Rejected{modifyReviewNote ? `: ${modifyReviewNote}` : ''}
+                </Badge>
+                <button
+                  onClick={() => setModifyOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-normal px-2.5 py-1.5 border rounded-lg text-ink-soft border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-[#CC1F1F] hover:text-[#CC1F1F] transition-colors"
+                  title="Request permission to modify this matrix"
+                >
+                  <RequestModifyIcon size={12} />
+                  Request Again
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => setModifyOpen(true)}
@@ -211,7 +237,7 @@ export function KpiCard({
                 title="Request permission to modify this matrix"
               >
                 <RequestModifyIcon size={12} />
-                {modifyRequestStatus === 'rejected' ? 'Request Again' : 'Request Modify'}
+                Request Modify
               </button>
             )
           ) : (
