@@ -34,11 +34,20 @@ export function SplashScreen() {
   const [phase, setPhase] = useState<'intro' | 'reveal'>('intro')
 
   useIsomorphicLayoutEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) {
+    // sessionStorage can throw (private browsing, strict privacy settings, some mobile browser
+    // configurations) — a throw here previously took down the entire app on first load, since this
+    // effect runs unconditionally in the root layout before anything else renders. Treat a throw as
+    // "not shown yet" so the splash still plays once; it just won't persist across reloads.
+    let alreadyShown = false
+    try {
+      alreadyShown = !!sessionStorage.getItem(SESSION_KEY)
+      if (!alreadyShown) sessionStorage.setItem(SESSION_KEY, '1')
+    } catch { /* storage unavailable — fall through as if never shown */ }
+
+    if (alreadyShown) {
       setVisible(false)
       return
     }
-    sessionStorage.setItem(SESSION_KEY, '1')
     const toReveal = setTimeout(() => setPhase('reveal'), 600)
     const toHide = setTimeout(() => setVisible(false), 2200)
     return () => { clearTimeout(toReveal); clearTimeout(toHide) }

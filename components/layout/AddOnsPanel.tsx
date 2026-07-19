@@ -16,14 +16,15 @@ export function AddOnsPanel() {
   const [confirmLogout, setConfirmLogout] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(DARK_MODE_KEY) === '1'
+    let stored = false
+    try { stored = localStorage.getItem(DARK_MODE_KEY) === '1' } catch { /* storage unavailable — default to light */ }
     setDarkMode(stored)
     document.documentElement.classList.toggle('dark', stored)
   }, [])
 
   const toggleDarkMode = (checked: boolean) => {
     setDarkMode(checked)
-    localStorage.setItem(DARK_MODE_KEY, checked ? '1' : '0')
+    try { localStorage.setItem(DARK_MODE_KEY, checked ? '1' : '0') } catch { /* storage unavailable — preference won't persist */ }
     document.documentElement.classList.toggle('dark', checked)
   }
 

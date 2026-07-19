@@ -34,10 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem('itsec_kpi_user')
-    if (stored) {
-      try { setUser(JSON.parse(stored)) } catch { localStorage.removeItem('itsec_kpi_user') }
-    }
+    // localStorage can throw (private browsing, strict privacy settings, some mobile browser
+    // configurations) — this runs unconditionally on every app load in the root layout, so an
+    // unguarded throw here previously crashed the entire app before anything could render. Falling
+    // through to unauthenticated is the safe default; `ready` still flips so pages stop skeleton-
+    // loading and redirect to /login instead of hanging forever.
+    try {
+      const stored = localStorage.getItem('itsec_kpi_user')
+      if (stored) {
+        try { setUser(JSON.parse(stored)) } catch { localStorage.removeItem('itsec_kpi_user') }
+      }
+    } catch { /* storage unavailable — proceed unauthenticated */ }
     setReady(true)
   }, [])
 
@@ -53,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const data = await res.json()
     setUser(data)
-    localStorage.setItem('itsec_kpi_user', JSON.stringify(data))
+    try { localStorage.setItem('itsec_kpi_user', JSON.stringify(data)) } catch { /* storage unavailable — session stays in-memory only */ }
   }
 
   // Updates the locally-cached profile fields (name/avatar) after a successful self-service edit,
@@ -62,14 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(prev => {
       if (!prev) return prev
       const next = { ...prev, ...patch }
-      localStorage.setItem('itsec_kpi_user', JSON.stringify(next))
+      try { localStorage.setItem('itsec_kpi_user', JSON.stringify(next)) } catch { /* storage unavailable */ }
       return next
     })
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem('itsec_kpi_user')
+    try { localStorage.removeItem('itsec_kpi_user') } catch { /* storage unavailable */ }
   }
 
   return (

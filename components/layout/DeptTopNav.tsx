@@ -228,10 +228,12 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   // that only clears once actually resolved (approve/reject/verify/flag).
   useEffect(() => {
     if (!notifOpen || isTaskQueue || !user || notifItems.length === 0) return
-    const key = seenKey(user.user_id)
-    const seenIds = new Set<string>(JSON.parse(localStorage.getItem(key) || '[]'))
-    notifItems.forEach(it => seenIds.add(it.id))
-    localStorage.setItem(key, JSON.stringify(Array.from(seenIds)))
+    try {
+      const key = seenKey(user.user_id)
+      const seenIds = new Set<string>(JSON.parse(localStorage.getItem(key) || '[]'))
+      notifItems.forEach(it => seenIds.add(it.id))
+      localStorage.setItem(key, JSON.stringify(Array.from(seenIds)))
+    } catch { /* storage unavailable — non-fatal, just won't persist the seen-set */ }
     setHasUnseen(false)
   }, [notifOpen, isTaskQueue, user, notifItems])
 
