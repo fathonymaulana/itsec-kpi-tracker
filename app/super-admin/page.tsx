@@ -41,6 +41,7 @@ import {
 import { iconHoverClass, cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { fireApproveConfetti } from '@/lib/confetti'
+import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
 
 type Role = 'dept_head' | 'corp_planning'
 interface AdminUser { id: number; name: string; avatar_url: string | null; role: Role; dept_id: string | null; dept_name: string | null; active: boolean; created_at: string }
@@ -271,9 +272,7 @@ export default function SuperAdminPage() {
                 </div>
               )}
 
-              {loading ? (
-                <div className="h-64 bg-panel border border-divider rounded-3xl animate-pulse" />
-              ) : (
+              <CrossfadeSwap show={!loading} skeleton={<div className="h-64 bg-panel border border-divider rounded-3xl animate-pulse" />}>
                 <>
                   <TabsContent value="users">
                     {/* Mobile/tablet: one card per user, matching the Figma "Table Card Responsive"
@@ -477,7 +476,7 @@ export default function SuperAdminPage() {
                     </div>
                   </TabsContent>
                 </>
-              )}
+              </CrossfadeSwap>
             </Tabs>
           </div>
         </main>

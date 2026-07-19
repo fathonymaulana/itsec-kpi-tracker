@@ -26,6 +26,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
+import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
 import { cn } from '@/lib/utils'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -231,11 +232,14 @@ export default function DeptDashboard() {
               })}
             </div>
 
-            {loading ? (
-              <div className="space-y-4">
-                {[...Array(4)].map((_, i) => <div key={i} className="h-48 bg-panel border border-divider rounded-3xl animate-pulse" />)}
-              </div>
-            ) : (
+            <CrossfadeSwap
+              show={!loading}
+              skeleton={
+                <div className="space-y-4">
+                  {[...Array(4)].map((_, i) => <div key={i} className="h-48 bg-panel border border-divider rounded-3xl animate-pulse" />)}
+                </div>
+              }
+            >
               <Tabs value={view} onValueChange={v => v && setView(v as 'charts' | 'table')}>
                 <TabsList variant="pill" className="mb-4">
                   <TabsTrigger value="charts">
@@ -378,7 +382,7 @@ export default function DeptDashboard() {
                   </div>
                 </TabsContent>
               </Tabs>
-            )}
+            </CrossfadeSwap>
           </div>
         </main>
         </div>

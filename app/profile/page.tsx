@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
+import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 
 // 168px avatar frame — ring sits just outside it. circumference = 2πr, r = 84.
@@ -222,12 +223,16 @@ export default function ProfilePage() {
           </Button>
         </div>
 
-        {loading ? (
-          <div className="space-y-4">
-            <div className="h-40 bg-panel border border-divider rounded-3xl animate-pulse" />
-            <div className="h-40 bg-panel border border-divider rounded-3xl animate-pulse" />
-          </div>
-        ) : profile && (
+        <CrossfadeSwap
+          show={!loading}
+          skeleton={
+            <div className="space-y-4">
+              <div className="h-40 bg-panel border border-divider rounded-3xl animate-pulse" />
+              <div className="h-40 bg-panel border border-divider rounded-3xl animate-pulse" />
+            </div>
+          }
+        >
+          {profile && (
           <>
             {/* Profile card */}
             <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-6">
@@ -345,7 +350,8 @@ export default function ProfilePage() {
               )}
             </div>
           </>
-        )}
+          )}
+        </CrossfadeSwap>
         </div>
       </main>
 

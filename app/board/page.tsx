@@ -30,6 +30,7 @@ import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/li
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
+import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn, iconHoverClass } from '@/lib/utils'
@@ -408,11 +409,15 @@ export default function BoardPage() {
                 {/* Department accordion */}
                 <div className="space-y-2">
                   <h3 className="font-medium text-ink text-sm mb-3">Department Breakdown</h3>
-                  {loading ? (
-                    <div className="space-y-2">
-                      {[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-panel border border-divider rounded-3xl animate-pulse" />)}
-                    </div>
-                  ) : summaries.map(dept => {
+                  <CrossfadeSwap
+                    show={!loading}
+                    skeleton={
+                      <div className="space-y-2">
+                        {[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-panel border border-divider rounded-3xl animate-pulse" />)}
+                      </div>
+                    }
+                  >
+                  {summaries.map(dept => {
                     const expanded = expandedDepts.has(dept.dept_id)
                     const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
                     return (
@@ -475,6 +480,7 @@ export default function BoardPage() {
                       </div>
                     )
                   })}
+                  </CrossfadeSwap>
                 </div>
               </TabsContent>
 
