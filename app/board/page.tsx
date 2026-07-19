@@ -73,17 +73,26 @@ const chartConfig: ChartConfig = {
   noData: { label: 'No Data', color: STATUS_COLORS.no_data },
 }
 
+const LEGEND_BADGE_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'outline'> = {
+  onTrack: 'success',
+  watch: 'warning',
+  offTrack: 'danger',
+  noData: 'outline',
+}
+
 // Custom legend (not the shared ChartLegendContent) — that component's default swatch is a small
 // square rather than a circle, so this reads chartConfig's own solid color values directly and
-// renders them as circles instead, per the requested legend style.
+// renders them as circles instead, per the requested legend style. Each entry is a <Badge> (not a
+// raw span) so the same status colors used everywhere else in the app (StatusBadge, stat cards)
+// carry through here too.
 function ChartLegendCircles() {
   return (
-    <div className="flex items-center justify-center gap-4 pt-3 flex-wrap">
+    <div className="flex items-center justify-center gap-2 pt-3 flex-wrap">
       {Object.entries(chartConfig).map(([key, cfg]) => (
-        <div key={key} className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
-          <span className="text-xs text-ink-muted">{cfg.label}</span>
-        </div>
+        <Badge key={key} variant={LEGEND_BADGE_VARIANT[key] ?? 'outline'} className="h-auto px-2 py-0.5 text-[10px] md:text-xs">
+          <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
+          {cfg.label}
+        </Badge>
       ))}
     </div>
   )
@@ -311,13 +320,13 @@ export default function BoardPage() {
                 (app/dept/dashboard/page.tsx), so this reads identically across roles. */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               {[
-                { label: 'On Track', value: totals.on_track, pct: pct(totals.on_track), color: 'var(--success-text)', Icon: TrendingUp, caption: 'performing at or above target' },
-                { label: 'Watch', value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', Icon: Minus, caption: 'trending toward target, worth watching' },
-                { label: 'Off Track', value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', Icon: Minus, caption: 'below target — needs attention' },
-                { label: 'No Data', value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-muted)', Icon: Minus, caption: 'not yet entered this month' },
+                { label: 'On Track', variant: 'success' as const, value: totals.on_track, pct: pct(totals.on_track), color: 'var(--success-text)', Icon: TrendingUp, caption: 'performing at or above target' },
+                { label: 'Watch', variant: 'warning' as const, value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', Icon: Minus, caption: 'trending toward target, worth watching' },
+                { label: 'Off Track', variant: 'danger' as const, value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', Icon: Minus, caption: 'below target — needs attention' },
+                { label: 'No Data', variant: 'outline' as const, value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-muted)', Icon: Minus, caption: 'not yet entered this month' },
               ].map(s => (
                 <div key={s.label} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
-                  <div className="text-sm text-ink-muted">{s.label}</div>
+                  <Badge variant={s.variant} className="h-auto px-2 py-0.5 text-[10px] w-fit">{s.label}</Badge>
                   <CountUpNumber value={s.value} className="text-[40px] leading-[48px] font-medium text-ink tracking-[-0.5px]" />
                   <div className="flex items-center gap-1">
                     <s.Icon size={14} style={{ color: s.color }} />
@@ -351,8 +360,8 @@ export default function BoardPage() {
                         <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{MONTHS[month - 1]} {year}</Badge>
                       </div>
                       <DropdownMenu>
-                        <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), iconHoverClass)}>
-                          <IconFilters size={13} className="mr-1" />
+                        <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), iconHoverClass)}>
+                          <IconFilters size={15} />
                           Filters
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
@@ -468,12 +477,12 @@ export default function BoardPage() {
                               </div>
                             )}
                             <Button
-                              variant="outline"
+                              variant="default"
                               size="sm"
                               onClick={() => router.push(`/admin?dept=${dept.dept_id}`)}
-                              className={cn('rounded-full border-divider bg-panel text-ink', iconHoverClass)}
+                              className={iconHoverClass}
                             >
-                              <FileSearch size={13} />
+                              <FileSearch />
                               View KPI details & sources
                             </Button>
                           </div>

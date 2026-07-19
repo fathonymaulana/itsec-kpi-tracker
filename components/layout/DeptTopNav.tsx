@@ -24,8 +24,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
 import { cn, iconHoverClass } from '@/lib/utils'
+import { buttonVariants } from '@/components/ui/button'
 import { playNotificationSound } from '@/lib/notification-sound'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
+import { ItsecMonogramE } from '@/components/layout/ItsecMonogram'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 
 type NotifKind = 'modify_pending' | 'modify_approved' | 'modify_rejected' | 'verified' | 'flagged'
@@ -242,7 +244,8 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
             onClick={() => router.push(navItems[0]?.href ?? '/login')}
             className={cn('flex items-center', iconHoverClass)}
           >
-            <ItsecLogo className="h-5 w-auto text-ink" />
+            <ItsecLogo className="hidden sm:block h-4 w-auto text-ink" />
+            <ItsecMonogramE className="sm:hidden h-5 w-auto text-ink" />
           </TooltipTrigger>
           <TooltipContent>Go to dashboard</TooltipContent>
         </Tooltip>
@@ -384,7 +387,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
       <Tooltip>
         <TooltipTrigger
           onClick={() => setDrawerOpen(true)}
-          className={cn('flex md:hidden col-start-3 size-9 rounded-lg items-center justify-center justify-self-end transition-colors hover:bg-panel-soft', iconHoverClass)}
+          className={cn(buttonVariants({ variant: 'outline', size: 'icon-lg' }), 'flex md:hidden col-start-3 justify-self-end', iconHoverClass)}
         >
           <HamburgerMenu size={18} className="text-ink" />
         </TooltipTrigger>

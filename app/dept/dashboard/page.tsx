@@ -24,6 +24,7 @@ import { getPrimarySubMetric, resolvePrimaryValue, getPeriodStatuses } from '@/l
 import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
+import { Badge } from '@/components/ui/badge'
 import { CountUpNumber } from '@/components/ui/animated-number'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
@@ -209,15 +210,15 @@ export default function DeptDashboard() {
             {/* Stat summary */}
             <div className="grid grid-cols-2 gap-3 mb-8">
               {[
-                { label: 'On Track', value: onTrack, color: 'var(--success-text)', Icon: TrendingUp, caption: 'performing at or above target' },
-                { label: 'Watch', value: watch, color: 'var(--warning-text)', Icon: Eye, caption: 'trending toward target, worth watching' },
-                { label: 'Off Track', value: offTrack, color: 'var(--danger-text)', Icon: TrendingDown, caption: 'below target — needs attention' },
-                { label: 'No Data', value: noData, color: 'var(--ink-muted)', Icon: CircleDashed, caption: 'not yet entered this month' },
+                { label: 'On Track', variant: 'success' as const, value: onTrack, color: 'var(--success-text)', Icon: TrendingUp, caption: 'performing at or above target' },
+                { label: 'Watch', variant: 'warning' as const, value: watch, color: 'var(--warning-text)', Icon: Eye, caption: 'trending toward target, worth watching' },
+                { label: 'Off Track', variant: 'danger' as const, value: offTrack, color: 'var(--danger-text)', Icon: TrendingDown, caption: 'below target — needs attention' },
+                { label: 'No Data', variant: 'outline' as const, value: noData, color: 'var(--ink-muted)', Icon: CircleDashed, caption: 'not yet entered this month' },
               ].map(s => {
                 const pct = kpis.length > 0 ? Math.round((s.value / kpis.length) * 100) : 0
                 return (
                   <div key={s.label} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
-                    <div className="text-sm text-ink-muted">{s.label}</div>
+                    <Badge variant={s.variant} className="h-auto px-2 py-0.5 text-[10px] w-fit">{s.label}</Badge>
                     <CountUpNumber value={s.value} className="text-[40px] leading-[48px] font-medium text-ink tracking-[-0.5px]" />
                     <div className="flex items-center gap-1">
                       <s.Icon size={14} style={{ color: s.color }} />

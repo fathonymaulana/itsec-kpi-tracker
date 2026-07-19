@@ -10,6 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { useAuth } from '@/lib/auth'
 import { cn, iconHoverClass } from '@/lib/utils'
+import { buttonVariants } from '@/components/ui/button'
 
 export interface MobileNavItem {
   href: string
@@ -69,7 +70,7 @@ export function MobileNavDrawer({ open, onClose, navItems, onNavigate }: MobileN
           <span className="text-base font-semibold text-ink tracking-[-0.192px]">Menu</span>
           <button
             onClick={onClose}
-            className={cn('size-9 rounded-lg flex items-center justify-center transition-colors hover:bg-panel-soft', iconHoverClass)}
+            className={cn(buttonVariants({ variant: 'secondary', size: 'icon-lg' }), iconHoverClass)}
             title="Close menu"
           >
             <CloseIcon size={18} className="text-ink" />

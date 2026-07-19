@@ -28,7 +28,7 @@ import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -219,12 +219,7 @@ export default function SuperAdminPage() {
                   />
                   <div className="flex items-center gap-2 shrink-0">
                     <DropdownMenu>
-                      <DropdownMenuTrigger
-                        className={cn(
-                          'inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-divider bg-panel text-sm font-medium text-ink hover:bg-panel-soft transition-colors',
-                          iconHoverClass
-                        )}
-                      >
+                      <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), iconHoverClass)}>
                         <IconFilters size={15} />
                         Filters
                         {activeFilterCount > 0 && <Badge className="ml-0.5 text-[10px] px-1.5">{activeFilterCount}</Badge>}
