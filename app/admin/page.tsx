@@ -187,8 +187,8 @@ export default function AdminPage() {
       await fetchModifyRequests()
       if (selectedDept) await fetchDeptData()
       toast.success(
-        action === 'approve' ? 'Month unlocked' : 'Request rejected',
-        { description: action === 'approve' ? 'The department can edit and resubmit that month now.' : 'The department will see why this was declined.' }
+        action === 'approve' ? 'Matrix unlocked' : 'Request rejected',
+        { description: action === 'approve' ? 'The department can edit that matrix and resubmit — the rest of the month stays as submitted.' : 'The department will see why this was declined.' }
       )
     } catch (err) {
       toast.error('That action didn’t go through', { description: err instanceof Error ? err.message : 'Please try again.' })

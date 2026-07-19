@@ -40,5 +40,14 @@ export async function POST(request: NextRequest) {
     { onConflict: 'dept_id,year,month', ignoreDuplicates: true }
   )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Re-submitting is what closes out any approved modify requests for this exact period — the KPI(s)
+  // they unlocked go back to read-only like the rest of the month once this resolves, instead of
+  // staying unlocked forever.
+  await supabase
+    .from('modify_requests')
+    .update({ status: 'resolved' })
+    .eq('dept_id', dept_id).eq('year', year).eq('month', month).eq('status', 'approved')
+
   return NextResponse.json({ success: true })
 }

@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { MONTHS, getDefaultMonth, getDefaultYear } from '@/lib/status'
-import { cn, iconHoverClass } from '@/lib/utils'
+import { cn, iconHoverClass, discordIconClass } from '@/lib/utils'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 
@@ -135,12 +135,14 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
 
           type ModifyRow = { id: number; status: string; reviewed_at: string | null; review_note: string | null; kpi_name: string | null; month: number; year: number }
           const reviewed: NotifItem[] = (modifyData.requests || [])
-            .filter((req: ModifyRow) => req.status !== 'pending' && req.reviewed_at)
+            // 'resolved' (an approved request the dept_head already acted on and re-submitted) isn't
+            // new news — only the first approved/rejected transition is.
+            .filter((req: ModifyRow) => (req.status === 'approved' || req.status === 'rejected') && req.reviewed_at)
             .map((req: ModifyRow) => req.status === 'approved' ? {
               id: `modify_approved-${req.id}`,
               kind: 'modify_approved' as const,
               title: `Your request to edit "${req.kpi_name ?? 'a KPI'}" was approved`,
-              description: `${MONTHS[req.month - 1]} ${req.year} is unlocked for editing — head to Data Entry to make your change.`,
+              description: `This matrix is unlocked for editing for ${MONTHS[req.month - 1]} ${req.year} — head to Data Entry to make your change. Everything else stays submitted.`,
               timestamp: req.reviewed_at as string,
               href: '/dept',
             } : {
@@ -283,7 +285,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           <Tooltip>
             <TooltipTrigger
               onClick={onToggleLeftPanel}
-              className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
+              className={cn('size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass, discordIconClass)}
             >
               {leftPanelOpen
                 ? <SidebarBold size={18} className="text-ink -scale-x-100" />
@@ -296,7 +298,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           <Tooltip>
             <TooltipTrigger
               onClick={onToggleRightPanel}
-              className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
+              className={cn('size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass, discordIconClass)}
             >
               {rightPanelOpen
                 ? <SidebarBold size={18} className="text-ink" />
@@ -308,7 +310,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
 
         <Popover open={notifOpen} onOpenChange={setNotifOpen}>
           <PopoverTrigger
-            className={cn('relative size-9 rounded-full bg-panel-soft flex items-center justify-center hover:bg-divider transition-colors', iconHoverClass)}
+            className={cn('relative size-9 bg-panel-soft flex items-center justify-center hover:bg-divider', iconHoverClass, discordIconClass)}
             title="Notifications"
           >
             {notifOpen ? <BellBold size={18} className="text-ink" /> : <BellLine size={18} className="text-ink" />}
@@ -380,7 +382,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
       <Tooltip>
         <TooltipTrigger
           onClick={() => setDrawerOpen(true)}
-          className={cn('flex md:hidden col-start-3 size-9 rounded-full bg-panel-soft items-center justify-center justify-self-end', iconHoverClass)}
+          className={cn('flex md:hidden col-start-3 size-9 bg-panel-soft items-center justify-center justify-self-end', iconHoverClass, discordIconClass)}
         >
           <HamburgerMenu size={18} className="text-ink" />
         </TooltipTrigger>

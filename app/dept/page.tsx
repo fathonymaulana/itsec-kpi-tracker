@@ -59,7 +59,7 @@ interface Actual {
 interface ModifyRequest {
   id: number
   kpi_id: number
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'resolved'
   reason: string
   review_note: string | null
 }
@@ -291,6 +291,7 @@ export default function DeptPage() {
       const data = await r.json()
       if (!r.ok) throw new Error(data.error || 'Submit failed')
       setSubmitted(true)
+      await fetchModifyRequests() // any 'approved' rows for this period just flipped to 'resolved' server-side
       toast.success(`${MONTHS[month - 1]} ${year} submitted`, { description: 'Your data is locked and ready for Corporate Planning’s review.' })
     } catch (err: unknown) {
       toast.error('Couldn’t submit this month', { description: err instanceof Error ? err.message : 'Please try again.' })
@@ -307,6 +308,11 @@ export default function DeptPage() {
   }
 
   const getVerification = (kpiId: number): Verification | undefined => verifications.find(v => v.kpi_id === kpiId)
+
+  // At least one KPI is unlocked for editing via an approved modify request — Submit Month needs to
+  // stay clickable (and read as "still needs a resubmit") until that's resolved, even though the
+  // month as a whole is already submitted.
+  const hasOpenApprovedRequest = modifyRequests.some(r => r.status === 'approved')
 
   const handleRequestModify = async (kpiId: number, reason: string) => {
     if (!token) return
@@ -463,6 +469,11 @@ export default function DeptPage() {
                 ) : visibleKpis.map(kpi => {
                   const modifyRequest = submitted ? getModifyRequest(kpi.id) : null
                   const verification = submitted ? getVerification(kpi.id) : undefined
+                  // Approving a modify request only unlocks the one KPI it was actually about — every
+                  // other KPI in the month stays exactly as locked as before. Nothing here deletes or
+                  // resets existing entries; this KPI simply becomes editable again until the
+                  // dept_head re-submits, which is what locks it back down.
+                  const kpiReadOnly = submitted && modifyRequest?.status !== 'approved'
                   return (
                     <div key={kpi.id} className="space-y-2">
                       <KpiCard
@@ -473,7 +484,7 @@ export default function DeptPage() {
                         dataSource={dataSources[kpi.id]}
                         onValueChange={handleValueChange}
                         onDataSourceSave={handleDataSourceSave}
-                        readOnly={submitted}
+                        readOnly={kpiReadOnly}
                         modifyRequestStatus={modifyRequest?.status ?? null}
                         modifyReviewNote={modifyRequest?.review_note ?? null}
                         onRequestModify={submitted ? handleRequestModify : undefined}
@@ -524,10 +535,10 @@ export default function DeptPage() {
             <Button
               className={`h-12 px-5 rounded-2xl gap-2 bg-primary hover:bg-primary/80 text-primary-foreground ${iconHoverClass}`}
               onClick={handleSubmit}
-              disabled={saving || submitting || submitted}
+              disabled={saving || submitting || (submitted && !hasOpenApprovedRequest)}
             >
-              <SuccessMorph stateKey={submitted ? 'submitted' : submitting ? 'submitting' : 'idle'}>
-                {submitted ? 'Submitted' : submitting ? 'Submitting…' : 'Submit Month'}
+              <SuccessMorph stateKey={submitting ? 'submitting' : (submitted && !hasOpenApprovedRequest) ? 'submitted' : 'idle'}>
+                {submitting ? 'Submitting…' : (submitted && !hasOpenApprovedRequest) ? 'Submitted' : hasOpenApprovedRequest ? 'Resubmit Month' : 'Submit Month'}
                 <Send size={16} />
               </SuccessMorph>
             </Button>

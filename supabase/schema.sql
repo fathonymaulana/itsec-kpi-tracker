@@ -112,8 +112,11 @@ create table submissions (
 );
 
 -- A dept_head can't edit a KPI once its month is submitted (locked). To fix a mistake after the
--- fact, they file a modify_request explaining why; approving it deletes the submissions row for
--- that dept/year/month (see app/api/modify-requests/[id]), which unlocks the whole month again.
+-- fact, they file a modify_request explaining why. Approving it does NOT touch the submissions row —
+-- the month stays submitted, and only this specific kpi_id unlocks (app/dept/page.tsx computes
+-- readOnly per-KPI: locked unless it has an 'approved' row here). Re-submitting the month (POST
+-- /api/submissions) flips any 'approved' rows for that dept/year/month to 'resolved', re-locking the
+-- KPI along with everything else — 'resolved' is a closed/historical state, not an active unlock.
 create table modify_requests (
   id bigint generated always as identity primary key,
   kpi_id bigint not null references kpis(id) on delete cascade,
@@ -121,7 +124,7 @@ create table modify_requests (
   year integer not null,
   month integer not null,
   reason text not null,
-  status text not null default 'pending' check (status in ('pending','approved','rejected')),
+  status text not null default 'pending' check (status in ('pending','approved','rejected','resolved')),
   requested_by bigint not null references users(id),
   requested_at timestamptz not null default now(),
   reviewed_by bigint references users(id),

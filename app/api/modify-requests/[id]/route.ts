@@ -7,8 +7,12 @@ import { requireAuth } from '@/lib/auth-server'
 export const preferredRegion = 'sin1'
 
 // PATCH /api/modify-requests/:id — body: { action: 'approve' | 'reject', note? }
-// Approving deletes the submissions row for that dept/year/month, unlocking the whole month for
-// re-editing (this app has no per-KPI lock — submission is all-or-nothing for the period).
+// Approving used to delete the whole month's submissions row, unlocking every KPI in the period for
+// re-editing just to let the dept_head fix the one they actually asked about. It no longer touches
+// submissions at all: the month stays "submitted", and only the specific requested KPI unlocks (see
+// dept/page.tsx's per-KPI readOnly check, keyed off an 'approved' modify_requests row for that
+// kpi_id). Re-submitting the month (POST /api/submissions) is what closes the loop, flipping this
+// request to 'resolved' so the KPI locks again like everything else.
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAuth(request, ['corp_planning'])
   if (auth instanceof NextResponse) return auth
@@ -27,14 +31,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .maybeSingle()
   if (fetchError || !reqRow) return NextResponse.json({ error: 'Request not found' }, { status: 404 })
   if (reqRow.status !== 'pending') return NextResponse.json({ error: 'Request already reviewed' }, { status: 400 })
-
-  if (action === 'approve') {
-    const { error: unlockError } = await supabase
-      .from('submissions')
-      .delete()
-      .eq('dept_id', reqRow.dept_id).eq('year', reqRow.year).eq('month', reqRow.month)
-    if (unlockError) return NextResponse.json({ error: unlockError.message }, { status: 500 })
-  }
 
   const { error } = await supabase
     .from('modify_requests')

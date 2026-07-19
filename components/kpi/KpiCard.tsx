@@ -58,7 +58,9 @@ interface KpiCardProps {
   // When set, a locked (readOnly) card shows a "Request Modify" CTA instead of collapse/expand —
   // only meaningful on the dept_head's own Data Entry page, not on Corporate Planning's read-only
   // review view, so this is opt-in rather than inferred from readOnly alone.
-  modifyRequestStatus?: 'pending' | 'approved' | 'rejected' | null
+  // 'resolved' is accepted for type-compatibility with the full ModifyRequest union but is never
+  // meaningfully passed in — a resolved request just means "back to normal," represented as null.
+  modifyRequestStatus?: 'pending' | 'approved' | 'rejected' | 'resolved' | null
   // Corporate Planning's rejection reason — shown right on the card so acting on it doesn't require
   // digging back through a notification that may have already been dismissed.
   modifyReviewNote?: string | null

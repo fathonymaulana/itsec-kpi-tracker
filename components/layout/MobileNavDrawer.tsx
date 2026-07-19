@@ -9,7 +9,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { useAuth } from '@/lib/auth'
-import { cn, iconHoverClass } from '@/lib/utils'
+import { cn, iconHoverClass, discordIconClass } from '@/lib/utils'
 
 export interface MobileNavItem {
   href: string
@@ -69,7 +69,7 @@ export function MobileNavDrawer({ open, onClose, navItems, onNavigate }: MobileN
           <span className="text-base font-semibold text-ink tracking-[-0.192px]">Menu</span>
           <button
             onClick={onClose}
-            className={cn('size-9 rounded-full bg-panel-soft flex items-center justify-center', iconHoverClass)}
+            className={cn('size-9 bg-panel-soft flex items-center justify-center', iconHoverClass, discordIconClass)}
             title="Close menu"
           >
             <CloseIcon size={18} className="text-ink" />

@@ -57,7 +57,7 @@ export function ModifyRequestModal({ open, onClose, onSubmit, kpiName, submittin
         <div className="bg-panel-soft rounded-[20px] p-6 flex gap-3 items-start">
           <p className="text-xs text-ink-muted leading-4 text-justify">
             This month has already been submitted, so this matrix is locked. Explain why you need to change it —
-            Corporate Planning will review your reason and either unlock the month or ask you to leave it as is.
+            Corporate Planning will review your reason and either unlock just this matrix for editing or ask you to leave it as is. Everything else in the month stays submitted either way.
           </p>
         </div>
 
@@ -70,7 +70,7 @@ export function ModifyRequestModal({ open, onClose, onSubmit, kpiName, submittin
             rows={4}
             className="w-full rounded-lg border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-sm p-3 resize-none focus:outline-none focus:border-[#CC1F1F]"
           />
-          <p className="text-xs text-ink-muted leading-4">Be specific — this is what Corporate Planning sees when deciding whether to unlock the month.</p>
+          <p className="text-xs text-ink-muted leading-4">Be specific — this is what Corporate Planning sees when deciding whether to unlock this matrix.</p>
         </div>
 
         <div className="flex gap-4 justify-end">
