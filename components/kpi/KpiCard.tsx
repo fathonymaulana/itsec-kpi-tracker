@@ -11,12 +11,15 @@ import {
   ClockCircleLineDuotone as PendingIcon,
   CheckCircleLineDuotone as ApprovedIcon,
   CloseCircleLineDuotone as RejectedIcon,
+  CopyLineDuotone as CopyIcon,
+  CheckCircleLineDuotone as CopiedIcon,
 } from '@solar-icons/react-perf'
 import { getStatus, getStatusColors } from '@/lib/status'
 import { resolveAllValues, getSubMetricStatuses, getPeriodStatuses } from '@/lib/kpi-primary'
 import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { Badge } from '@/components/ui/badge'
+import { SuccessMorph } from '@/components/ui/success-morph'
 import { StatusBadge } from './StatusBadge'
 import { DataSourceModal } from './DataSourceModal'
 import { ModifyRequestModal } from './ModifyRequestModal'
@@ -79,7 +82,19 @@ export function KpiCard({
   const [dsOpen, setDsOpen] = useState(false)
   const [modifyOpen, setModifyOpen] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [copied, setCopied] = useState(false)
   const { token } = useAuth()
+
+  const handleCopyUrl = async () => {
+    if (!dataSource?.url) return
+    try {
+      await navigator.clipboard.writeText(dataSource.url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      toast.error('Couldn’t copy that link', { description: 'Your browser may be blocking clipboard access.' })
+    }
+  }
 
   // A plain <a href download> only honors `download` for same-origin URLs — for external source
   // links (Google Drive, Dropbox, SharePoint, etc.) the browser just navigates instead of saving a
@@ -322,6 +337,15 @@ export function KpiCard({
               {dataSource.note && (
                 <span className="text-[11px] text-ink-muted shrink-0">— {dataSource.note}</span>
               )}
+              <button
+                onClick={handleCopyUrl}
+                className="shrink-0 text-ink-faint hover:text-ink-soft transition-colors p-0.5"
+                title="Copy link"
+              >
+                <SuccessMorph stateKey={copied ? 'copied' : 'idle'} className="inline-flex">
+                  {copied ? <CopiedIcon size={12} className="text-success" /> : <CopyIcon size={12} />}
+                </SuccessMorph>
+              </button>
             </div>
           )}
         </motion.div>

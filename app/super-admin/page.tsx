@@ -42,6 +42,7 @@ import { iconHoverClass, cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { fireApproveConfetti } from '@/lib/confetti'
 import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
+import { SuccessMorph } from '@/components/ui/success-morph'
 
 type Role = 'dept_head' | 'corp_planning'
 interface AdminUser { id: number; name: string; avatar_url: string | null; role: Role; dept_id: string | null; dept_name: string | null; active: boolean; created_at: string }
@@ -604,7 +605,9 @@ function UserFormDialog({ initial, depts, token, onClose, onSaved }: {
         <DialogFooter>
           <Button variant="outline" onClick={handleCancel}>Cancel</Button>
           <Button disabled={saving} onClick={handleSubmit} className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white">
-            {saving ? 'Saving…' : initial ? 'Save Changes' : 'Create User'}
+            <SuccessMorph stateKey={saving ? 'saving' : 'idle'}>
+              {saving ? 'Saving…' : initial ? 'Save Changes' : 'Create User'}
+            </SuccessMorph>
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -670,7 +673,9 @@ function ResetPinDialog({ targetUser, token, onClose, onSaved }: {
         <DialogFooter>
           <Button variant="outline" onClick={handleCancel}>Cancel</Button>
           <Button disabled={saving || pin.length !== 4} onClick={handleSubmit} className="bg-[#CC1F1F] hover:bg-[#8B1A1A] text-white">
-            {saving ? 'Saving…' : 'Reset PIN'}
+            <SuccessMorph stateKey={saving ? 'saving' : 'idle'}>
+              {saving ? 'Saving…' : 'Reset PIN'}
+            </SuccessMorph>
           </Button>
         </DialogFooter>
       </DialogContent>

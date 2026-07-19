@@ -211,4 +211,13 @@
     border-width: 1px;
     background-color: var(--ink-muted);
   }
+
+  /* Sonner injects its own <style> tag at runtime (not something this app's own CSS import order
+     can reliably beat in the cascade), so !important is what actually guarantees this wins: swaps
+     the toast's default ease timing for a spring-like overshoot on its slide/scale-in — the same
+     "settles with a touch of bounce" character as a physical spring, without pulling in a JS spring
+     library just for this. */
+  [data-sonner-toast] {
+    transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  }
 }

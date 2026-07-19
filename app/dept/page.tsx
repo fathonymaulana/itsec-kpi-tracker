@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { Badge } from '@/components/ui/badge'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
+import { SuccessMorph } from '@/components/ui/success-morph'
 import { cn, iconHoverClass } from '@/lib/utils'
 
 interface SubMetric {
@@ -511,20 +512,24 @@ export default function DeptPage() {
               onClick={handleSave}
               disabled={saving || submitting || submitted}
             >
-              {!saving && !isDirty && lastSavedAt ? <CheckCircle2 size={16} /> : <Save size={16} />}
-              {saving
-                ? 'Saving…'
-                : !isDirty && lastSavedAt
-                  ? `Saved · ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                  : 'Save'}
+              <SuccessMorph stateKey={saving ? 'saving' : (!isDirty && lastSavedAt) ? 'saved' : 'idle'}>
+                {!saving && !isDirty && lastSavedAt ? <CheckCircle2 size={16} /> : <Save size={16} />}
+                {saving
+                  ? 'Saving…'
+                  : !isDirty && lastSavedAt
+                    ? `Saved · ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Save'}
+              </SuccessMorph>
             </Button>
             <Button
               className={`h-12 px-5 rounded-2xl gap-2 bg-primary hover:bg-primary/80 text-primary-foreground ${iconHoverClass}`}
               onClick={handleSubmit}
               disabled={saving || submitting || submitted}
             >
-              {submitted ? 'Submitted' : submitting ? 'Submitting…' : 'Submit Month'}
-              <Send size={16} />
+              <SuccessMorph stateKey={submitted ? 'submitted' : submitting ? 'submitting' : 'idle'}>
+                {submitted ? 'Submitted' : submitting ? 'Submitting…' : 'Submit Month'}
+                <Send size={16} />
+              </SuccessMorph>
             </Button>
           </div>
         </main>

@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
+import { SuccessMorph } from '@/components/ui/success-morph'
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 
 // 168px avatar frame — ring sits just outside it. circumference = 2πr, r = 84.
@@ -303,7 +304,9 @@ export default function ProfilePage() {
                   disabled={savingName || !name.trim() || name.trim() === profile.name}
                   onClick={handleSaveName}
                 >
-                  {savingName ? 'Saving…' : 'Save'}
+                  <SuccessMorph stateKey={savingName ? 'saving' : 'idle'}>
+                    {savingName ? 'Saving…' : 'Save'}
+                  </SuccessMorph>
                 </Button>
               </div>
             </div>
@@ -342,8 +345,10 @@ export default function ProfilePage() {
                       onClick={handleSubmitPin}
                       className="shrink-0"
                     >
-                      <ShieldCheck size={13} className="mr-1" />
-                      {submittingPin ? 'Submitting…' : 'Request Change'}
+                      <SuccessMorph stateKey={submittingPin ? 'submitting' : 'idle'}>
+                        <ShieldCheck size={13} className="mr-1" />
+                        {submittingPin ? 'Submitting…' : 'Request Change'}
+                      </SuccessMorph>
                     </Button>
                   </div>
                 </div>
