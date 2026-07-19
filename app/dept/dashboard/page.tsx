@@ -175,7 +175,7 @@ export default function DeptDashboard() {
             rightPanelOpen ? 'lg:pr-[400px]' : 'pr-0'
           )}
         >
-        <main className="min-w-0 px-6 py-8">
+        <main className="min-w-0 px-4 sm:px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
@@ -240,7 +240,7 @@ export default function DeptDashboard() {
               }
             >
               <Tabs value={view} onValueChange={v => v && setView(v as 'charts' | 'table')}>
-                <TabsList variant="pill" className="mb-4">
+                <TabsList variant="pill" className="mb-4 w-full sm:w-fit">
                   <TabsTrigger value="charts">
                     {view === 'charts' ? <ChartBold data-icon="inline-start" size={14} /> : <ChartLine data-icon="inline-start" size={14} />}
                     Charts

@@ -260,7 +260,7 @@ export default function AdminPage() {
             rightPanelOpen ? 'lg:pr-[400px]' : 'pr-0'
           )}
         >
-        <main className="min-w-0 px-6 py-8">
+        <main className="min-w-0 px-4 sm:px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">
@@ -295,7 +295,7 @@ export default function AdminPage() {
 
             {/* Tabs — Modify Requests is global (any department), so it works with no department selected */}
             <Tabs value={tab} onValueChange={v => v && setTab(v as TabKey)}>
-            <TabsList variant="pill" className="mb-4">
+            <TabsList variant="pill" className="mb-4 w-full sm:w-fit">
               {([
                 { key: 'data', label: 'Data Review', icon: ChevronRight, boldIcon: ChevronRightBold },
                 { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield, boldIcon: ShieldBold },

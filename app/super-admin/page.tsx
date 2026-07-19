@@ -188,7 +188,7 @@ export default function SuperAdminPage() {
             rightPanelOpen ? 'lg:pr-[400px]' : 'pr-0'
           )}
         >
-        <main className="min-w-0 px-6 py-8">
+        <main className="min-w-0 px-4 sm:px-6 py-8">
           <div className="max-w-5xl mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Users</h1>
@@ -198,7 +198,7 @@ export default function SuperAdminPage() {
             <Tabs value={tab} onValueChange={v => v && setTab(v as 'users' | 'requests')}>
               {/* Row 1: tabs alone. Row 2: search (left) and the action group (right), justified
                   apart — sized and typeset to match the reference (h-10, text-sm throughout). */}
-              <TabsList variant="pill" className="mb-4">
+              <TabsList variant="pill" className="mb-4 w-full sm:w-fit">
                 <TabsTrigger value="users">
                   {tab === 'users' ? <UsersBold data-icon="inline-start" size={14} /> : <UsersLine data-icon="inline-start" size={14} />}
                   Users

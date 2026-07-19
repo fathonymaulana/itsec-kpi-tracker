@@ -368,7 +368,7 @@ export default function DeptPage() {
         <main className="h-full min-w-0 flex flex-col overflow-hidden">
           <div
             className={cn(
-              'flex-1 overflow-y-auto pl-6 pr-6 py-8 transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+              'flex-1 overflow-y-auto pl-4 pr-4 sm:pl-6 sm:pr-6 py-8 transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
               leftPanelOpen && 'md:pl-[374px]',
               rightPanelOpen && 'lg:pr-[424px]'
             )}
@@ -512,7 +512,7 @@ export default function DeptPage() {
           {/* Save/Submit action bar — pinned flush to the bottom of the screen, not floating over content */}
           <div
             className={cn(
-              'shrink-0 border-t border-divider bg-app pl-6 pr-6 py-4 flex justify-end gap-3 transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+              'shrink-0 border-t border-divider bg-app pl-4 pr-4 sm:pl-6 sm:pr-6 py-4 flex justify-end gap-3 transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
               leftPanelOpen && 'md:pl-[374px]',
               rightPanelOpen && 'lg:pr-[424px]'
             )}
