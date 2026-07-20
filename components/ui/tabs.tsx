@@ -28,8 +28,9 @@ const tabsListVariants = cva(
   // has more tabs/labels than a narrow screen can fit, it scrolls within its own bounds instead of
   // widening its ancestors and dragging the whole page into horizontal scroll (which briefly
   // happened on Data Verification's 3-tab pill bar). scrollbar-hide keeps that scroll affordance from
-  // looking like a stray scrollbar on what reads as a small, self-contained control.
-  "group/tabs-list inline-flex w-fit max-w-full items-center justify-center overflow-x-auto scrollbar-hide rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none data-[variant=pill]:rounded-full",
+  // looking like a stray scrollbar on what reads as a small, self-contained control. relative gives
+  // TabsIndicator (see below) a positioning context to glide across.
+  "group/tabs-list relative inline-flex w-fit max-w-full items-center justify-center overflow-x-auto scrollbar-hide rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none data-[variant=pill]:rounded-full",
   {
     variants: {
       variant: {
@@ -50,6 +51,7 @@ const tabsListVariants = cva(
 function TabsList({
   className,
   variant = "default",
+  children,
   ...props
 }: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) {
   return (
@@ -57,6 +59,32 @@ function TabsList({
       data-slot="tabs-list"
       data-variant={variant}
       className={cn(tabsListVariants({ variant }), className)}
+      {...props}
+    >
+      <TabsIndicator />
+      {children}
+    </TabsPrimitive.List>
+  )
+}
+
+// The sliding highlight behind the active pill tab — Base UI's own Tabs.Indicator tracks the real
+// DOM position/size of whichever tab is active via CSS custom properties (--active-tab-left/-width/
+// etc, recomputed on every switch and on resize), so this just adds the visual fill plus a CSS
+// transition on those properties for the actual glide. Sits at z-0 behind the tab triggers (their
+// own background is transparent for the pill variant — see TabsTrigger below — so the label reads
+// on top of this as it slides under it), matching the sliding-segment feel of things like macOS's
+// System Settings sidebar or Arc's tab switcher rather than an instant color cut.
+function TabsIndicator({ className, ...props }: TabsPrimitive.Indicator.Props) {
+  return (
+    <TabsPrimitive.Indicator
+      data-slot="tabs-indicator"
+      className={cn(
+        "absolute z-0 left-(--active-tab-left) top-(--active-tab-top) h-(--active-tab-height) w-(--active-tab-width) transition-[left,width,top,height] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+        "group-data-[variant=pill]/tabs-list:rounded-full group-data-[variant=pill]/tabs-list:bg-primary",
+        "group-data-[variant=default]/tabs-list:rounded-md group-data-[variant=default]/tabs-list:bg-background group-data-[variant=default]/tabs-list:shadow-sm",
+        "group-data-[variant=line]/tabs-list:hidden",
+        className
+      )}
       {...props}
     />
   )
@@ -72,10 +100,14 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         // narrow 3-tab pill bar. shrink-0 keeps the grow behavior (short tab sets still stretch to
         // fill a wide w-full list) but stops the shrink, so a set that doesn't fit overflows into
         // the list's own overflow-x-auto scroll instead of cramming/truncating any one label.
-        "relative inline-flex h-[calc(100%-1px)] flex-1 shrink-0 items-center justify-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 aria-disabled:pointer-events-none aria-disabled:opacity-50 dark:text-muted-foreground dark:hover:text-foreground group-data-[variant=default]/tabs-list:data-active:shadow-sm group-data-[variant=line]/tabs-list:data-active:shadow-none group-data-[variant=pill]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        // z-10 keeps the label/icon painting above TabsIndicator's sliding fill (that one sits at
+        // z-0 in the same stacking context), and both variants' own background is transparent now —
+        // the indicator supplies the moving pill/box, this trigger only ever needs to hand off text
+        // color as the indicator glides underneath it.
+        "relative z-10 inline-flex h-[calc(100%-1px)] flex-1 shrink-0 items-center justify-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-sm font-medium whitespace-nowrap text-foreground/60 transition-colors duration-200 group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 aria-disabled:pointer-events-none aria-disabled:opacity-50 dark:text-muted-foreground dark:hover:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-active:bg-transparent dark:group-data-[variant=line]/tabs-list:data-active:border-transparent dark:group-data-[variant=line]/tabs-list:data-active:bg-transparent",
-        "group-data-[variant=pill]/tabs-list:rounded-full group-data-[variant=pill]/tabs-list:px-4 group-data-[variant=pill]/tabs-list:bg-transparent group-data-[variant=pill]/tabs-list:data-active:bg-primary group-data-[variant=pill]/tabs-list:data-active:text-primary-foreground dark:group-data-[variant=pill]/tabs-list:data-active:border-transparent dark:group-data-[variant=pill]/tabs-list:data-active:bg-primary dark:group-data-[variant=pill]/tabs-list:data-active:text-primary-foreground",
-        "data-active:bg-background data-active:text-foreground dark:data-active:border-input dark:data-active:bg-input/30 dark:data-active:text-foreground",
+        "group-data-[variant=pill]/tabs-list:rounded-full group-data-[variant=pill]/tabs-list:px-4 group-data-[variant=pill]/tabs-list:bg-transparent group-data-[variant=pill]/tabs-list:data-active:text-primary-foreground",
+        "group-data-[variant=default]/tabs-list:data-active:text-foreground dark:group-data-[variant=default]/tabs-list:data-active:text-foreground",
         "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
         className
       )}
@@ -90,8 +122,12 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
       data-slot="tabs-content"
       // keepMounted defaults to false, so the inactive panel actually unmounts and the newly
       // active one mounts fresh on every switch — animate-in replays on that mount automatically,
-      // no extra state needed to detect "just switched tabs".
-      className={cn("flex-1 text-sm outline-none animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out", className)}
+      // no extra state needed to detect "just switched tabs". Same deceleration curve used for every
+      // other panel/aside transition in this app, not the generic ease-out.
+      className={cn(
+        "flex-1 text-sm outline-none animate-in fade-in-0 slide-in-from-bottom-2 duration-300 fill-mode-both [animation-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+        className
+      )}
       {...props}
     />
   )
