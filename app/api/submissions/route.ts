@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   const { searchParams } = new URL(request.url)
-  const dept_id = searchParams.get('dept_id')
+  const dept_id = auth.role === 'dept_head' ? auth.dept_id : searchParams.get('dept_id')
   const year = searchParams.get('year')
   const month = searchParams.get('month')
 

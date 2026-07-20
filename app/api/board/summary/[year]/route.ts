@@ -17,7 +17,10 @@ interface KpiWithSubMetrics {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ year: string }> }) {
-  const auth = requireAuth(request)
+  // Cross-department aggregates — the /board page itself already redirects dept_head away from
+  // this view, but nothing at the API layer enforced that; a dept_head could otherwise call this
+  // directly and see every other department's on-track/watch/off-track rollup.
+  const auth = requireAuth(request, ['corp_planning'])
   if (auth instanceof NextResponse) return auth
   const { year } = await params
   const { searchParams } = new URL(request.url)

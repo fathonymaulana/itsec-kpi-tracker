@@ -88,6 +88,22 @@ export async function POST(request: NextRequest) {
     const month = actuals[0].month
     const smIds = Array.from(new Set(actuals.map(r => r.sub_metric_id)))
 
+    // A dept_head's own dept_id comes from their token, never trusted from the request body — but
+    // sub_metric_id is just an integer they control, and nothing here previously verified it
+    // actually belongs to one of THEIR department's KPIs. Without this, any dept_head could write
+    // to another department's actuals by guessing/enumerating sub_metric_id.
+    if (auth.role === 'dept_head') {
+      const { data: smRows } = await supabase.from('sub_metrics').select('id, kpi_id').in('id', smIds)
+      const kpiIds = Array.from(new Set((smRows || []).map(sm => sm.kpi_id)))
+      const { data: kpiRows } = kpiIds.length
+        ? await supabase.from('kpis').select('id, dept_id').in('id', kpiIds)
+        : { data: [] as { id: number; dept_id: string }[] }
+      const foreignKpi = (kpiRows || []).some(k => k.dept_id !== auth.dept_id)
+      if (foreignKpi || (smRows || []).length !== smIds.length) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
     const { data: existingRows } = await supabase
       .from('actuals')
       .select('sub_metric_id, data_source_url, data_source_note')

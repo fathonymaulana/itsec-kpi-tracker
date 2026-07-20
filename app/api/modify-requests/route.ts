@@ -65,6 +65,14 @@ export async function POST(request: NextRequest) {
 
   const supabase = supabaseServer()
 
+  // kpi_id is caller-supplied — verify it's actually one of this dept_head's own KPIs before
+  // creating a request "for" it, otherwise a crafted kpi_id could reference another department's
+  // KPI while dept_id (forced from the token) still says this department.
+  const { data: kpiRow } = await supabase.from('kpis').select('dept_id').eq('id', kpi_id).maybeSingle()
+  if (!kpiRow || kpiRow.dept_id !== auth.dept_id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   // Don't stack a second pending request for the same KPI/period.
   const { data: existing } = await supabase
     .from('modify_requests')
