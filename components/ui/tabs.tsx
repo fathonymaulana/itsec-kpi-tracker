@@ -79,7 +79,11 @@ function TabsIndicator({ className, ...props }: TabsPrimitive.Indicator.Props) {
     <TabsPrimitive.Indicator
       data-slot="tabs-indicator"
       className={cn(
-        "absolute z-0 left-(--active-tab-left) top-(--active-tab-top) h-(--active-tab-height) w-(--active-tab-width) transition-[left,width,top,height] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+        // This project is on Tailwind v3 — the v4-only "util-(--css-var)" shorthand silently
+        // produces no CSS at all here (no error, just dropped), which is what left this indicator
+        // completely unpositioned/zero-sized and invisible. v3's actual arbitrary-value syntax
+        // needs the explicit var() wrapped in brackets.
+        "absolute z-0 left-[var(--active-tab-left)] top-[var(--active-tab-top)] h-[var(--active-tab-height)] w-[var(--active-tab-width)] transition-[left,width,top,height] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
         "group-data-[variant=pill]/tabs-list:rounded-full group-data-[variant=pill]/tabs-list:bg-primary",
         "group-data-[variant=default]/tabs-list:rounded-md group-data-[variant=default]/tabs-list:bg-background group-data-[variant=default]/tabs-list:shadow-sm",
         "group-data-[variant=line]/tabs-list:hidden",
