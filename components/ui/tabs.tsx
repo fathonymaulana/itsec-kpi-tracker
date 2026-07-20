@@ -88,7 +88,10 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={cn("flex-1 text-sm outline-none", className)}
+      // keepMounted defaults to false, so the inactive panel actually unmounts and the newly
+      // active one mounts fresh on every switch — animate-in replays on that mount automatically,
+      // no extra state needed to detect "just switched tabs".
+      className={cn("flex-1 text-sm outline-none animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out", className)}
       {...props}
     />
   )

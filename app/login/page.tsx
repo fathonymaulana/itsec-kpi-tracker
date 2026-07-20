@@ -2,6 +2,7 @@
 import { useState, useEffect, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useAuth } from '@/lib/auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -236,13 +237,13 @@ function LoginForm() {
 
       {/* Footer */}
       <div className="shrink-0 pb-5 flex items-center justify-center gap-2 text-xs text-ink-faint relative">
-        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-ink-muted transition-colors">
+        <Link href="/privacy" className="hover:text-ink-muted transition-colors">
           Privacy Policy
-        </a>
+        </Link>
         <span aria-hidden>·</span>
-        <a href="/cookies" target="_blank" rel="noopener noreferrer" className="hover:text-ink-muted transition-colors">
+        <Link href="/cookies" className="hover:text-ink-muted transition-colors">
           Cookie Policy
-        </a>
+        </Link>
       </div>
     </div>
   )
