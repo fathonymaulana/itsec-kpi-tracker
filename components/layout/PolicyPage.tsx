@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
-import { ItsecMonogramE } from '@/components/layout/ItsecMonogram'
 
 interface PolicyPageProps {
   title: string
@@ -14,8 +13,7 @@ export function PolicyPage({ title, updated, children }: PolicyPageProps) {
       <header className="bg-panel border-b border-divider">
         <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
           <Link href="/login" className="flex items-center gap-2">
-            <ItsecLogo className="hidden sm:block h-4 w-auto text-ink" />
-            <ItsecMonogramE className="sm:hidden h-5 w-auto text-ink" />
+            <ItsecLogo className="h-4 w-auto text-ink" />
           </Link>
           <Link href="/login" className="text-sm text-ink-muted hover:text-ink transition-colors">
             Back to Sign in
