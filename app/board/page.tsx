@@ -359,7 +359,7 @@ export default function BoardPage() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
               <DropdownMenu>
-                <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), iconHoverClass)}>
+                <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'shadow-xs', iconHoverClass)}>
                   <IconFilters size={15} />
                   Departments
                   {hiddenDepts.size > 0 && <Badge className="ml-0.5 text-[10px] px-1.5">{summaries.length - hiddenDepts.size}/{summaries.length}</Badge>}
@@ -467,7 +467,7 @@ export default function BoardPage() {
                         <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
                       </div>
                       <DropdownMenu>
-                        <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), iconHoverClass)}>
+                        <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'shadow-xs', iconHoverClass)}>
                           <IconFilters size={15} />
                           Filters
                         </DropdownMenuTrigger>
@@ -688,7 +688,7 @@ export default function BoardPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Department</TableHead>
+                        <TableHead className="max-w-[180px]">Department</TableHead>
                         <TableHead className="text-right">KPIs</TableHead>
                         <TableHead className="text-right">On Track</TableHead>
                         <TableHead className="text-right">Watch</TableHead>
@@ -703,7 +703,7 @@ export default function BoardPage() {
                         const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
                         return (
                           <TableRow key={dept.dept_id}>
-                            <TableCell className="font-medium text-ink">{dept.department_name}</TableCell>
+                            <TableCell className="font-medium text-ink max-w-[180px] truncate" title={dept.department_name}>{dept.department_name}</TableCell>
                             <TableCell className="text-right">{dept.total}</TableCell>
                             <TableCell className="text-right" style={{ color: STATUS_COLORS.on_track }}>{dept.on_track}</TableCell>
                             <TableCell className="text-right" style={{ color: STATUS_COLORS.watch }}>{dept.watch}</TableCell>
@@ -771,7 +771,7 @@ export default function BoardPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="sticky left-0 bg-panel">Department</TableHead>
+                        <TableHead className="sticky left-0 bg-panel max-w-[180px]">Department</TableHead>
                         {rangePeriods.map(p => (
                           <TableHead key={`${p.year}-${p.month}`} className="text-center whitespace-nowrap">
                             {MONTHS[p.month - 1].slice(0, 3)} {p.year !== rangePeriods[0].year || p.year !== rangePeriods[rangePeriods.length - 1].year ? String(p.year).slice(2) : ''}
@@ -782,7 +782,7 @@ export default function BoardPage() {
                     <TableBody>
                       {filteredSummaries.map(dept => (
                         <TableRow key={dept.dept_id}>
-                          <TableCell className="font-medium text-ink sticky left-0 bg-panel">{dept.department_name}</TableCell>
+                          <TableCell className="font-medium text-ink sticky left-0 bg-panel max-w-[180px] truncate" title={dept.department_name}>{dept.department_name}</TableCell>
                           {rangePeriods.map(p => {
                             const status = statusForPeriod(dept.dept_id, p)
                             const color = status ? STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? '#D1D5DB' : '#E5E5E5'

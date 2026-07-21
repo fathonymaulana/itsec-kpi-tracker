@@ -78,7 +78,7 @@ export function DownloadReportButton({ title, filename, columns, rows, className
     <DropdownMenu>
       <DropdownMenuTrigger
         disabled={!!exporting || rows.length === 0}
-        className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'disabled:opacity-50 disabled:pointer-events-none', iconHoverClass, className)}
+        className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'shadow-xs disabled:opacity-50 disabled:pointer-events-none', iconHoverClass, className)}
       >
         <IconDownload size={15} className="mr-1.5" />
         {exporting ? 'Exporting…' : 'Download Report'}

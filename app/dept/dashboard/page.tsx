@@ -12,14 +12,14 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
-import { DateSidebar } from '@/components/kpi/DateSidebar'
+import { DateSidebar, type MonthPeriod } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { getStatus, getDefaultMonth, MONTHS, type KpiStatus } from '@/lib/status'
+import { getStatus, worstStatus, MONTHS, type KpiStatus } from '@/lib/status'
 import { getPrimarySubMetric, resolvePrimaryValue, getPeriodStatuses } from '@/lib/kpi-primary'
 import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
@@ -74,8 +74,13 @@ export default function DeptDashboard() {
   const { user, token, ready } = useAuth()
   const router = useRouter()
   const [kpis, setKpis] = useState<Kpi[]>([])
-  const [year, setYear] = useState(CURRENT_YEAR)
-  const [allActuals, setAllActuals] = useState<Record<number, Record<number, number>>>({}) // month → {smId → value}
+  // Range picker — mirrors the CorPlan board dashboard's for consistency. Defaults to the full
+  // current year (the page's previous behavior) rather than a single month, since these views are
+  // trend charts first and foremost.
+  const [rangeFrom, setRangeFrom] = useState<MonthPeriod>({ year: CURRENT_YEAR, month: 1 })
+  const [rangeTo, setRangeTo] = useState<MonthPeriod>({ year: CURRENT_YEAR, month: 12 })
+  // year → month → smId → value
+  const [actualsByYearMonth, setActualsByYearMonth] = useState<Record<number, Record<number, Record<number, number>>>>({})
   const [loading, setLoading] = useState(true)
   const [leftPanelOpen, setLeftPanelOpen] = useState(true)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
@@ -90,60 +95,91 @@ export default function DeptDashboard() {
     if (user.role !== 'dept_head') { router.push('/board'); return }
   }, [user, router, ready])
 
-  const fetchData = useCallback(async () => {
+  // Every calendar year the selected range touches — usually one, at most two given minYear/maxYear
+  // below are only a year apart. Re-fetched whenever that set changes; narrowing the month endpoints
+  // within an already-fetched year needs no new request, since filtering happens client-side.
+  const years: number[] = []
+  for (let y = rangeFrom.year; y <= rangeTo.year; y++) years.push(y)
+
+  const fetchData = useCallback(async (yearsToFetch: number[]) => {
     if (!user || !token) return
     setLoading(true)
     try {
-      const [kpiRes, actRes] = await Promise.all([
+      const [kpiRes, ...actResList] = await Promise.all([
         fetch(`/api/departments/${user.dept_id}/kpis`, { headers: authHeaders(token) }),
-        fetch(`/api/actuals?dept_id=${user.dept_id}&year=${year}`, { headers: authHeaders(token) }),
+        ...yearsToFetch.map(y => fetch(`/api/actuals?dept_id=${user.dept_id}&year=${y}`, { headers: authHeaders(token) })),
       ])
       const kpiData = await kpiRes.json()
-      const actData = await actRes.json()
       setKpis(kpiData.kpis || [])
-      const byMonth: Record<number, Record<number, number>> = {}
-      for (const a of (actData.actuals || [])) {
-        if (!byMonth[a.month]) byMonth[a.month] = {}
-        byMonth[a.month][a.sub_metric_id] = a.value
+      const byYearMonth: Record<number, Record<number, Record<number, number>>> = {}
+      for (let i = 0; i < yearsToFetch.length; i++) {
+        const actData = await actResList[i].json()
+        const y = yearsToFetch[i]
+        byYearMonth[y] = {}
+        for (const a of (actData.actuals || [])) {
+          if (!byYearMonth[y][a.month]) byYearMonth[y][a.month] = {}
+          byYearMonth[y][a.month][a.sub_metric_id] = a.value
+        }
       }
-      setAllActuals(byMonth)
+      setActualsByYearMonth(byYearMonth)
     } catch { /* non-fatal */ }
     finally { setLoading(false) }
-  }, [user, token, year])
+  }, [user, token])
 
-  useEffect(() => { if (user) fetchData() }, [user, fetchData])
+  useEffect(() => { if (user) fetchData(years) }, [user, fetchData, rangeFrom.year, rangeTo.year]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Stats — the "current" period for the stat cards is the same "previous calendar month" default
-  // Data Entry uses (see getDefaultMonth), not the literal in-progress calendar month, since actuals
-  // for the still-running month haven't been submitted yet. Using the real current month here was why
-  // the stat cards stayed at "No Data" right after a dept_head submitted last month's data.
-  const currentMonth = getDefaultMonth()
-  const statuses = kpis.map(kpi => statusFor(kpi, allActuals, currentMonth).status)
+  // Every {year, month} from rangeFrom to rangeTo inclusive, in order — the range picked in the
+  // sidebar, same "worst wins" aggregation convention as the CorPlan board dashboard.
+  const rangePeriods: MonthPeriod[] = []
+  {
+    let y = rangeFrom.year, m = rangeFrom.month
+    while (y < rangeTo.year || (y === rangeTo.year && m <= rangeTo.month)) {
+      rangePeriods.push({ year: y, month: m })
+      m++
+      if (m > 12) { m = 1; y++ }
+    }
+  }
+  const isMultiYear = rangeFrom.year !== rangeTo.year
+  const periodLbl = (p: MonthPeriod) => `${MONTHS[p.month - 1]} ${p.year}`
+  const isSinglePeriod = rangeFrom.year === rangeTo.year && rangeFrom.month === rangeTo.month
+  const rangeLabel = isSinglePeriod ? periodLbl(rangeFrom) : `${periodLbl(rangeFrom)} – ${periodLbl(rangeTo)}`
+
+  // Stats reflect each KPI's worst status across the whole selected range — same range-aggregate
+  // convention as the CorPlan board dashboard's stat cards, not just a single "current" month.
+  const statuses = kpis.map(kpi =>
+    worstStatus(rangePeriods.map(p => statusFor(kpi, actualsByYearMonth[p.year] || {}, p.month).status))
+  )
   const onTrack = statuses.filter(s => s === 'on_track').length
   const watch = statuses.filter(s => s === 'watch').length
   const offTrack = statuses.filter(s => s === 'off_track').length
   const noData = statuses.filter(s => s === 'no_data').length
 
-  // Precompute each KPI's month-by-month series once, shared by both the Charts and Table views
+  // Precompute each KPI's series across the selected range once, shared by both the Charts and
+  // Table views.
   const kpisWithData = kpis.map(kpi => {
     const monthStatuses: Partial<Record<number, KpiStatus>> = {}
     const primaryCalcSm = kpi.sub_metrics.find(sm => sm.is_calculated)
     const unit = primaryCalcSm?.unit || kpi.sub_metrics[0]?.unit || ''
-    const monthValues = MONTHS.map((label, mi) => {
-      const m = mi + 1
-      const vals = allActuals[m] || {}
+    const monthValues = rangePeriods.map(p => {
+      const vals = actualsByYearMonth[p.year]?.[p.month] || {}
       const v = resolvePrimaryValue(kpi.sub_metrics, vals)
-      monthStatuses[m] = statusFor(kpi, allActuals, m).status
+      monthStatuses[p.month] = statusFor(kpi, actualsByYearMonth[p.year] || {}, p.month).status
       const displayValue = v !== null
         ? unit === '%' ? parseFloat((v * 100).toFixed(1)) : parseFloat(v.toFixed(2))
         : null
-      return { month: label.slice(0, 3), value: displayValue, raw: v }
+      const label = isMultiYear ? `${MONTHS[p.month - 1].slice(0, 3)} '${String(p.year).slice(2)}` : MONTHS[p.month - 1].slice(0, 3)
+      return { month: label, value: displayValue, raw: v }
     })
     const hasData = monthValues.some(d => d.value !== null)
     const period = parsePeriod(kpi.frequency)
-    const { value: currentV } = statusFor(kpi, allActuals, currentMonth)
+    // "Current" value shown beside the chart title is the latest period in the range — the trend
+    // line covers the whole range, but a single headline number needs one period to anchor to.
+    const { value: currentV } = statusFor(kpi, actualsByYearMonth[rangeTo.year] || {}, rangeTo.month)
     return { kpi, unit, monthValues, monthStatuses, hasData, currentV, period }
   })
+  // Unique month numbers touched by the range, in order — feeds the compact MonthGrid footer under
+  // each chart, which renders one cell per number, not per {year, month} pair.
+  const rangeMonths = Array.from(new Set(rangePeriods.map(p => p.month)))
 
   if (!ready || !user) return <PageSkeleton />
 
@@ -163,9 +199,18 @@ export default function DeptDashboard() {
           Padding (not the asides' own layout) reserves their space, animated with the same
           duration/easing as AnimatedAside's own width tween so they move in lockstep. */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Left: clock + year picker */}
+        {/* Left: clock + range picker — same control CorPlan's board dashboard uses, for consistency. */}
         <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="p-12 overflow-y-auto">
-          <DateSidebar year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} />
+          <DateSidebar
+            year={rangeFrom.year}
+            onYearChange={() => {}}
+            month={rangeFrom.month}
+            toYear={rangeTo.year}
+            toMonth={rangeTo.month}
+            onRangeChange={(f, t) => { setRangeFrom(f); setRangeTo(t) }}
+            minYear={CURRENT_YEAR - 1}
+            maxYear={CURRENT_YEAR}
+          />
         </AnimatedAside>
 
         <div
@@ -189,12 +234,16 @@ export default function DeptDashboard() {
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xs text-ink-muted mt-1">{kpis.length} KPIs</span>
                 <DownloadReportButton
-                  title={`${user.dept_name} — KPI Status (${year})`}
-                  filename={`${(user.dept_name || 'department').toLowerCase().replace(/\s+/g, '-')}-kpi-status-${year}`}
+                  title={`${user.dept_name} — KPI Status (${rangeLabel})`}
+                  filename={`${(user.dept_name || 'department').toLowerCase().replace(/\s+/g, '-')}-kpi-status-${rangeFrom.year}-${String(rangeFrom.month).padStart(2, '0')}${isSinglePeriod ? '' : `-to-${rangeTo.year}-${String(rangeTo.month).padStart(2, '0')}`}`}
                   columns={[
                     { key: 'kpi', label: 'KPI', width: 32 },
                     { key: 'target', label: 'Target', width: 28 },
-                    ...MONTHS.map((m, i) => ({ key: `m${i + 1}`, label: m.slice(0, 3), width: 12 })),
+                    ...rangePeriods.map((p, i) => ({
+                      key: `m${i + 1}`,
+                      label: isMultiYear ? `${MONTHS[p.month - 1].slice(0, 3)} '${String(p.year).slice(2)}` : MONTHS[p.month - 1].slice(0, 3),
+                      width: 12,
+                    })),
                   ]}
                   rows={kpisWithData.map(({ kpi, unit, monthValues }) => {
                     const row: Record<string, string | number> = { kpi: kpi.name, target: kpi.target_text }
@@ -205,7 +254,17 @@ export default function DeptDashboard() {
               </div>
             </div>
 
-            <MobileDatePicker year={year} onYearChange={setYear} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR} className="mb-6" />
+            <MobileDatePicker
+              year={rangeFrom.year}
+              onYearChange={() => {}}
+              month={rangeFrom.month}
+              toYear={rangeTo.year}
+              toMonth={rangeTo.month}
+              onRangeChange={(f, t) => { setRangeFrom(f); setRangeTo(t) }}
+              minYear={CURRENT_YEAR - 1}
+              maxYear={CURRENT_YEAR}
+              className="mb-6"
+            />
 
             {/* Stat summary */}
             <div className="grid grid-cols-2 gap-3 mb-8">
@@ -270,7 +329,7 @@ export default function DeptDashboard() {
                           {currentV !== null && (
                             <div className="text-right shrink-0">
                               <div className="text-lg font-medium text-ink">{formatValue(currentV, unit)}</div>
-                              <div className="text-[10px] text-ink-muted">{MONTHS[currentMonth - 1]}</div>
+                              <div className="text-[10px] text-ink-muted">{MONTHS[rangeTo.month - 1]}{isMultiYear ? ` ${rangeTo.year}` : ''}</div>
                             </div>
                           )}
                         </div>
@@ -312,7 +371,7 @@ export default function DeptDashboard() {
                         )}
 
                         <div className="px-5 py-3 border-t border-divider">
-                          <MonthGrid data={monthStatuses} compact />
+                          <MonthGrid data={monthStatuses} months={rangeMonths} compact />
                         </div>
                       </div>
                     )
@@ -339,9 +398,9 @@ export default function DeptDashboard() {
                           <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">Target</span>
                           <span className="flex-1 py-3 text-sm font-medium text-ink text-center">{kpi.target_text}</span>
                         </div>
-                        {MONTHS.map((m, i) => (
-                          <div key={m} className="flex items-center justify-between border-t border-divider">
-                            <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">{m}</span>
+                        {rangePeriods.map((p, i) => (
+                          <div key={`${p.year}-${p.month}`} className="flex items-center justify-between border-t border-divider">
+                            <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">{MONTHS[p.month - 1]}{isMultiYear ? ` ${p.year}` : ''}</span>
                             <span className="flex-1 py-3 text-sm font-medium text-ink text-center">{formatValue(monthValues[i].raw, unit)}</span>
                           </div>
                         ))}
@@ -353,8 +412,12 @@ export default function DeptDashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="sticky left-0 bg-panel">KPI</TableHead>
-                          {MONTHS.map(m => <TableHead key={m} className="text-right">{m.slice(0, 3)}</TableHead>)}
+                          <TableHead className="sticky left-0 bg-panel max-w-[220px]">KPI</TableHead>
+                          {rangePeriods.map(p => (
+                            <TableHead key={`${p.year}-${p.month}`} className="text-right whitespace-nowrap">
+                              {MONTHS[p.month - 1].slice(0, 3)}{isMultiYear ? ` '${String(p.year).slice(2)}` : ''}
+                            </TableHead>
+                          ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
