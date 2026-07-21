@@ -39,8 +39,21 @@ export async function GET(request: NextRequest) {
     .in('sub_metric_id', smIds)
     .eq('year', year)
   if (month) query = query.eq('month', month)
-  const { data: rows, error } = await query
+  const { data: allRows, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // A department head clicking Save (without Submit) writes a real row here immediately — that's a
+  // draft only the department itself should see. Corporate Planning must only ever see actuals for
+  // periods this department has actually locked in via Submit; dept_head requests for their own
+  // department (already ownership-checked above) are unaffected and always see their own drafts.
+  let rows = allRows
+  if (auth.role === 'corp_planning') {
+    let subQuery = supabase.from('submissions').select('year, month').eq('dept_id', dept_id)
+    if (month) subQuery = subQuery.eq('month', month)
+    const { data: subRows } = await subQuery.eq('year', year)
+    const submittedMonths = new Set((subRows || []).map(s => s.month))
+    rows = (allRows || []).filter(r => submittedMonths.has(r.month))
+  }
 
   const actuals = (rows || [])
     .map(a => {

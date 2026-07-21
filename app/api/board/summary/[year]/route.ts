@@ -57,7 +57,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { data: allKpis } = await supabase.from('kpis').select('id, dept_id, numeric_target, direction, frequency').in('dept_id', deptIds)
   const kpiIds = (allKpis || []).map(k => k.id)
 
-  const [{ data: allSubMetrics }, { data: allSubmissions }] = await Promise.all([
+  const [{ data: allSubMetrics }, { data: allSubmissions }, { data: periodSubmissions }] = await Promise.all([
     kpiIds.length
       ? supabase
           .from('sub_metrics')
@@ -67,10 +67,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       : Promise.resolve({ data: [] as { id: number; kpi_id: number; is_calc: boolean; formula_key: string | null; calc_input_positions: string | null; numeric_target: number | null; direction: number; display_order: number }[] }),
     // "Submitted" reflects the most recent period in the range — the range's own tail end.
     supabase.from('submissions').select('dept_id').eq('year', toYear).eq('month', toMonth).in('dept_id', deptIds),
+    // Every submitted (dept, year, month) touching this request — not just the range's tail end —
+    // used below to keep a department's saved-but-not-submitted draft actuals out of the status
+    // math entirely. Save and Submit write to the same actuals table; without this, clicking Save
+    // alone would already move a department's on-track/off-track counts on Corporate Planning's
+    // dashboard, before that department ever chose to send anything for review.
+    supabase.from('submissions').select('dept_id, year, month').in('dept_id', deptIds).in('year', years),
   ])
   const smIds = (allSubMetrics || []).map(sm => sm.id)
 
-  const { data: allActuals } = smIds.length
+  const { data: rawActuals } = smIds.length
     ? await supabase.from('actuals').select('sub_metric_id, year, month, value').in('sub_metric_id', smIds).in('year', years)
     : { data: [] as { sub_metric_id: number; year: number; month: number; value: number | null }[] }
 
@@ -84,11 +90,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!smByKpi.has(sm.kpi_id)) smByKpi.set(sm.kpi_id, [])
     smByKpi.get(sm.kpi_id)!.push(sm)
   }
+
+  const kpiIdToDeptId = new Map<number, string>()
+  for (const k of allKpis || []) kpiIdToDeptId.set(k.id, k.dept_id)
+  const smIdToDeptId = new Map<number, string>()
+  for (const sm of allSubMetrics || []) {
+    const deptId = kpiIdToDeptId.get(sm.kpi_id)
+    if (deptId) smIdToDeptId.set(sm.id, deptId)
+  }
+  const submittedPeriodSet = new Set((periodSubmissions || []).map(s => `${s.dept_id}-${s.year}-${s.month}`))
+  const allActuals = (rawActuals || []).filter(a => {
+    const deptId = smIdToDeptId.get(a.sub_metric_id)
+    return !!deptId && submittedPeriodSet.has(`${deptId}-${a.year}-${a.month}`)
+  })
+
   const actualsBySm = new Map<number, { year: number; month: number; value: number | null }[]>()
   // year -> month -> smId -> value — kept per-year (not a flat month key) since a "≥4/year" target
   // still needs to sum within its own calendar year even when the selected range spans two years.
   const actualsByYearMonth: Record<number, Record<number, Record<number, number>>> = {}
-  for (const a of allActuals || []) {
+  for (const a of allActuals) {
     if (!actualsBySm.has(a.sub_metric_id)) actualsBySm.set(a.sub_metric_id, [])
     actualsBySm.get(a.sub_metric_id)!.push({ year: a.year, month: a.month, value: a.value })
     if (a.value !== null) {
