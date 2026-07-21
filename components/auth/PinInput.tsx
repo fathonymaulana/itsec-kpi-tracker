@@ -95,24 +95,18 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
     if (phase !== 'success' || !boxes.length || !containerRef.current) return
 
     // Red means "still working", green means "confirmed" — the stroke (and the checkmark that
-    // appears once boxes finish merging) both shift color the instant this phase starts.
+    // appears once boxes finish merging) both shift color the instant this phase starts. This is a
+    // hard cut (gsap.set), not a crossfade tween — an earlier version tried tweening stroke+filter
+    // from red to green over 0.35s, but the verifying phase's infinite breathing loop gets killed
+    // mid-tween on this same phase change, freezing `filter` at whatever the browser's live computed
+    // style happened to be — which the browser is free to re-serialize in a different drop-shadow
+    // token order than the literal string GSAP wrote, breaking the interpolation and leaving a
+    // visible red remnant/flash for the tween's duration instead of a clean crossfade. There's no
+    // version of "tween the color" that's provably free of that risk, so this cuts straight to green
+    // with no transition window at all — the box merge/checkmark motion right after is what still
+    // carries the "confirmed" moment, this just guarantees the color itself is never caught red.
     if (strokes.length) {
-      // The verifying effect's cleanup (runs just before this, on the same phase change) kills its
-      // infinite NEON_BRIGHT<->NEON_DIM breathing loop mid-tween, freezing `filter` at whatever the
-      // browser's live computed style happens to be at that instant — which the browser is free to
-      // re-serialize in a different drop-shadow token order than the literal string GSAP wrote. Once
-      // that reordering happens, GSAP's complex-value interpolator can't reliably match it up against
-      // NEON_GREEN's own token order, so the color tween can snap or blend unevenly instead of
-      // crossfading — the leftover-red the green transition was supposed to replace. Re-pinning to
-      // NEON_BRIGHT here, synchronously and immediately before the .to() below, guarantees the "from"
-      // value is the exact same GSAP-authored string structurally, every time.
-      gsap.set(strokes, { filter: NEON_BRIGHT })
-      gsap.to(strokes, {
-        stroke: '#22C55E',
-        filter: NEON_GREEN,
-        duration: 0.35,
-        ease: 'sine.out',
-      })
+      gsap.set(strokes, { stroke: '#22C55E', filter: NEON_GREEN })
     }
 
     const containerRect = containerRef.current.getBoundingClientRect()
