@@ -25,7 +25,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, type ChartConfig } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { getStatus, worstStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
@@ -380,7 +380,15 @@ export default function BoardPage() {
                   Departments
                   {hiddenDepts.size > 0 && <Badge className="ml-0.5 text-[10px] px-1.5">{summaries.length - hiddenDepts.size}/{summaries.length}</Badge>}
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52 max-h-72 overflow-y-auto">
+                <DropdownMenuContent align="end" className="w-52 max-h-80 overflow-y-auto">
+                  <DropdownMenuCheckboxItem
+                    checked={hiddenDepts.size === 0}
+                    onCheckedChange={v => setHiddenDepts(v ? new Set() : new Set(summaries.map(d => d.dept_id)))}
+                    className="font-medium"
+                  >
+                    Select All
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
                   {summaries.map(d => (
                     <DropdownMenuCheckboxItem
                       key={d.dept_id}
@@ -394,14 +402,6 @@ export default function BoardPage() {
                       {d.department_name}
                     </DropdownMenuCheckboxItem>
                   ))}
-                  {hiddenDepts.size > 0 && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setHiddenDepts(new Set())}>
-                        Show all departments
-                      </DropdownMenuItem>
-                    </>
-                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               <DownloadReportButton

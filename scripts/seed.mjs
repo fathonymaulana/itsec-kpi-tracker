@@ -177,7 +177,7 @@ addKpi('FAT','Tax Compliance','≥ 95%',0.95,1,'Monthly',[
   {name:'Total Tax Reporting Obligations'},
   {name:'Tax Compliance Rate % (Auto-calc)',is_calc:1,fk:'1-(A/B)',unit:'%',target:0.95,dir:1},
 ])
-addKpi('FAT','Compliance with Government Regulations','100%',1,1,'Monthly, Quarterly, Annually',[
+addKpi('FAT','Compliance with Government Regulations','100%',1,1,'Quarterly',[
   {name:'No. of Regulatory Reports Submitted On Time'},
   {name:'Total Regulatory Reports Due'},
   {name:'Compliance Rate % (Auto-calc)',is_calc:1,fk:'A/B',unit:'%',target:1,dir:1},
