@@ -35,6 +35,16 @@ const CURRENT_YEAR = new Date().getFullYear()
 // mode too, so the line and its gradient fill went nearly invisible against a dark panel.
 const CHART_COLOR = 'var(--foreground)'
 
+// Same semantic palette (and the same CSS-variable-over-literal-hex reasoning) as the CorPlan board
+// dashboard's own STATUS_COLORS — kept as a separate local copy rather than a shared import since
+// each page already keeps its status-rendering logic self-contained.
+const STATUS_COLORS = {
+  on_track: 'var(--success-text)',
+  watch: 'var(--warning-text)',
+  off_track: 'var(--danger-text)',
+  no_data: 'var(--ink-faint)',
+}
+
 
 interface SubMetric {
   id: number; name: string; unit: string;
@@ -173,7 +183,11 @@ export default function DeptDashboard() {
     // "Current" value shown beside the chart title is the latest period in the range — the trend
     // line covers the whole range, but a single headline number needs one period to anchor to.
     const { value: currentV } = statusFor(kpi, actualsByYearMonth[rangeTo.year] || {}, rangeTo.month)
-    return { kpi, unit, monthValues, hasData, currentV, period }
+    // Per-period status (not just the range-worst single value used by the stat cards above) — one
+    // entry per column of the Full Period Overview table below, same "worst status per period"
+    // reasoning the CorPlan board dashboard uses per department, just evaluated per KPI here instead.
+    const periodStatuses = rangePeriods.map(p => statusFor(kpi, actualsByYearMonth[p.year] || {}, p.month).status)
+    return { kpi, unit, monthValues, hasData, currentV, period, periodStatuses }
   })
 
   if (!ready || !user) return <PageSkeleton />
@@ -497,6 +511,82 @@ export default function DeptDashboard() {
                                 {formatValue(mv.raw, unit)}
                               </TableCell>
                             ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Full Period Overview — same status-dot-per-period pattern as the CorPlan board
+                      dashboard's own "Full Period Overview" (which breaks rows down by department),
+                      just broken down by this department's own KPIs instead: one row per metric, one
+                      status dot per month in the selected range, so a whole period's shape reads at a
+                      glance without parsing the raw values in the table above. */}
+                  <div className="flex items-center gap-2 mt-6 mb-3 flex-wrap">
+                    <h3 className="font-medium text-ink text-sm">Full Period Overview</h3>
+                    <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
+                  </div>
+                  {/* Mobile/tablet: one card per KPI, matching the Figma "Table Card Responsive"
+                      pattern used everywhere else — muted header (KPI name), one divided label/value
+                      row per period with a status dot instead of text. */}
+                  <div className="flex md:hidden flex-col gap-3">
+                    {kpisWithData.map(({ kpi, periodStatuses }) => (
+                      <div key={kpi.id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
+                        <div className="bg-panel-soft flex items-center px-6 py-4">
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-[10px] text-ink-faint">KPI</span>
+                            <span className="text-sm font-medium text-ink">{kpi.name}</span>
+                          </div>
+                        </div>
+                        {rangePeriods.map((p, i) => {
+                          const status = periodStatuses[i]
+                          const color = status ? STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? '#D1D5DB' : '#E5E5E5'
+                          return (
+                            <div key={`${p.year}-${p.month}`} className="flex items-center justify-between border-t border-divider">
+                              <span className="flex-1 pl-6 py-3 text-xs text-ink-faint">{MONTHS[p.month - 1].slice(0, 3)} {p.year}</span>
+                              <div className="flex-1 py-3 flex justify-center">
+                                <span
+                                  title={status ?? 'no data'}
+                                  className="inline-block size-2.5 rounded-full"
+                                  style={{ backgroundColor: color }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden md:block bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="sticky left-0 bg-panel max-w-[240px]">KPI</TableHead>
+                          {rangePeriods.map(p => (
+                            <TableHead key={`${p.year}-${p.month}`} className="text-center whitespace-nowrap">
+                              {MONTHS[p.month - 1].slice(0, 3)}{isMultiYear ? ` '${String(p.year).slice(2)}` : ''}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {kpisWithData.map(({ kpi, periodStatuses }) => (
+                          <TableRow key={kpi.id}>
+                            <TableCell className="sticky left-0 bg-panel font-medium text-ink max-w-[240px] truncate" title={kpi.name}>{kpi.name}</TableCell>
+                            {rangePeriods.map((p, i) => {
+                              const status = periodStatuses[i]
+                              const color = status ? STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? '#D1D5DB' : '#E5E5E5'
+                              return (
+                                <TableCell key={`${p.year}-${p.month}`} className="text-center">
+                                  <span
+                                    title={`${MONTHS[p.month - 1]} ${p.year}: ${status ?? 'no data'}`}
+                                    className="inline-block size-2.5 rounded-full"
+                                    style={{ backgroundColor: color }}
+                                  />
+                                </TableCell>
+                              )
+                            })}
                           </TableRow>
                         ))}
                       </TableBody>

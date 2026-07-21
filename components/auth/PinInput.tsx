@@ -32,6 +32,17 @@ interface PinInputProps {
 const GLOW_RED = '204,31,31' // #CC1F1F as an rgb triple — still processing, matches the rest of the brand's red
 const GLOW_GREEN = '34,197,94' // #22C55E as an rgb triple — credential confirmed; green reads as "done, success" everywhere else in this app too (see StatusBadge/getStatusColors' on_track)
 
+// A real neon tube reads as layered light, not one flat blur: a tight near-white hot core right
+// against the line, a mid-radius color glow, and a soft wide halo outside that. Each state stacks
+// all three as separate drop-shadow() layers (CSS supports chaining them) instead of one. Hoisted to
+// module scope (not just declared inside the verifying-phase effect) so the success-phase effect can
+// re-pin the stroke to this exact, freshly-authored string right before tweening to green — see the
+// comment at that call site for why that matters.
+const NEON_OFF = `drop-shadow(0 0 0px rgba(255,235,225,0)) drop-shadow(0 0 0px rgba(${GLOW_RED},0)) drop-shadow(0 0 0px rgba(${GLOW_RED},0))`
+const NEON_BRIGHT = `drop-shadow(0 0 1.5px rgba(255,235,225,0.95)) drop-shadow(0 0 5px rgba(${GLOW_RED},0.9)) drop-shadow(0 0 11px rgba(${GLOW_RED},0.6))`
+const NEON_DIM = `drop-shadow(0 0 1px rgba(255,235,225,0.6)) drop-shadow(0 0 3px rgba(${GLOW_RED},0.55)) drop-shadow(0 0 6px rgba(${GLOW_RED},0.3))`
+const NEON_GREEN = `drop-shadow(0 0 1.5px rgba(255,255,255,0.95)) drop-shadow(0 0 6px rgba(${GLOW_GREEN},0.9)) drop-shadow(0 0 13px rgba(${GLOW_GREEN},0.6))`
+
 // Perimeter of the box's own rounded-rect outline (x=2 y=2 w=44 h=44 rx=10 in a 48×48 viewBox) —
 // the four straight edges (2*(44-2*10) each, twice over) plus the four quarter-circle corners
 // (which together make one full circle of radius 10): 96 + 2π·10 ≈ 158.83. Used as the real
@@ -64,12 +75,6 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
   useGSAP(() => {
     const strokes = strokeRefs.current.filter((el): el is SVGRectElement => !!el)
     if (phase !== 'verifying' || !strokes.length) return
-    // A real neon tube reads as layered light, not one flat blur: a tight near-white hot core right
-    // against the line, a mid-radius red glow, and a soft wide halo outside that. Each state below
-    // stacks all three as separate drop-shadow() layers (CSS supports chaining them) instead of one.
-    const NEON_OFF = `drop-shadow(0 0 0px rgba(255,235,225,0)) drop-shadow(0 0 0px rgba(${GLOW_RED},0)) drop-shadow(0 0 0px rgba(${GLOW_RED},0))`
-    const NEON_BRIGHT = `drop-shadow(0 0 1.5px rgba(255,235,225,0.95)) drop-shadow(0 0 5px rgba(${GLOW_RED},0.9)) drop-shadow(0 0 11px rgba(${GLOW_RED},0.6))`
-    const NEON_DIM = `drop-shadow(0 0 1px rgba(255,235,225,0.6)) drop-shadow(0 0 3px rgba(${GLOW_RED},0.55)) drop-shadow(0 0 6px rgba(${GLOW_RED},0.3))`
     gsap.set(strokes, { strokeDashoffset: BOX_PERIMETER, opacity: 1, filter: NEON_OFF })
     const tl = gsap.timeline()
     tl.to(strokes, { strokeDashoffset: 0, duration: 0.55, ease: 'power2.out' })
@@ -90,12 +95,21 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
     if (phase !== 'success' || !boxes.length || !containerRef.current) return
 
     // Red means "still working", green means "confirmed" — the stroke (and the checkmark that
-    // appears once boxes finish merging) both shift color the instant this phase starts, on top of
-    // whatever red glow the verifying phase left behind.
+    // appears once boxes finish merging) both shift color the instant this phase starts.
     if (strokes.length) {
+      // The verifying effect's cleanup (runs just before this, on the same phase change) kills its
+      // infinite NEON_BRIGHT<->NEON_DIM breathing loop mid-tween, freezing `filter` at whatever the
+      // browser's live computed style happens to be at that instant — which the browser is free to
+      // re-serialize in a different drop-shadow token order than the literal string GSAP wrote. Once
+      // that reordering happens, GSAP's complex-value interpolator can't reliably match it up against
+      // NEON_GREEN's own token order, so the color tween can snap or blend unevenly instead of
+      // crossfading — the leftover-red the green transition was supposed to replace. Re-pinning to
+      // NEON_BRIGHT here, synchronously and immediately before the .to() below, guarantees the "from"
+      // value is the exact same GSAP-authored string structurally, every time.
+      gsap.set(strokes, { filter: NEON_BRIGHT })
       gsap.to(strokes, {
         stroke: '#22C55E',
-        filter: `drop-shadow(0 0 1.5px rgba(255,255,255,0.95)) drop-shadow(0 0 6px rgba(${GLOW_GREEN},0.9)) drop-shadow(0 0 13px rgba(${GLOW_GREEN},0.6))`,
+        filter: NEON_GREEN,
         duration: 0.35,
         ease: 'sine.out',
       })
