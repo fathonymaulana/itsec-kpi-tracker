@@ -148,8 +148,8 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
       {/* Year + month grid picker — the day-of-month grid a normal calendar UI would show here is
           replaced by a month grid, since nothing in this app ever filters by exact date, only by
           month/year. */}
-      <div className="bg-panel border border-divider rounded-3xl overflow-hidden">
-        <div className="p-6 flex items-center justify-between">
+      <div className="bg-panel border border-divider rounded-3xl overflow-hidden pt-8 px-6 pb-6">
+        <div className="flex items-center justify-between">
           <button
             onClick={() => (isRange ? setRangeViewYear(v => v - 1) : onYearChange(year - 1))}
             disabled={minYear !== undefined && viewYear <= minYear}
@@ -192,7 +192,7 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
         </div>
 
         {showMonthGrid && (
-          <div className="px-6 pb-5">
+          <div className="mt-6">
             <div className="grid grid-cols-3 gap-1.5">
               {MONTHS.map((label, i) => {
                 const m = i + 1
@@ -225,7 +225,7 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
         {/* Quick jumps — Today / Next Month / Next Year, always relative to the real current date,
             not whatever's currently selected (matching how a "Tomorrow"/"Next Week" shortcut would
             behave in a normal day-level date picker). */}
-        <div className="px-6 py-2 border-t border-divider flex flex-col">
+        <div className="-mx-6 px-6 mt-6 pt-2 border-t border-divider flex flex-col">
           {quickActions.map(a => (
             <button
               key={a.key}
@@ -247,8 +247,8 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
         {/* Usage hint — this app has no notion of "time of day" (nothing here is scheduled), so the
             row a normal date picker would spend on that instead nudges the user through how the
             picker above actually works. */}
-        <div className="px-6 pb-5 pt-3 border-t border-divider">
-          <p className="text-[12px] text-muted-foreground leading-relaxed">
+        <div className="-mx-6 px-6 pt-3 border-t border-divider">
+          <p className="text-[12px] text-muted-foreground leading-[14px]">
             {isRange
               ? 'Tap a start month, then an end month, to set the range — every chart, table, and export on this page follows it.'
               : 'Pick a year, then a month — the whole page updates to match.'}
