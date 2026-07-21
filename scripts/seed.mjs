@@ -115,20 +115,20 @@ addKpi('CorCom','ESG & CSR Impact Index','≥ 1000 unique beneficiaries/year; �
 ])
 
 // ── CorSec ──────────────────────────────────────────────────────────────
-addKpi('CorSec','Zero Regulatory Breaches','0 breaches',0,-1,'Monthly, Quarterly, Annually',[
+addKpi('CorSec','Zero Regulatory Breaches','0 breaches',0,-1,'Monthly',[
   {name:'No. of Breaches / Incidents Reported by Regulators',target:0,dir:-1},
 ])
-addKpi('CorSec','Corporate Governance Execution','100% completion rate',1,1,'Monthly, Quarterly, Annually',[
+addKpi('CorSec','Corporate Governance Execution','100% completion rate',1,1,'Monthly',[
   {name:'No. of Meetings Held & Documents Completed'},
   {name:'Total Required Agenda Items'},
   {name:'Completion Rate % (Auto-calc)',is_calc:1,fk:'A/B',unit:'%',target:1,dir:1},
 ])
-addKpi('CorSec','Corporate Compliance & Reporting','100% compliance rate',1,1,'Monthly, Quarterly, Annually',[
+addKpi('CorSec','Corporate Compliance & Reporting','100% compliance rate',1,1,'Monthly',[
   {name:'No. of Timely Reports & Compliance Updates Submitted'},
   {name:'Total Reporting Obligations'},
   {name:'Compliance Rate % (Auto-calc)',is_calc:1,fk:'A/B',unit:'%',target:1,dir:1},
 ])
-addKpi('CorSec','Corporate Secretary Admin & Public Relations','100% completion rate',1,1,'Monthly, Quarterly, Annually',[
+addKpi('CorSec','Corporate Secretary Admin & Public Relations','100% completion rate',1,1,'Monthly',[
   {name:'No. of Documents / Correspondences Completed On Time'},
   {name:'Total Documents / Correspondences Due'},
   {name:'Completion Rate % (Auto-calc)',is_calc:1,fk:'A/B',unit:'%',target:1,dir:1},
