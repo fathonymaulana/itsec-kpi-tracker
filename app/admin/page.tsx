@@ -404,7 +404,7 @@ export default function AdminPage() {
                                   size="lg"
                                   variant="outline"
                                   className="text-success border-success-soft-border hover:bg-success-soft"
-                                  disabled={actionLoading === kpi.id}
+                                  disabled={actionLoading === kpi.id || !selectedDeptObj?.submitted}
                                   onClick={() => setVerifyTarget(kpi)}
                                 >
                                   <CheckCircle2 size={15} className="mr-1" />
@@ -414,12 +414,19 @@ export default function AdminPage() {
                                   size="lg"
                                   variant="outline"
                                   className="text-danger border-danger-soft-border hover:bg-danger-soft"
-                                  disabled={actionLoading === kpi.id}
+                                  disabled={actionLoading === kpi.id || !selectedDeptObj?.submitted}
                                   onClick={() => { setFlagTarget(kpi); setFlagNote('') }}
                                 >
                                   <AlertTriangle size={15} className="mr-1" />
                                   Flag
                                 </Button>
+                                {/* Data can be entered/saved as a draft before the department locks
+                                    it in with Submit Month — verifying/flagging draft data that
+                                    could still change out from under the review would be misleading,
+                                    so both CTAs stay disabled until it's actually submitted. */}
+                                {!selectedDeptObj?.submitted && (
+                                  <span className="text-[11px] text-ink-faint">Waiting for department to submit this month</span>
+                                )}
                               </>
                             ) : (
                               <Badge variant="warning" className="h-auto px-2.5 py-1 text-[11px]">Pending verification</Badge>

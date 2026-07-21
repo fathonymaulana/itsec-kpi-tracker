@@ -24,7 +24,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, type ChartConfig } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { getStatus, worstStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
@@ -124,6 +124,10 @@ export default function BoardPage() {
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const [view, setView] = useState<'charts' | 'table'>('charts')
   const [visibleSeries, setVisibleSeries] = useState({ onTrack: true, watch: true, offTrack: true, noData: true })
+  // Membership = hidden, not shown — starts empty (nothing hidden, every department visible) so
+  // this doesn't need to know the full department list before the first fetch resolves, mirroring
+  // visibleSeries' own "default everything on" convention.
+  const [hiddenDepts, setHiddenDepts] = useState<Set<string>>(new Set())
 
   // The single date control for this whole page now — CorPlan's sidebar picker (see DateSidebar's
   // range mode). Defaults to a one-month "range" (today's default period, both ends the same) so a
@@ -247,8 +251,13 @@ export default function BoardPage() {
 
   if (!ready || !user) return <PageSkeleton />
 
-  // Totals across all depts
-  const totals = summaries.reduce((acc, d) => ({
+  // The department filter applies everywhere summaries feeds the page — stat cards, chart,
+  // accordion, both table views, and the exported report all read this instead of the raw fetch
+  // result, so hiding a department is consistent across the whole dashboard, not just one chart.
+  const filteredSummaries = summaries.filter(d => !hiddenDepts.has(d.dept_id))
+
+  // Totals across filtered depts
+  const totals = filteredSummaries.reduce((acc, d) => ({
     total: acc.total + d.total,
     on_track: acc.on_track + d.on_track,
     watch: acc.watch + d.watch,
@@ -257,7 +266,7 @@ export default function BoardPage() {
   }), { total: 0, on_track: 0, watch: 0, off_track: 0, no_data: 0 })
 
   // Bar chart data: one bar group per dept
-  const chartData = summaries.map(d => ({
+  const chartData = filteredSummaries.map(d => ({
     name: d.department_name.length > 8 ? d.dept_id.slice(0, 8) : d.department_name,
     onTrack: d.on_track,
     watch: d.watch,
@@ -312,6 +321,37 @@ export default function BoardPage() {
                   Every department&apos;s KPI status for {rangeLabel}, at a glance.
                 </p>
               </div>
+              <div className="flex items-center gap-2 shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), iconHoverClass)}>
+                  <IconFilters size={15} />
+                  Departments
+                  {hiddenDepts.size > 0 && <Badge className="ml-0.5 text-[10px] px-1.5">{summaries.length - hiddenDepts.size}/{summaries.length}</Badge>}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52 max-h-72 overflow-y-auto">
+                  {summaries.map(d => (
+                    <DropdownMenuCheckboxItem
+                      key={d.dept_id}
+                      checked={!hiddenDepts.has(d.dept_id)}
+                      onCheckedChange={v => setHiddenDepts(prev => {
+                        const next = new Set(prev)
+                        if (v) next.delete(d.dept_id); else next.add(d.dept_id)
+                        return next
+                      })}
+                    >
+                      {d.department_name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                  {hiddenDepts.size > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setHiddenDepts(new Set())}>
+                        Show all departments
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <DownloadReportButton
                 title={`Department KPI Status — ${rangeLabel}`}
                 filename={`department-kpi-status-${rangeFrom.year}-${String(rangeFrom.month).padStart(2, '0')}${isSinglePeriod ? '' : `-to-${rangeTo.year}-${String(rangeTo.month).padStart(2, '0')}`}`}
@@ -323,7 +363,7 @@ export default function BoardPage() {
                   { key: 'off_track', label: 'Off Track' },
                   { key: 'no_data', label: 'No Data' },
                 ]}
-                rows={summaries.map(d => ({
+                rows={filteredSummaries.map(d => ({
                   department_name: d.department_name,
                   total: d.total,
                   on_track: d.on_track,
@@ -332,6 +372,7 @@ export default function BoardPage() {
                   no_data: d.no_data,
                 }))}
               />
+              </div>
             </div>
 
             <MobileDatePicker
@@ -457,7 +498,7 @@ export default function BoardPage() {
                     }
                   >
                   <div className="space-y-2">
-                  {summaries.map(dept => {
+                  {filteredSummaries.map(dept => {
                     const expanded = expandedDepts.has(dept.dept_id)
                     const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
                     return (
@@ -531,7 +572,7 @@ export default function BoardPage() {
                     button), one divided label/value row per metric, and a footer stat. Replaces
                     the earlier 4-up colored-badge grid with this row-based layout. */}
                 <div className="flex md:hidden flex-col gap-3 mb-6">
-                  {summaries.map(dept => {
+                  {filteredSummaries.map(dept => {
                     const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
                     const rows = [
                       { label: 'KPIs', value: dept.total },
@@ -587,7 +628,7 @@ export default function BoardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {summaries.map(dept => {
+                      {filteredSummaries.map(dept => {
                         const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
                         return (
                           <TableRow key={dept.dept_id}>
@@ -627,7 +668,7 @@ export default function BoardPage() {
                     Responsive" pattern used everywhere else — muted header (department name),
                     one divided label/value row per period with a status dot instead of text. */}
                 <div className="flex md:hidden flex-col gap-3">
-                  {summaries.map(dept => (
+                  {filteredSummaries.map(dept => (
                     <div key={dept.dept_id} className="bg-panel border border-divider rounded-3xl overflow-hidden">
                       <div className="bg-panel-soft flex items-center px-6 py-4">
                         <div className="flex flex-col gap-1.5">
@@ -668,7 +709,7 @@ export default function BoardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {summaries.map(dept => (
+                      {filteredSummaries.map(dept => (
                         <TableRow key={dept.dept_id}>
                           <TableCell className="font-medium text-ink sticky left-0 bg-panel">{dept.department_name}</TableCell>
                           {rangePeriods.map(p => {
