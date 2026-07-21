@@ -241,7 +241,15 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
               className="flex items-center justify-between gap-3 py-2 disabled:opacity-40 disabled:pointer-events-none group"
             >
               <span className="flex items-center gap-3">
-                <span className="size-8 rounded-lg bg-ink text-white flex items-center justify-center shrink-0 transition-colors group-hover:bg-[#CC1F1F]">
+                {/* bg-primary/text-primary-foreground (not bg-ink/text-white) — --ink inverts
+                    between themes (near-black in light mode, near-white in dark mode) but a hardcoded
+                    text-white icon never followed it, so in dark mode this became a white icon on a
+                    near-white badge and vanished. --primary/--primary-foreground invert the same way
+                    but as a matched pair, so the icon stays readable against its own badge in both
+                    themes; the hover fill is a fixed brand red in both themes, so its icon color is
+                    pinned to white explicitly rather than following primary-foreground (which would
+                    go dark-on-red in dark mode otherwise). */}
+                <span className="size-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0 transition-colors group-hover:bg-[#CC1F1F] group-hover:text-white">
                   <a.Icon size={15} />
                 </span>
                 <span className="text-sm font-medium text-ink">{a.label}</span>
