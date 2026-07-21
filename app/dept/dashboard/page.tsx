@@ -16,7 +16,6 @@ import { DateSidebar, type MonthPeriod } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
-import { MonthGrid } from '@/components/kpi/MonthGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { getStatus, worstStatus, MONTHS, type KpiStatus } from '@/lib/status'
@@ -157,13 +156,11 @@ export default function DeptDashboard() {
   // Precompute each KPI's series across the selected range once, shared by both the Charts and
   // Table views.
   const kpisWithData = kpis.map(kpi => {
-    const monthStatuses: Partial<Record<number, KpiStatus>> = {}
     const primaryCalcSm = kpi.sub_metrics.find(sm => sm.is_calculated)
     const unit = primaryCalcSm?.unit || kpi.sub_metrics[0]?.unit || ''
     const monthValues = rangePeriods.map(p => {
       const vals = actualsByYearMonth[p.year]?.[p.month] || {}
       const v = resolvePrimaryValue(kpi.sub_metrics, vals)
-      monthStatuses[p.month] = statusFor(kpi, actualsByYearMonth[p.year] || {}, p.month).status
       const displayValue = v !== null
         ? unit === '%' ? parseFloat((v * 100).toFixed(1)) : parseFloat(v.toFixed(2))
         : null
@@ -175,11 +172,8 @@ export default function DeptDashboard() {
     // "Current" value shown beside the chart title is the latest period in the range — the trend
     // line covers the whole range, but a single headline number needs one period to anchor to.
     const { value: currentV } = statusFor(kpi, actualsByYearMonth[rangeTo.year] || {}, rangeTo.month)
-    return { kpi, unit, monthValues, monthStatuses, hasData, currentV, period }
+    return { kpi, unit, monthValues, hasData, currentV, period }
   })
-  // Unique month numbers touched by the range, in order — feeds the compact MonthGrid footer under
-  // each chart, which renders one cell per number, not per {year, month} pair.
-  const rangeMonths = Array.from(new Set(rangePeriods.map(p => p.month)))
 
   if (!ready || !user) return <PageSkeleton />
 
@@ -311,7 +305,7 @@ export default function DeptDashboard() {
                 </TabsList>
 
                 <TabsContent value="charts" className="space-y-4">
-                  {kpisWithData.map(({ kpi, unit, monthValues, monthStatuses, hasData, currentV, period }) => {
+                  {kpisWithData.map(({ kpi, unit, monthValues, hasData, currentV, period }) => {
                     const chartConfig: ChartConfig = { value: { label: kpi.name, color: CHART_COLOR } }
                     return (
                       <div key={kpi.id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden">
@@ -334,45 +328,47 @@ export default function DeptDashboard() {
                           )}
                         </div>
 
-                        {hasData && (
-                          <div className="px-2 pb-1">
-                            <ChartContainer config={chartConfig} className="h-[100px] w-full aspect-auto">
-                              <AreaChart data={monthValues} margin={{ top: 4, right: 12, left: -20, bottom: 0 }}>
-                                <defs>
-                                  <linearGradient id={`grad-${kpi.id}`} x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={CHART_COLOR} stopOpacity={0.15} />
-                                    <stop offset="95%" stopColor={CHART_COLOR} stopOpacity={0} />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
-                                <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} />
-                                <YAxis tick={{ fontSize: 9, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} width={36} />
-                                <ChartTooltip
-                                  content={
-                                    <ChartTooltipContent
-                                      indicator="dot"
-                                      formatter={(value) => [unit === '%' ? `${value}%` : `${value}`, kpi.name]}
-                                    />
-                                  }
-                                />
-                                <Area
-                                  type="monotone"
-                                  dataKey="value"
-                                  stroke={CHART_COLOR}
-                                  strokeWidth={1.5}
-                                  fill={`url(#grad-${kpi.id})`}
-                                  connectNulls={false}
-                                  dot={false}
-                                  activeDot={{ r: 3, fill: CHART_COLOR }}
-                                />
-                              </AreaChart>
-                            </ChartContainer>
-                          </div>
-                        )}
-
-                        <div className="px-5 py-3 border-t border-divider">
-                          <MonthGrid data={monthStatuses} months={rangeMonths} compact />
+                        {/* Always rendered, even with zero entries — the axis alone (Jan..Dec of the
+                            selected range) already tells the user what period they're looking at.
+                            Hiding the chart entirely whenever no values existed yet read as "nothing
+                            is here" rather than "here's the range, no data yet" — the caption below
+                            makes the empty state explicit instead of leaving a blank card. */}
+                        <div className="px-2 pb-1">
+                          <ChartContainer config={chartConfig} className="h-[100px] w-full aspect-auto">
+                            <AreaChart data={monthValues} margin={{ top: 4, right: 12, left: -20, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id={`grad-${kpi.id}`} x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor={CHART_COLOR} stopOpacity={0.15} />
+                                  <stop offset="95%" stopColor={CHART_COLOR} stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
+                              <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} />
+                              <YAxis tick={{ fontSize: 9, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} width={36} />
+                              <ChartTooltip
+                                content={
+                                  <ChartTooltipContent
+                                    indicator="dot"
+                                    formatter={(value) => [unit === '%' ? `${value}%` : `${value}`, kpi.name]}
+                                  />
+                                }
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="value"
+                                stroke={CHART_COLOR}
+                                strokeWidth={1.5}
+                                fill={`url(#grad-${kpi.id})`}
+                                connectNulls={false}
+                                dot={false}
+                                activeDot={{ r: 3, fill: CHART_COLOR }}
+                              />
+                            </AreaChart>
+                          </ChartContainer>
                         </div>
+                        {!hasData && (
+                          <div className="px-5 pb-4 -mt-1 text-xs text-ink-faint">No data entered yet for {rangeLabel}.</div>
+                        )}
                       </div>
                     )
                   })}
@@ -412,7 +408,7 @@ export default function DeptDashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="sticky left-0 bg-panel max-w-[220px]">KPI</TableHead>
+                          <TableHead className="sticky left-0 bg-panel max-w-[240px]">KPI</TableHead>
                           {rangePeriods.map(p => (
                             <TableHead key={`${p.year}-${p.month}`} className="text-right whitespace-nowrap">
                               {MONTHS[p.month - 1].slice(0, 3)}{isMultiYear ? ` '${String(p.year).slice(2)}` : ''}
@@ -423,14 +419,14 @@ export default function DeptDashboard() {
                       <TableBody>
                         {kpisWithData.map(({ kpi, unit, monthValues, period }) => (
                           <TableRow key={kpi.id}>
-                            <TableCell className="sticky left-0 bg-panel font-medium text-ink">
-                              <div className="flex items-center gap-2">
-                                {kpi.name}
-                                <span className="inline-flex items-center border border-divider bg-panel-soft text-ink-muted px-2.5 py-1 text-xs rounded font-medium tracking-wide">
+                            <TableCell className="sticky left-0 bg-panel font-medium text-ink max-w-[240px]">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="truncate" title={kpi.name}>{kpi.name}</span>
+                                <span className="shrink-0 inline-flex items-center border border-divider bg-panel-soft text-ink-muted px-2.5 py-1 text-xs rounded font-medium tracking-wide">
                                   {periodLabel(period)}
                                 </span>
                               </div>
-                              <div className="text-xs text-ink-muted font-normal mt-0.5">Target: {kpi.target_text}</div>
+                              <div className="text-xs text-ink-muted font-normal mt-0.5 truncate" title={`Target: ${kpi.target_text}`}>Target: {kpi.target_text}</div>
                             </TableCell>
                             {monthValues.map((mv, i) => (
                               <TableCell key={i} className="text-right text-ink whitespace-nowrap">
