@@ -144,6 +144,16 @@ export interface PeriodStatusResult {
 // itself is prorated by how far `month` is into the period — full target only once the period's
 // final month is reached. A zero target prorates to zero either way, so "no breaches allowed" style
 // KPIs are unaffected.
+//
+// That proration only makes sense for a raw, cumulative COUNT — "2 of 4 agreements by month 6" is
+// genuinely on pace toward "4 by December". It does not make sense for a CALCULATED sub-metric like
+// a ratio or a percentage (e.g. "AVE Ratio", "Completion Rate %"): those are already a normalized
+// rate, not a running tally, so there's no "on pace toward 5x" the way there's "on pace toward 4
+// agreements" — 2.5x six months into the year isn't "half of 5x and thus fine for now", it's just
+// under half the target, full stop. A CorCom KPI with an annual-frequency ratio sub-metric targeting
+// "≥5x" was reading as on_track at 2.5x actual specifically because month 6 of 12 prorated that
+// target down to exactly 2.5 — this is why is_calculated sub-metrics are excluded from proration
+// below and always compared against their real, un-prorated target.
 export function getPeriodStatuses<T extends SubMetricLike>(
   subMetrics: T[],
   actualsByMonth: Record<number, Record<number, number>>,
@@ -161,7 +171,8 @@ export function getPeriodStatuses<T extends SubMetricLike>(
   const targeted = subMetrics.filter(sm => sm.numeric_target != null && sm.direction != null)
   const bySmId: Record<number, KpiStatus> = {}
   for (const sm of targeted) {
-    const proratedTarget = period === 'monthly' ? sm.numeric_target! : sm.numeric_target! * paceFactor
+    const shouldProrate = period !== 'monthly' && !sm.is_calculated
+    const proratedTarget = shouldProrate ? sm.numeric_target! * paceFactor : sm.numeric_target!
     bySmId[sm.id] = getStatus(periodValues[sm.id] ?? null, proratedTarget, sm.direction ?? 1)
   }
   const overall = targeted.length > 0 ? worstStatus(Object.values(bySmId)) : null

@@ -126,12 +126,20 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
   const realNow = new Date()
   const realMonth = realNow.getMonth() + 1
   const realYear = realNow.getFullYear()
-  let nextMonthM = realMonth + 1, nextMonthY = realYear
+  // "Next Month"/"Next Year" step forward from whatever's currently selected (the range's end in
+  // range mode, since that's the most-forward point already picked) — not from today's real date.
+  // Anchoring them to the real date meant "Next Year" stayed permanently stuck on (today + 1) no
+  // matter what the user had already navigated to, so it could either re-jump backwards to a year
+  // already behind the current selection, or — if that fixed target happened to still be in
+  // bounds — stay enabled even after the user had already reached the last selectable year, since
+  // its own target never moved past the boundary in the first place.
+  const selectedBase: MonthPeriod = isRange ? to : { year, month: month ?? 1 }
+  let nextMonthM = selectedBase.month + 1, nextMonthY = selectedBase.year
   if (nextMonthM > 12) { nextMonthM = 1; nextMonthY++ }
   const quickActions = [
     { key: 'today', label: 'Today', Icon: TodayIcon, year: realYear, month: realMonth },
     { key: 'next-month', label: 'Next Month', Icon: ChevronRight, year: nextMonthY, month: nextMonthM },
-    { key: 'next-year', label: 'Next Year', Icon: NextYearIcon, year: realYear + 1, month: realMonth },
+    { key: 'next-year', label: 'Next Year', Icon: NextYearIcon, year: selectedBase.year + 1, month: selectedBase.month },
   ]
 
   return (
@@ -222,9 +230,8 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
           </div>
         )}
 
-        {/* Quick jumps — Today / Next Month / Next Year, always relative to the real current date,
-            not whatever's currently selected (matching how a "Tomorrow"/"Next Week" shortcut would
-            behave in a normal day-level date picker). */}
+        {/* Quick jumps — Today always targets the real current date; Next Month/Next Year step
+            forward from whatever's currently selected instead (see selectedBase above). */}
         <div className="-mx-6 px-6 mt-6 pt-2 border-t border-divider flex flex-col">
           {quickActions.map(a => (
             <button
