@@ -2,7 +2,19 @@
 import { useRef, useState } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
+import { CustomEase } from 'gsap/CustomEase'
 import { cn } from '@/lib/utils'
+
+gsap.registerPlugin(CustomEase)
+
+// This app's own established "professional" curve (see AnimatedAside/SplashScreen/dialog.tsx,
+// all using [0.16, 1, 0.3, 1] via framer-motion) — reused here as an actual GSAP ease via
+// CustomEase so the pull-to-center glide reads consistently with the rest of the app's motion.
+// pinPop is hand-tuned separately for the scale — noticeably overshoots past 1 before easing back,
+// the actual "physics" part: a rounded-rect getting pulled in hard enough that it bulges past its
+// resting size and springs back, rather than just sliding to a stop.
+CustomEase.create('pinGlide', 'M0,0 C0.16,1 0.3,1 1,1')
+CustomEase.create('pinPop', 'M0,0 C0.34,1.56 0.64,1 1,1')
 
 export type PinPhase = 'idle' | 'verifying' | 'success'
 
@@ -65,9 +77,11 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
     return () => { tl.kill() }
   }, [phase])
 
-  // Success: dots vanish, all four boxes glide toward the container's horizontal center (so they
-  // visually merge into one), then a checkmark settles into the last box, which is the only one
-  // left visible once they've converged.
+  // Success: dots vanish, all four boxes glide toward the container's horizontal center — like
+  // something is physically pulling them together, not just fading/sliding. Reference clip
+  // (re-checked at 60fps for this pass) shows the first and last boxes picking up the most tilt as
+  // they converge, everything overshooting past its resting scale before springing back, and only
+  // then does a checkmark settle into the last box, the only one left visible once they've merged.
   useGSAP(() => {
     const boxes = boxRefs.current.filter((el): el is HTMLDivElement => !!el)
     const dots = dotRefs.current.filter((el): el is HTMLSpanElement => !!el)
@@ -79,13 +93,25 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
       const r = box.getBoundingClientRect()
       return centerX - (r.left + r.width / 2)
     })
+    // First/last box tilt hardest, the two inner ones less — a fan closing shut, not a flat slide.
+    const TILT = [-14, -5, 5, 14]
 
     const tl = gsap.timeline()
     if (dots.length) tl.to(dots, { opacity: 0, duration: 0.15, ease: 'sine.out' }, 0)
-    tl.to(boxes, { x: i => targetX[i], duration: 0.4, ease: 'power3.inOut' }, 0.05)
-    tl.to(boxes.slice(0, -1), { opacity: 0, duration: 0.18, ease: 'sine.in' }, '-=0.16')
+    // Position glides in one continuous motion (this app's own signature curve, see pinGlide above)
+    // — nothing needs to overshoot past center and slide back, that'd look like the boxes colliding.
+    tl.to(boxes, { x: i => targetX[i], duration: 0.42, ease: 'pinGlide' }, 0.05)
+    // Rotation and scale are the parts that actually get "pulled too far, then spring back" — tilt
+    // in first, then straighten; grow past resting size, then settle. pinPop is this app's own
+    // hand-tuned overshoot curve (a classic easeOutBack shape), used on the way back for both so the
+    // spring-back reads as one connected motion rather than two independently-timed corrections.
+    tl.to(boxes, { rotation: i => TILT[i], duration: 0.22, ease: 'pinGlide' }, 0.05)
+    tl.to(boxes, { rotation: 0, duration: 0.25, ease: 'pinPop' }, '-=0.02')
+    tl.to(boxes, { scale: 1.18, duration: 0.2, ease: 'sine.out' }, 0.05)
+    tl.to(boxes, { scale: 1, duration: 0.25, ease: 'pinPop' }, '-=0.03')
+    tl.to(boxes.slice(0, -1), { opacity: 0, duration: 0.18, ease: 'sine.in' }, '-=0.3')
     if (checkRef.current) {
-      tl.fromTo(checkRef.current, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.8)' }, '-=0.08')
+      tl.fromTo(checkRef.current, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.8)' }, '-=0.15')
     }
     return () => { tl.kill() }
   }, [phase])
