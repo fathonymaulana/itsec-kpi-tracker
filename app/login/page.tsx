@@ -240,10 +240,6 @@ function LoginForm() {
         <Link href="/privacy" className="hover:text-ink-muted transition-colors">
           Privacy Policy
         </Link>
-        <span aria-hidden>·</span>
-        <Link href="/cookies" className="hover:text-ink-muted transition-colors">
-          Cookie Policy
-        </Link>
       </div>
     </div>
   )

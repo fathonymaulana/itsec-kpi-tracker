@@ -4,7 +4,6 @@ import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import { AuthProvider } from '@/lib/auth'
-import { CookieConsent } from '@/components/layout/CookieConsent'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { SplashScreen } from '@/components/layout/SplashScreen'
 
@@ -48,7 +47,6 @@ export default function RootLayout({
         <TooltipProvider delay={200}>
           <AuthProvider>
             {children}
-            <CookieConsent />
           </AuthProvider>
           <Toaster position="bottom-right" visibleToasts={4} />
         </TooltipProvider>

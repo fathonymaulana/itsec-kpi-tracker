@@ -48,7 +48,7 @@ function AvatarFallback({
       className={cn(
         // bg-destructive (not bg-muted) app-wide, per request — --destructive-foreground isn't
         // defined in globals.css, so text-white matches every other solid-red surface in the app
-        // (Sign Out, CookieConsent's Understood button, etc.) instead of relying on that unset var.
+        // (Sign Out, etc.) instead of relying on that unset var.
         "flex size-full items-center justify-center rounded-full bg-destructive text-sm text-white group-data-[size=sm]/avatar:text-xs",
         className
       )}
