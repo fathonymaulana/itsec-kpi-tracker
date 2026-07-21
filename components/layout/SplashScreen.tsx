@@ -14,16 +14,11 @@ const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffec
 const SESSION_KEY = 'itsec-splash-shown'
 
 const EASE = [0.16, 1, 0.3, 1] as const
-const SPRING_EASE = [0.34, 1.56, 0.64, 1] as const
 
-// Modeled on Facebook web's splash: the product's own mark centered and large, with a small
-// "from [parent brand]" line beneath it — here, the full ITSEC KPI TRACKER wordmark centered, and
-// "From" + the compact ITSEC monogram below. The signature move is the red "E" accent (ITSEC's
-// own iconic mark — the three horizontal strokes visible in both this monogram and the main
-// wordmark) starting the intro alone and full-size, then sharing a layoutId with its small
-// counterpart inside the "From ITSEC" line — framer-motion interpolates the position/size delta
-// automatically (a "shared layout" transition), so the accent visually shrinks and glides into
-// place rather than just cutting from one state to the other.
+// A static mark — the full ITSEC KPI TRACKER wordmark centered, "From ITSEC" beneath it — rather
+// than the previous two-phase intro where the red "E" accent played a shared-layout move from a
+// large standalone mark down into the small "From" line. Both blocks appear together as one simple
+// fade/rise-in; the only other motion is the whole screen fading out once the timer below ends.
 export function SplashScreen() {
   // Defaults to visible so the very first paint (server-rendered HTML, before any JS has run)
   // already covers the page — the alternative (defaulting to false, flipping true in an effect)
@@ -31,7 +26,6 @@ export function SplashScreen() {
   // of what a splash screen is for. The layout effect below runs before the browser paints, so a
   // same-tab repeat visit (sessionStorage already set) gets dismissed before the user ever sees it.
   const [visible, setVisible] = useState(true)
-  const [phase, setPhase] = useState<'intro' | 'reveal'>('intro')
 
   useIsomorphicLayoutEffect(() => {
     // sessionStorage can throw (private browsing, strict privacy settings, some mobile browser
@@ -48,9 +42,8 @@ export function SplashScreen() {
       setVisible(false)
       return
     }
-    const toReveal = setTimeout(() => setPhase('reveal'), 600)
-    const toHide = setTimeout(() => setVisible(false), 2200)
-    return () => { clearTimeout(toReveal); clearTimeout(toHide) }
+    const toHide = setTimeout(() => setVisible(false), 1400)
+    return () => clearTimeout(toHide)
   }, [])
 
   return (
@@ -59,59 +52,37 @@ export function SplashScreen() {
         <motion.div
           key="splash"
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: EASE }}
-          className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-app overflow-hidden"
+          transition={{ duration: 0.4, ease: EASE }}
+          // No interactive elements live in here, and the whole point of the fix below is that this
+          // overlay must never be able to eat a click meant for whatever's underneath — including
+          // during its own fade-out, when it's still in the DOM (AnimatePresence keeps an exiting
+          // element mounted until its exit animation finishes) but the sign-in form beneath it has
+          // already become visible and tappable. A user clicking the instant they can see a button
+          // was landing on this invisible-but-still-there overlay instead of the real button.
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-app overflow-hidden pointer-events-none"
           style={{ height: '100dvh' }}
         >
-          {/* Main app mark — centered, fills the available space above the "From" line */}
-          <div className="flex-1 min-h-0 flex items-center justify-center w-full px-8">
-            <AnimatePresence mode="wait">
-              {phase === 'intro' ? (
-                <motion.div
-                  key="e-intro"
-                  layoutId="itsec-e-morph"
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.55, ease: SPRING_EASE }}
-                >
-                  <ItsecMonogramE className="h-16 sm:h-20 w-auto text-ink" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="logo-reveal"
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, ease: EASE }}
-                >
-                  <ItsecLogo className="h-7 sm:h-9 w-auto text-ink" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* "From ITSEC" — column, centered, "From" smaller than the mark beneath it */}
-          <div className="pb-10 sm:pb-14 shrink-0 flex flex-col items-center gap-2">
-            <motion.span
-              className="text-[11px] font-medium text-ink-faint tracking-[0.02em]"
-              animate={{ opacity: phase === 'reveal' ? 1 : 0 }}
-              transition={{ duration: 0.35, ease: EASE }}
-            >
-              From
-            </motion.span>
-            <div className="flex items-center gap-[3px] h-4">
-              <motion.div animate={{ opacity: phase === 'reveal' ? 1 : 0 }} transition={{ duration: 0.35, delay: 0.1, ease: EASE }}>
-                <ItsecMonogramBeforeE className="h-4 w-auto text-ink" />
-              </motion.div>
-              {phase === 'reveal' && (
-                <motion.div layoutId="itsec-e-morph" transition={{ duration: 0.55, ease: SPRING_EASE }}>
-                  <ItsecMonogramE className="h-4 w-auto text-ink" />
-                </motion.div>
-              )}
-              <motion.div animate={{ opacity: phase === 'reveal' ? 1 : 0 }} transition={{ duration: 0.35, delay: 0.1, ease: EASE }}>
-                <ItsecMonogramAfterE className="h-4 w-auto text-ink" />
-              </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            className="flex-1 min-h-0 flex flex-col items-center justify-center w-full px-8"
+          >
+            {/* Main app mark */}
+            <div className="flex-1 min-h-0 flex items-center justify-center w-full">
+              <ItsecLogo className="h-7 sm:h-9 w-auto text-ink" />
             </div>
-          </div>
+
+            {/* "From ITSEC" — column, centered, "From" smaller than the mark beneath it */}
+            <div className="pb-10 sm:pb-14 shrink-0 flex flex-col items-center gap-2">
+              <span className="text-[11px] font-medium text-ink-faint tracking-[0.02em]">From</span>
+              <div className="flex items-center gap-[3px] h-4">
+                <ItsecMonogramBeforeE className="h-4 w-auto text-ink" />
+                <ItsecMonogramE className="h-4 w-auto text-ink" />
+                <ItsecMonogramAfterE className="h-4 w-auto text-ink" />
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
