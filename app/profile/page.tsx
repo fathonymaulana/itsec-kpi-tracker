@@ -8,21 +8,19 @@ import {
   AltArrowRightLineDuotone as ChevronRight,
   RestartLineDuotone as ResetIcon,
   GalleryLineDuotone as ChooseIcon,
+  LogoutLineDuotone as LogOutIcon,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
-import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
-import { AnimatedAside } from '@/components/layout/AnimatedAside'
-import { useResponsivePanels } from '@/hooks/use-responsive-panels'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
 import { SuccessMorph } from '@/components/ui/success-morph'
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
-import { cn } from '@/lib/utils'
 
 // 168px avatar frame — ring sits just outside it. circumference = 2πr, r = 84.
 const AVATAR_RING_R = 84
@@ -43,9 +41,8 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 export default function ProfilePage() {
-  const { user, token, ready, refreshUser } = useAuth()
+  const { user, token, ready, refreshUser, logout } = useAuth()
   const router = useRouter()
-  const { rightPanelOpen, toggleRightPanel } = useResponsivePanels()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [name, setName] = useState('')
@@ -56,6 +53,7 @@ export default function ProfilePage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [resettingAvatar, setResettingAvatar] = useState(false)
   const [submittingPin, setSubmittingPin] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   useEffect(() => {
     if (!ready) return
@@ -139,6 +137,13 @@ export default function ProfilePage() {
     }
   }
 
+  const handleLogout = () => {
+    const firstName = user?.name?.split(' ')[0]
+    logout()
+    router.push('/login')
+    toast.success('Signed out', { description: firstName ? `See you soon, ${firstName}.` : 'You’ve been signed out safely.' })
+  }
+
   const handleSaveName = async () => {
     if (!token || !name.trim()) return
     setSavingName(true)
@@ -179,21 +184,15 @@ export default function ProfilePage() {
     }
   }
 
-  if (!ready || !user) return <PageSkeleton leftAside={false} />
+  if (!ready || !user) return <PageSkeleton leftAside={false} rightAside={false} />
 
   const homeHref = user.role === 'dept_head' ? '/dept/dashboard' : '/board'
 
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
-      <DeptTopNav rightPanelOpen={rightPanelOpen} onToggleRightPanel={toggleRightPanel} />
+      <DeptTopNav />
 
-      <div className="flex-1 relative overflow-hidden">
-      <main
-        className={cn(
-          'h-full min-w-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-8 transition-[padding] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
-          rightPanelOpen ? 'lg:pr-[400px]' : 'pr-0'
-        )}
-      >
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-8">
         <div className="max-w-xl mx-auto w-full space-y-4">
         <Breadcrumb className="mb-2">
           <BreadcrumbList>
@@ -209,9 +208,20 @@ export default function ProfilePage() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="mb-2">
-          <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Profile</h1>
-          <p className="text-sm text-ink-muted mt-1">Manage your display name, avatar, and PIN.</p>
+        <div className="mb-2 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Profile</h1>
+            <p className="text-sm text-ink-muted mt-1">Manage your display name, avatar, and PIN.</p>
+          </div>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setConfirmLogout(true)}
+            className="text-danger border-danger-soft-border hover:bg-danger-soft shrink-0"
+          >
+            <LogOutIcon size={15} className="mr-1.5" />
+            Sign Out
+          </Button>
         </div>
 
         <CrossfadeSwap
@@ -350,10 +360,15 @@ export default function ProfilePage() {
         </div>
       </main>
 
-      <AnimatedAside open={rightPanelOpen} width={400} side="right" className="absolute inset-y-0 right-0 z-10 hidden lg:block" contentClassName="overflow-y-auto">
-        <AddOnsPanel />
-      </AnimatedAside>
-      </div>
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Sign out?"
+        description="You'll need your PIN again to sign back in."
+        confirmLabel="Sign out"
+        cancelLabel="Stay signed in"
+        onConfirm={handleLogout}
+      />
     </div>
   )
 }
