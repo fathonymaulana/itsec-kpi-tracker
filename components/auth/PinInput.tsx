@@ -19,6 +19,16 @@ interface PinInputProps {
 
 const GLOW = '204,31,31' // #CC1F1F as an rgb triple, for building drop-shadow strings at various alphas
 
+// Perimeter of the box's own rounded-rect outline (x=2 y=2 w=44 h=44 rx=10 in a 48×48 viewBox) —
+// the four straight edges (2*(44-2*10) each, twice over) plus the four quarter-circle corners
+// (which together make one full circle of radius 10): 96 + 2π·10 ≈ 158.83. Used as the real
+// stroke-dasharray/-dashoffset unit for the trace-in animation below, deliberately not the SVG2
+// pathLength=1 normalization shortcut — GSAP tweens strokeDashoffset by writing it as a CSS
+// property, and a bare "1" with no unit convention already established on the element is
+// ambiguous enough (GSAP may default to appending "px") that the reveal silently snapped straight
+// to its end state instead of visibly sweeping. Real user-space units sidestep that entirely.
+const BOX_PERIMETER = 96 + 2 * Math.PI * 10
+
 // Reproduces the reference clip's verify sequence, timed against what it actually shows frame by
 // frame (not guessed): a neon stroke traces clockwise around each box's border starting from the
 // top (~0.35s), the fully-drawn outline blooms outward and then breathes gently for as long as the
@@ -41,10 +51,10 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
   useGSAP(() => {
     const strokes = strokeRefs.current.filter((el): el is SVGRectElement => !!el)
     if (phase !== 'verifying' || !strokes.length) return
-    gsap.set(strokes, { strokeDashoffset: 1, opacity: 1, filter: `drop-shadow(0 0 0px rgba(${GLOW},0))` })
+    gsap.set(strokes, { strokeDashoffset: BOX_PERIMETER, opacity: 1, filter: `drop-shadow(0 0 0px rgba(${GLOW},0))` })
     const tl = gsap.timeline()
-    tl.to(strokes, { strokeDashoffset: 0, duration: 0.35, ease: 'power2.out' })
-    tl.to(strokes, { filter: `drop-shadow(0 0 10px rgba(${GLOW},0.7))`, duration: 0.4, ease: 'sine.out' }, '-=0.05')
+    tl.to(strokes, { strokeDashoffset: 0, duration: 0.55, ease: 'power2.out' })
+    tl.to(strokes, { filter: `drop-shadow(0 0 10px rgba(${GLOW},0.7))`, duration: 0.4, ease: 'sine.out' }, '-=0.1')
     tl.to(strokes, {
       filter: `drop-shadow(0 0 4px rgba(${GLOW},0.35))`,
       duration: 1,
@@ -130,8 +140,8 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
                   </div>
                 )}
               </div>
-              {/* Neon trace overlay — a rounded-rect stroke with pathLength=1 so strokeDashoffset
-                  always runs a clean 0→1 range regardless of the box's actual perimeter length,
+              {/* Neon trace overlay — a rounded-rect stroke, dasharray/dashoffset set to its real
+                  perimeter (BOX_PERIMETER above) rather than SVG2's pathLength=1 normalization —
                   independent of the border-2 CSS border underneath it (which stays transparent
                   once this takes over, rather than the two competing for the same edge). */}
               <svg
@@ -145,9 +155,8 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
                   fill="none"
                   stroke="#CC1F1F"
                   strokeWidth="2"
-                  pathLength={1}
-                  strokeDasharray={1}
-                  strokeDashoffset={1}
+                  strokeDasharray={BOX_PERIMETER}
+                  strokeDashoffset={BOX_PERIMETER}
                 />
               </svg>
             </div>
