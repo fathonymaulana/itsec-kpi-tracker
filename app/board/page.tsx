@@ -18,6 +18,7 @@ import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
+import { useResponsivePanels } from '@/hooks/use-responsive-panels'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
 import type { MonthPeriod } from '@/components/kpi/DateSidebar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -147,8 +148,7 @@ export default function BoardPage() {
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
   const [deptKpiDetails, setDeptKpiDetails] = useState<Record<string, DeptKpiSummary[]>>({})
   const [loadingDeptDetails, setLoadingDeptDetails] = useState<Set<string>>(new Set())
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true)
-  const [rightPanelOpen, setRightPanelOpen] = useState(true)
+  const { leftPanelOpen, rightPanelOpen, toggleLeftPanel, toggleRightPanel } = useResponsivePanels()
   const [view, setView] = useState<'charts' | 'table'>('charts')
   const [visibleSeries, setVisibleSeries] = useState({ onTrack: true, watch: true, offTrack: true, noData: true })
   // Membership = hidden, not shown — starts empty (nothing hidden, every department visible) so
@@ -336,15 +336,15 @@ export default function BoardPage() {
     <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
         leftPanelOpen={leftPanelOpen}
-        onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        onToggleLeftPanel={toggleLeftPanel}
         rightPanelOpen={rightPanelOpen}
-        onToggleRightPanel={() => setRightPanelOpen(v => !v)}
+        onToggleRightPanel={toggleRightPanel}
       />
 
       {/* The scroll container spans edge-to-edge (both asides float above it, absolutely
           positioned) so its native scrollbar renders at the true right edge of the viewport. */}
       <div className="flex-1 relative overflow-hidden">
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="p-12 overflow-y-auto">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="py-8 px-6 overflow-y-auto">
           <DateSidebar
             year={rangeFrom.year}
             onYearChange={() => {}}

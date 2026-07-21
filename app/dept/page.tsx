@@ -15,6 +15,7 @@ import { DateSidebar } from '@/components/kpi/DateSidebar'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
+import { useResponsivePanels } from '@/hooks/use-responsive-panels'
 import { EmptyState } from '@/components/ui/empty-state'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -94,8 +95,7 @@ export default function DeptPage() {
   const [verifications, setVerifications] = useState<Verification[]>([])
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true)
-  const [rightPanelOpen, setRightPanelOpen] = useState(true)
+  const { leftPanelOpen, rightPanelOpen, toggleLeftPanel, toggleRightPanel } = useResponsivePanels()
   const hasFetchedRef = useRef(false)
 
   useEffect(() => {
@@ -342,9 +342,9 @@ export default function DeptPage() {
     <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
         leftPanelOpen={leftPanelOpen}
-        onToggleLeftPanel={() => setLeftPanelOpen(v => !v)}
+        onToggleLeftPanel={toggleLeftPanel}
         rightPanelOpen={rightPanelOpen}
-        onToggleRightPanel={() => setRightPanelOpen(v => !v)}
+        onToggleRightPanel={toggleRightPanel}
       />
 
       {/* The scroll container spans edge-to-edge (both asides float above it, absolutely
@@ -353,7 +353,7 @@ export default function DeptPage() {
           buttons don't sit underneath the asides either. */}
       <div className="flex-1 relative overflow-hidden">
         {/* Left: clock + date picker */}
-        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="p-12 overflow-y-auto">
+        <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="py-8 px-6 overflow-y-auto">
           <DateSidebar
             year={year}
             onYearChange={setYear}
