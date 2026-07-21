@@ -37,6 +37,16 @@ import { cn, iconHoverClass } from '@/lib/utils'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
+interface PeriodTally {
+  year: number
+  month: number
+  on_track: number
+  watch: number
+  off_track: number
+  no_data: number
+  review_manually: number
+}
+
 interface DeptSummary {
   dept_id: string
   department_name: string
@@ -46,6 +56,7 @@ interface DeptSummary {
   off_track: number
   no_data: number
   month_statuses: Partial<Record<number, KpiStatus>>
+  periods?: PeriodTally[]
 }
 
 interface DeptKpiSummary {
@@ -128,6 +139,10 @@ export default function BoardPage() {
   // this doesn't need to know the full department list before the first fetch resolves, mirroring
   // visibleSeries' own "default everything on" convention.
   const [hiddenDepts, setHiddenDepts] = useState<Set<string>>(new Set())
+  // null = the "All" tab (worst-status-across-the-range aggregate, the default/original behavior).
+  // Set to a specific period once the range spans more than one month and the user picks one of the
+  // per-month tabs under Department Breakdown, to drill into just that month instead of the rollup.
+  const [breakdownPeriod, setBreakdownPeriod] = useState<MonthPeriod | null>(null)
 
   // The single date control for this whole page now — CorPlan's sidebar picker (see DateSidebar's
   // range mode). Defaults to a one-month "range" (today's default period, both ends the same) so a
@@ -164,6 +179,11 @@ export default function BoardPage() {
 
   useEffect(() => { if (user) fetchData() }, [user, fetchData])
 
+  // A previously-picked month tab may not even fall inside a newly-picked range, and any cached
+  // per-KPI detail was computed for the old range/tab anyway — reset both back to "All" + empty so
+  // nothing stale carries over when the range itself changes.
+  useEffect(() => { setBreakdownPeriod(null); setDeptKpiDetails({}) }, [rangeFrom.year, rangeFrom.month, rangeTo.year, rangeTo.month])
+
   const fetchYearSummary = useCallback(async (y: number) => {
     if (!token) return
     try {
@@ -195,14 +215,16 @@ export default function BoardPage() {
 
   // Lazy-loaded on first expand — the board summary endpoint only carries aggregate counts, not KPI
   // names/targets, so seeing the actual per-KPI breakdown for one department means a real fetch.
-  // Fetches actuals for every year the selected range touches (usually just one), then — matching
-  // the board summary API's own "worst status across the range" rule — takes each KPI's worst status
-  // among every period in rangePeriods, not just a single month's.
+  // Fetches actuals for every year the selected range touches (usually just one). When a specific
+  // month tab is active (breakdownPeriod set), each KPI's status is just that one period's — same
+  // rule the collapsed badge counts use via tallyFor. On "All", falls back to the worst status
+  // across every period in rangePeriods, matching the range-wide aggregate.
+  const detailPeriods = breakdownPeriod ? [breakdownPeriod] : rangePeriods
   const fetchDeptKpiDetails = useCallback(async (deptId: string) => {
     if (!token || deptKpiDetails[deptId] || loadingDeptDetails.has(deptId)) return
     setLoadingDeptDetails(prev => new Set(prev).add(deptId))
     try {
-      const years = Array.from(new Set(rangePeriods.map(p => p.year)))
+      const years = Array.from(new Set(detailPeriods.map(p => p.year)))
       const [kpiRes, ...actResList] = await Promise.all([
         fetch(`/api/departments/${deptId}/kpis`, { headers: authHeaders(token) }),
         ...years.map(y => fetch(`/api/actuals?dept_id=${deptId}&year=${y}`, { headers: authHeaders(token) })),
@@ -223,7 +245,7 @@ export default function BoardPage() {
         frequency?: string | null; sub_metrics: (SubMetricLike & { unit: string })[]
       }
       const summariesForDept: DeptKpiSummary[] = (kpiData.kpis || []).map((kpi: KpiRow) => {
-        const statuses = rangePeriods.map(p => {
+        const statuses = detailPeriods.map(p => {
           const actualsByMonth = actualsByYearMonth[p.year] || {}
           const { overall } = getPeriodStatuses(kpi.sub_metrics, actualsByMonth, kpi.frequency, p.month)
           return overall ?? getStatus(resolvePrimaryValue(kpi.sub_metrics, actualsByMonth[p.month] || {}), kpi.numeric_target, kpi.direction)
@@ -235,10 +257,15 @@ export default function BoardPage() {
     finally {
       setLoadingDeptDetails(prev => { const next = new Set(prev); next.delete(deptId); return next })
     }
-    // rangePeriods is derived fresh each render from rangeFrom/rangeTo — depend on those directly
-    // rather than the derived array itself, which would never be referentially stable.
+    // detailPeriods is derived fresh each render — depend on its own inputs directly rather than the
+    // derived array itself, which would never be referentially stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, rangeFrom.year, rangeFrom.month, rangeTo.year, rangeTo.month, deptKpiDetails, loadingDeptDetails])
+  }, [token, rangeFrom.year, rangeFrom.month, rangeTo.year, rangeTo.month, breakdownPeriod, deptKpiDetails, loadingDeptDetails])
+
+  // Switching tabs invalidates any already-fetched per-KPI detail (it was computed for the previous
+  // tab's period set) so re-expanding a department fetches fresh, correct-for-the-new-tab data
+  // instead of silently showing stale statuses.
+  useEffect(() => { setDeptKpiDetails({}) }, [breakdownPeriod])
 
   const toggleDept = (id: string) => {
     setExpandedDepts(prev => {
@@ -255,6 +282,15 @@ export default function BoardPage() {
   // accordion, both table views, and the exported report all read this instead of the raw fetch
   // result, so hiding a department is consistent across the whole dashboard, not just one chart.
   const filteredSummaries = summaries.filter(d => !hiddenDepts.has(d.dept_id))
+
+  // Department Breakdown's own tally — stat cards/chart above always stay the range-wide aggregate
+  // (on_track/watch/off_track/no_data), but the breakdown accordion switches to one specific
+  // period's counts when a month tab is active instead of the "worst across the range" rollup.
+  const tallyFor = (dept: DeptSummary) => {
+    if (!breakdownPeriod) return { on_track: dept.on_track, watch: dept.watch, off_track: dept.off_track, no_data: dept.no_data }
+    const p = dept.periods?.find(p => p.year === breakdownPeriod.year && p.month === breakdownPeriod.month)
+    return p ?? { on_track: 0, watch: 0, off_track: 0, no_data: dept.total }
+  }
 
   // Totals across filtered depts
   const totals = filteredSummaries.reduce((acc, d) => ({
@@ -489,6 +525,40 @@ export default function BoardPage() {
                 {/* Department accordion */}
                 <div className="space-y-2">
                   <h3 className="font-medium text-ink text-sm mb-3">Department Breakdown</h3>
+
+                  {/* Only worth showing once the range actually spans more than one month — "All"
+                      (the range-wide worst-status aggregate, same as the stat cards/chart above) is
+                      always first, then one tab per month in the range to drill into just that
+                      month instead of the rollup. */}
+                  {rangePeriods.length > 1 && (
+                    <div className="flex items-center gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
+                      <button
+                        onClick={() => setBreakdownPeriod(null)}
+                        className={cn(
+                          'shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-colors',
+                          !breakdownPeriod ? 'bg-primary text-primary-foreground' : 'bg-panel border border-divider text-ink-muted hover:text-ink'
+                        )}
+                      >
+                        All
+                      </button>
+                      {rangePeriods.map(p => {
+                        const active = breakdownPeriod?.year === p.year && breakdownPeriod?.month === p.month
+                        return (
+                          <button
+                            key={`${p.year}-${p.month}`}
+                            onClick={() => setBreakdownPeriod(p)}
+                            className={cn(
+                              'shrink-0 h-8 px-3 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                              active ? 'bg-primary text-primary-foreground' : 'bg-panel border border-divider text-ink-muted hover:text-ink'
+                            )}
+                          >
+                            {MONTHS[p.month - 1].slice(0, 3)} {p.year}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+
                   <CrossfadeSwap
                     show={!loading}
                     skeleton={
@@ -500,7 +570,8 @@ export default function BoardPage() {
                   <div className="space-y-2">
                   {filteredSummaries.map(dept => {
                     const expanded = expandedDepts.has(dept.dept_id)
-                    const onPct = dept.total > 0 ? Math.round(dept.on_track / dept.total * 100) : 0
+                    const tally = tallyFor(dept)
+                    const onPct = dept.total > 0 ? Math.round(tally.on_track / dept.total * 100) : 0
                     return (
                       <div key={dept.dept_id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden">
                         <button
@@ -514,10 +585,10 @@ export default function BoardPage() {
                           <div className="flex items-center gap-3 shrink-0">
                             <div className="flex gap-1.5">
                               {[
-                                { v: dept.on_track, c: 'var(--success-text)', bg: 'var(--success-soft-bg)' },
-                                { v: dept.watch, c: 'var(--warning-text)', bg: 'var(--warning-soft-bg)' },
-                                { v: dept.off_track, c: 'var(--danger-text)', bg: 'var(--danger-soft-bg)' },
-                                { v: dept.no_data, c: 'var(--ink-faint)', bg: 'var(--panel-soft-bg)' },
+                                { v: tally.on_track, c: 'var(--success-text)', bg: 'var(--success-soft-bg)' },
+                                { v: tally.watch, c: 'var(--warning-text)', bg: 'var(--warning-soft-bg)' },
+                                { v: tally.off_track, c: 'var(--danger-text)', bg: 'var(--danger-soft-bg)' },
+                                { v: tally.no_data, c: 'var(--ink-faint)', bg: 'var(--panel-soft-bg)' },
                               ].map((s, i) => s.v > 0 && (
                                 <Badge key={i} className="size-5 shrink-0 p-0 justify-center rounded-full text-[10px] font-medium" style={{ color: s.c, background: s.bg }}>
                                   {s.v}

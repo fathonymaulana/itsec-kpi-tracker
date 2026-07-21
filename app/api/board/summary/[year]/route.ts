@@ -151,6 +151,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       else no_data++
     }
 
+    // Same tally, but kept separate per period instead of collapsed to one worst-wins value — lets
+    // the client offer per-month tabs under a multi-month range without a separate fetch per tab.
+    const periodTallies = periods.map(p => {
+      let pOnTrack = 0, pWatch = 0, pOffTrack = 0, pNoData = 0, pReviewManually = 0
+      for (const kpi of kpis) {
+        const status = statusForPeriod(kpi, p.year, p.month)
+        if (status === 'on_track') pOnTrack++
+        else if (status === 'watch') pWatch++
+        else if (status === 'off_track') pOffTrack++
+        else if (status === 'review_manually') pReviewManually++
+        else pNoData++
+      }
+      return { year: p.year, month: p.month, on_track: pOnTrack, watch: pWatch, off_track: pOffTrack, no_data: pNoData, review_manually: pReviewManually }
+    })
+
     return {
       dept_id: dept.id,
       department_name: dept.name,
@@ -158,6 +173,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       on_track, watch, off_track, no_data, review_manually,
       submitted: submittedDeptSet.has(dept.id),
       month_statuses,
+      periods: periodTallies,
     }
   })
 
