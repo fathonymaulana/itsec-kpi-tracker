@@ -19,6 +19,37 @@ function sanitizePdfText(s: string): string {
   return s.replace(/≥/g, '>=').replace(/≤/g, '<=')
 }
 
+// The ITSEC KPI TRACKER lockup, rasterized once and reused for every export — jsPDF's addImage
+// has no native SVG support (it needs a raster format or a separate svg2pdf.js plugin), and this
+// asset already exists as a static SVG (unused elsewhere in the app, but exactly this shape: a
+// compact horizontal mark meant for a light background). Drawn onto a fixed-size canvas rather than
+// trusting the <img>'s reported natural size — an SVG with percentage width/height and no sizing
+// context resolves inconsistently across browsers — so the raster always comes out at the asset's
+// real 179:18.9378 aspect ratio regardless.
+const LOGO_SRC = '/login/itsec-logo-badge.svg'
+const LOGO_VIEWBOX = { w: 179, h: 18.9378 }
+const LOGO_RASTER_SCALE = 4
+let logoDataUrlPromise: Promise<string> | null = null
+function getLogoDataUrl(): Promise<string> {
+  if (!logoDataUrlPromise) {
+    logoDataUrlPromise = new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = LOGO_VIEWBOX.w * LOGO_RASTER_SCALE
+        canvas.height = LOGO_VIEWBOX.h * LOGO_RASTER_SCALE
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Canvas unavailable')); return }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/png'))
+      }
+      img.onerror = () => reject(new Error('Logo failed to load'))
+      img.src = LOGO_SRC
+    })
+  }
+  return logoDataUrlPromise
+}
+
 export interface ReportColumn {
   key: string
   label: string
@@ -42,15 +73,25 @@ export function DownloadReportButton({ title, filename, columns, rows, className
   const handlePdf = async () => {
     setExporting('pdf')
     try {
-      const [{ default: JsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
+      const [{ default: JsPDF }, { default: autoTable }, logoDataUrl] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+        // Non-fatal — a failed logo load (offline, asset missing) shouldn't block the export itself.
+        getLogoDataUrl().catch(() => null),
+      ])
       const doc = new JsPDF({ orientation: columns.length > 5 ? 'landscape' : 'portrait' })
+      if (logoDataUrl) {
+        const logoW = 42
+        const logoH = logoW * (LOGO_VIEWBOX.h / LOGO_VIEWBOX.w)
+        doc.addImage(logoDataUrl, 'PNG', 14, 10, logoW, logoH)
+      }
       doc.setFontSize(13)
-      doc.text(sanitizePdfText(title), 14, 15)
+      doc.text(sanitizePdfText(title), 14, 22)
       doc.setFontSize(9)
       doc.setTextColor(120)
-      doc.text(`Generated ${new Date().toLocaleString()}`, 14, 21)
+      doc.text(`Generated ${new Date().toLocaleString()}`, 14, 28)
       autoTable(doc, {
-        startY: 26,
+        startY: 33,
         head: [columns.map(c => sanitizePdfText(c.label))],
         body: rows.map(r => columns.map(c => sanitizePdfText(String(r[c.key] ?? '')))),
         styles: { fontSize: 9, cellPadding: 3 },
