@@ -3,14 +3,20 @@ import { useState, useEffect, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { useAuth } from '@/lib/auth'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
+import { PinInput } from '@/components/auth/PinInput'
 import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
 import { cn } from '@/lib/utils'
+
+// Cycled while a login request is in flight — a lighter, more "alive" read than a single static
+// "Signing in…" the whole time, same idea as an AI chat's cycling "Thinking… / Pondering…" status.
+const LOADING_WORDS = ['Signing in…', 'Verifying…', 'Checking credentials…', 'Almost there…']
+const LOADING_WORD_INTERVAL_MS = 1100
 
 interface DirectoryUser {
   id: number
@@ -42,6 +48,7 @@ function LoginForm() {
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingWordIndex, setLoadingWordIndex] = useState(0)
 
   useEffect(() => {
     fetch('/api/users/directory')
@@ -52,6 +59,12 @@ function LoginForm() {
       })
       .catch(() => setError('Failed to load users. Please refresh.'))
   }, [preselectId])
+
+  useEffect(() => {
+    if (!loading) { setLoadingWordIndex(0); return }
+    const id = setInterval(() => setLoadingWordIndex(i => (i + 1) % LOADING_WORDS.length), LOADING_WORD_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [loading])
 
   const preselectedUser = directory.find(u => String(u.id) === preselectId)
 
@@ -80,6 +93,7 @@ function LoginForm() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed')
       setLoading(false)
+      setPin('')
     }
   }
 
@@ -181,16 +195,14 @@ function LoginForm() {
                 <p className="text-[12.8px] text-ink-muted leading-5">Choose the department or role that best fits your position.</p>
               </div>
 
-              <div className="flex flex-col gap-2 w-full">
-                <label className="text-sm font-medium text-ink">4-Digit PIN</label>
-                <Input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={4}
+              <div className="flex flex-col gap-2 w-full items-center">
+                <label className="text-sm font-medium text-ink self-start">4-Digit PIN</label>
+                <PinInput
                   value={pin}
-                  onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  placeholder="• • • •"
-                  className="h-9 rounded-lg border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-center text-lg tracking-widest"
+                  onChange={v => { setPin(v); if (error) setError('') }}
+                  loading={loading}
+                  error={!!error}
+                  disabled={loading}
                 />
               </div>
 
@@ -201,27 +213,57 @@ function LoginForm() {
                 </div>
               )}
 
-              <Button
-                type="submit"
-                disabled={!selected || pin.length !== 4 || loading}
-                className={cn(
-                  // bg-primary (not a fixed hex) so this correctly inverts in dark mode — near-black
-                  // fill/near-white text in light mode, near-white fill/near-black text in dark mode.
-                  // disabled:bg-primary keeps the fill solid either way; only the text swaps between
-                  // muted-foreground and primary-foreground, both of which stay correctly paired with
-                  // whichever fill color --primary resolves to in the current theme. The unfilled
-                  // disabled state intentionally stays full-opacity (muted-foreground text carries
-                  // that "disabled" read on its own) — only the signing-in state below fades its
-                  // content, as processing feedback distinct from "not ready to submit yet".
-                  'w-full h-12 rounded-2xl bg-primary hover:bg-primary/80 font-medium disabled:opacity-100 disabled:bg-primary disabled:pointer-events-none',
-                  formFilled ? 'text-primary-foreground' : 'text-muted-foreground'
-                )}
+              {/* Wrapping motion.div (not the Button itself) carries the loading glow ring — same
+                  red pulse the PIN boxes get — so the submit action reads as one continuous "working"
+                  state across both, not just a spinner tucked inside the button. */}
+              <motion.div
+                animate={
+                  loading
+                    ? { boxShadow: ['0 0 0px 0px rgba(204,31,31,0)', '0 0 20px 4px rgba(204,31,31,0.45)', '0 0 0px 0px rgba(204,31,31,0)'] }
+                    : { boxShadow: '0 0 0px 0px rgba(204,31,31,0)' }
+                }
+                transition={loading ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+                className="w-full rounded-2xl"
               >
-                <span className={cn('flex items-center gap-2', loading && 'opacity-60')}>
-                  {loading && <Spinner className="size-4" />}
-                  {loading ? 'Signing in…' : 'Sign in'}
-                </span>
-              </Button>
+                <Button
+                  type="submit"
+                  disabled={!selected || pin.length !== 4 || loading}
+                  className={cn(
+                    // bg-primary (not a fixed hex) so this correctly inverts in dark mode — near-black
+                    // fill/near-white text in light mode, near-white fill/near-black text in dark mode.
+                    // disabled:bg-primary keeps the fill solid either way; only the text swaps between
+                    // muted-foreground and primary-foreground, both of which stay correctly paired with
+                    // whichever fill color --primary resolves to in the current theme. The unfilled
+                    // disabled state intentionally stays full-opacity (muted-foreground text carries
+                    // that "disabled" read on its own) — only the signing-in state below fades its
+                    // content, as processing feedback distinct from "not ready to submit yet".
+                    'w-full h-12 rounded-2xl bg-primary hover:bg-primary/80 font-medium disabled:opacity-100 disabled:bg-primary disabled:pointer-events-none',
+                    formFilled ? 'text-primary-foreground' : 'text-muted-foreground'
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    {loading && <Spinner className="size-4" />}
+                    {loading ? (
+                      // Shimmer built from var(--primary-foreground) itself (not a hardcoded white/
+                      // black), so the brightness sweep reads correctly in both themes — light mode's
+                      // near-white button text sweeps toward pure white, dark mode's near-black text
+                      // sweeps toward pure black, rather than flashing the wrong tone in one of them.
+                      <span
+                        key={loadingWordIndex}
+                        className="inline-block bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer"
+                        style={{
+                          backgroundImage:
+                            'linear-gradient(90deg, color-mix(in srgb, var(--primary-foreground) 45%, transparent) 35%, var(--primary-foreground) 50%, color-mix(in srgb, var(--primary-foreground) 45%, transparent) 65%)',
+                        }}
+                      >
+                        {LOADING_WORDS[loadingWordIndex]}
+                      </span>
+                    ) : (
+                      'Sign in'
+                    )}
+                  </span>
+                </Button>
+              </motion.div>
             </form>
 
             <p className="text-ink-muted text-[10px] leading-4 text-center w-full">

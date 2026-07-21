@@ -122,6 +122,26 @@ const config: Config = {
         // Tailwind v3 has no "xs" shadow size by default — this matches v4's own --shadow-xs value.
         xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
       },
+      keyframes: {
+        // Sweeps a bright band across a background-clip:text gradient — used for the "Signing in…"
+        // button label while a login request is in flight.
+        shimmer: {
+          '0%': { backgroundPosition: '150% 0' },
+          '100%': { backgroundPosition: '-50% 0' },
+        },
+        // Small side-to-side rattle for the PIN boxes on a rejected PIN — settles back to center.
+        'pin-shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%': { transform: 'translateX(-6px)' },
+          '40%': { transform: 'translateX(6px)' },
+          '60%': { transform: 'translateX(-4px)' },
+          '80%': { transform: 'translateX(4px)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.8s linear infinite',
+        'pin-shake': 'pin-shake 0.4s ease-in-out',
+      },
     },
   },
   plugins: [dataAttributeVariants, animate],
