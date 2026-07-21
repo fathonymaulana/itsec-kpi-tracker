@@ -24,6 +24,7 @@ import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
+import { useResponsivePanels } from '@/hooks/use-responsive-panels'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -64,7 +65,7 @@ export default function SuperAdminPage() {
   const [loading, setLoading] = useState(true)
   const [dialogUser, setDialogUser] = useState<AdminUser | 'new' | null>(null)
   const [resetPinFor, setResetPinFor] = useState<AdminUser | null>(null)
-  const [rightPanelOpen, setRightPanelOpen] = useState(true)
+  const { rightPanelOpen, toggleRightPanel } = useResponsivePanels()
 
   useEffect(() => {
     if (!ready) return
@@ -175,7 +176,7 @@ export default function SuperAdminPage() {
 
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
-      <DeptTopNav rightPanelOpen={rightPanelOpen} onToggleRightPanel={() => setRightPanelOpen(v => !v)} />
+      <DeptTopNav rightPanelOpen={rightPanelOpen} onToggleRightPanel={toggleRightPanel} />
 
       {/* The scroll container spans edge-to-edge (the aside floats above it, absolutely positioned)
           so its native scrollbar renders at the true right edge of the viewport instead of at
