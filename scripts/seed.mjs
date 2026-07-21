@@ -87,7 +87,7 @@ addKpi('CorCom','Government & Regulatory Relationship Index','≥ 3 meetings/qua
   {name:'(2) No. of Partnerships / MOUs Secured'},
   {name:'Partnership Conversion Rate % (Auto-calc)',is_calc:1,fk:'B/A',unit:'%',target:0.2,dir:1},
 ])
-addKpi('CorCom','Strategic Partnership Initiative','≥ 4 formal partnership agreements/year',4,1,'Quarterly, Annually',[
+addKpi('CorCom','Strategic Partnership Initiative','≥ 4 formal partnership agreements/year',4,1,'Quarterly',[
   {name:'(1) No. of Partnership Agreements / MOUs Signed',target:4,dir:1},
   {name:'(2) No. of Qualified Leads from Partnership Programs',target:100,dir:1},
   {name:'(3) Pipeline Value from Partnership Leads (IDR)',target:5000000000,dir:1},
@@ -115,20 +115,20 @@ addKpi('CorCom','ESG & CSR Impact Index','≥ 1000 unique beneficiaries/year; �
 ])
 
 // ── CorSec ──────────────────────────────────────────────────────────────
-addKpi('CorSec','Zero Regulatory Breaches','0 breaches',0,-1,'Monthly',[
+addKpi('CorSec','Zero Regulatory Breaches','0 breaches',0,-1,'Quarterly',[
   {name:'No. of Breaches / Incidents Reported by Regulators',target:0,dir:-1},
 ])
-addKpi('CorSec','Corporate Governance Execution','100% completion rate',1,1,'Monthly',[
+addKpi('CorSec','Corporate Governance Execution','100% completion rate',1,1,'Quarterly',[
   {name:'No. of Meetings Held & Documents Completed'},
   {name:'Total Required Agenda Items'},
   {name:'Completion Rate % (Auto-calc)',is_calc:1,fk:'A/B',unit:'%',target:1,dir:1},
 ])
-addKpi('CorSec','Corporate Compliance & Reporting','100% compliance rate',1,1,'Monthly',[
+addKpi('CorSec','Corporate Compliance & Reporting','100% compliance rate',1,1,'Quarterly',[
   {name:'No. of Timely Reports & Compliance Updates Submitted'},
   {name:'Total Reporting Obligations'},
   {name:'Compliance Rate % (Auto-calc)',is_calc:1,fk:'A/B',unit:'%',target:1,dir:1},
 ])
-addKpi('CorSec','Corporate Secretary Admin & Public Relations','100% completion rate',1,1,'Monthly',[
+addKpi('CorSec','Corporate Secretary Admin & Public Relations','100% completion rate',1,1,'Quarterly',[
   {name:'No. of Documents / Correspondences Completed On Time'},
   {name:'Total Documents / Correspondences Due'},
   {name:'Completion Rate % (Auto-calc)',is_calc:1,fk:'A/B',unit:'%',target:1,dir:1},
