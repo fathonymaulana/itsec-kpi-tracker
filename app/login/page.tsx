@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
-import { PinInput } from '@/components/auth/PinInput'
+import { PinInput, type PinPhase } from '@/components/auth/PinInput'
 import { DangerCircleLineDuotone as AlertCircle } from '@solar-icons/react-perf'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
 import { cn } from '@/lib/utils'
@@ -47,8 +47,9 @@ function LoginForm() {
   const [selected, setSelected] = useState('')
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [phase, setPhase] = useState<PinPhase>('idle')
   const [loadingWordIndex, setLoadingWordIndex] = useState(0)
+  const loading = phase !== 'idle'
 
   useEffect(() => {
     fetch('/api/users/directory')
@@ -61,10 +62,10 @@ function LoginForm() {
   }, [preselectId])
 
   useEffect(() => {
-    if (!loading) { setLoadingWordIndex(0); return }
+    if (phase !== 'verifying') { setLoadingWordIndex(0); return }
     const id = setInterval(() => setLoadingWordIndex(i => (i + 1) % LOADING_WORDS.length), LOADING_WORD_INTERVAL_MS)
     return () => clearInterval(id)
-  }, [loading])
+  }, [phase])
 
   const preselectedUser = directory.find(u => String(u.id) === preselectId)
 
@@ -78,21 +79,25 @@ function LoginForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!selected || pin.length !== 4) return
-    setLoading(true)
+    setPhase('verifying')
     setError('')
     try {
       await login(parseInt(selected, 10), pin)
       const stored = JSON.parse(localStorage.getItem('itsec_kpi_user') || '{}')
       const role = stored.role
+      // Give the boxes' merge-into-checkmark animation (see PinInput) time to actually play before
+      // navigating away — jumping straight to router.push the instant login() resolves would mean
+      // this component unmounts before anyone ever sees it.
+      setPhase('success')
+      await new Promise(resolve => setTimeout(resolve, 900))
       if (role === 'dept_head') router.push('/dept/dashboard')
       else router.push('/board')
-      // Intentionally leave `loading` true here instead of a `finally` — this component unmounts
-      // once the route change lands, so resetting it on success would only be visible as a flash
-      // back to "Sign in" in the moment before that happens. Only the failure path resets it, so
-      // the CTA stays in "Signing in…" continuously until the destination page opens or an error surfaces.
+      // Intentionally leave `phase` at 'success' here instead of resetting it — this component
+      // unmounts once the route change lands, so resetting it now would only be visible as a flash
+      // back to "Sign in" in the moment before that happens.
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed')
-      setLoading(false)
+      setPhase('idle')
       setPin('')
     }
   }
@@ -200,7 +205,7 @@ function LoginForm() {
                 <PinInput
                   value={pin}
                   onChange={v => { setPin(v); if (error) setError('') }}
-                  loading={loading}
+                  phase={phase}
                   error={!!error}
                   disabled={loading}
                 />
@@ -218,11 +223,13 @@ function LoginForm() {
                   state across both, not just a spinner tucked inside the button. */}
               <motion.div
                 animate={
-                  loading
+                  phase === 'verifying'
                     ? { boxShadow: ['0 0 0px 0px rgba(204,31,31,0)', '0 0 20px 4px rgba(204,31,31,0.45)', '0 0 0px 0px rgba(204,31,31,0)'] }
-                    : { boxShadow: '0 0 0px 0px rgba(204,31,31,0)' }
+                    : phase === 'success'
+                      ? { boxShadow: '0 0 16px 3px rgba(204,31,31,0.4)' }
+                      : { boxShadow: '0 0 0px 0px rgba(204,31,31,0)' }
                 }
-                transition={loading ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+                transition={phase === 'verifying' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
                 className="w-full rounded-2xl"
               >
                 <Button
@@ -242,8 +249,8 @@ function LoginForm() {
                   )}
                 >
                   <span className="flex items-center gap-2">
-                    {loading && <Spinner className="size-4" />}
-                    {loading ? (
+                    {phase === 'verifying' && <Spinner className="size-4" />}
+                    {phase === 'verifying' ? (
                       // Shimmer built from var(--primary-foreground) itself (not a hardcoded white/
                       // black), so the brightness sweep reads correctly in both themes — light mode's
                       // near-white button text sweeps toward pure white, dark mode's near-black text
@@ -258,6 +265,8 @@ function LoginForm() {
                       >
                         {LOADING_WORDS[loadingWordIndex]}
                       </span>
+                    ) : phase === 'success' ? (
+                      'Verified'
                     ) : (
                       'Sign in'
                     )}
