@@ -181,21 +181,6 @@
     max-width: 100vw;
   }
 
-  /* Desktop's default scale reads as too large at native 100% — this makes browser-zoomed-to-75%
-     (which is what "feels right" at desktop sizes) the actual default, instead of asking every
-     user to manually zoom out themselves. `zoom` (not `transform: scale`) scales layout itself, so
-     it doesn't fight overflow/position:fixed math the way a transform would, and it re-triggers
-     layout at the smaller effective size — the existing md:/lg:/xl: breakpoints below still apply
-     based on that shrunk-down layout, same as if the user had actually zoomed out. Gated to md+ only
-     — small/mobile screens already get their own dedicated compact views (mobile card lists, the
-     MobileDatePicker, etc.) tuned at native scale; zooming those out further would just make an
-     already-small screen's text harder to read for no benefit. */
-  @media (min-width: 768px) {
-    html {
-      zoom: 0.75;
-    }
-  }
-
   /* Thin, trackless scrollbars — only the thumb grows on hover (via animating its transparent
      border down, not its box width, since Webkit won't smoothly transition scrollbar box sizes).
      Track/gutter stays fully transparent in every state, matching the "no track bg/border, ever"

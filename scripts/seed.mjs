@@ -67,7 +67,7 @@ function addKpi(dept_id, kpi_name, target_text, numeric_target, direction, frequ
 }
 
 // ── CorCom ──────────────────────────────────────────────────────────────
-addKpi('CorCom','Revenue Contribution (ROAS)','≥ 2x ROAS',2,1,'Quarterly, Annually',[
+addKpi('CorCom','Revenue Contribution (ROAS)','≥ 2x ROAS',2,1,'Quarterly',[
   {name:'Marketing-Attributed Revenue (IDR)'},
   {name:'Total Marketing Spend (IDR)'},
   {name:'ROAS (Auto-calculated)',is_calc:1,fk:'A/B',unit:'x',target:2,dir:1},

@@ -9,6 +9,16 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { buttonVariants } from '@/components/ui/button'
 import { cn, iconHoverClass } from '@/lib/utils'
 
+// jsPDF's default core font (Helvetica) only covers WinAnsiEncoding, which has no glyph for ≥/≤
+// (KPI target text like "≥ 2x ROAS" uses them throughout scripts/seed.mjs) — instead of erroring,
+// jsPDF/autoTable silently draws whatever fallback glyph the font has for the codepoint, which is
+// how "≥ 2x ROAS" ended up rendering as "e 2 x R O A S" in exported PDFs. Swapping in the ASCII
+// equivalents before the text ever reaches jsPDF sidesteps needing a bundled Unicode font just for
+// two characters.
+function sanitizePdfText(s: string): string {
+  return s.replace(/≥/g, '>=').replace(/≤/g, '<=')
+}
+
 export interface ReportColumn {
   key: string
   label: string
@@ -35,14 +45,14 @@ export function DownloadReportButton({ title, filename, columns, rows, className
       const [{ default: JsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
       const doc = new JsPDF({ orientation: columns.length > 5 ? 'landscape' : 'portrait' })
       doc.setFontSize(13)
-      doc.text(title, 14, 15)
+      doc.text(sanitizePdfText(title), 14, 15)
       doc.setFontSize(9)
       doc.setTextColor(120)
       doc.text(`Generated ${new Date().toLocaleString()}`, 14, 21)
       autoTable(doc, {
         startY: 26,
-        head: [columns.map(c => c.label)],
-        body: rows.map(r => columns.map(c => String(r[c.key] ?? ''))),
+        head: [columns.map(c => sanitizePdfText(c.label))],
+        body: rows.map(r => columns.map(c => sanitizePdfText(String(r[c.key] ?? '')))),
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: [23, 23, 23] },
       })

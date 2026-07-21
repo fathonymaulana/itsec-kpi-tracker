@@ -11,7 +11,7 @@ import {
   ListLineDuotone as ListLine, ListBold as ListBold,
   TuningLineDuotone as IconFilters,
 } from '@solar-icons/react-perf'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Cell } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
@@ -120,6 +120,22 @@ function BarSegmentLabel(props: any) {
     <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={13} fontWeight={600}>
       {value}
     </text>
+  )
+}
+
+// Tooltip for the per-department metric chart below — a plain custom Tooltip (not the shared
+// ChartTooltipContent) since each bar's color comes from a per-KPI status, not a chartConfig series,
+// so there's no single "label"/color pair to look up the usual way.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function KpiStatusTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload as DeptKpiSummary
+  return (
+    <div className="rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl min-w-40 space-y-1">
+      <div className="font-medium text-ink">{d.name}</div>
+      <div className="text-ink-muted text-[11px]">Target: {d.target_text}</div>
+      <StatusBadge status={d.status} size="sm" />
+    </div>
   )
 }
 
@@ -606,17 +622,49 @@ export default function BoardPage() {
                                 {[...Array(3)].map((_, i) => <div key={i} className="h-8 bg-panel-soft rounded-lg animate-pulse" />)}
                               </div>
                             ) : deptKpiDetails[dept.dept_id] && (
-                              <div className="space-y-1">
-                                {deptKpiDetails[dept.dept_id].map(k => (
-                                  <div key={k.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-panel-soft">
-                                    <div className="min-w-0">
-                                      <div className="text-xs font-medium text-ink truncate">{k.name}</div>
-                                      <div className="text-[10px] text-ink-faint truncate">Target: {k.target_text}</div>
-                                    </div>
-                                    <StatusBadge status={k.status} size="sm" />
+                              <>
+                                {/* Same chart language as the department rollup above it, but the axis
+                                    is this one department's own metrics — one bar per KPI, colored by
+                                    that KPI's status, uniform length (there's no shared numeric unit
+                                    across a %, an x-multiple, and an IDR value to plot bar length by). */}
+                                {deptKpiDetails[dept.dept_id].length > 0 && (
+                                  <div className="bg-panel-soft rounded-2xl p-3">
+                                    <ChartContainer
+                                      config={chartConfig}
+                                      className="w-full aspect-auto"
+                                      style={{ height: Math.max(deptKpiDetails[dept.dept_id].length * 32 + 16, 60) }}
+                                    >
+                                      <BarChart
+                                        data={deptKpiDetails[dept.dept_id]}
+                                        layout="vertical"
+                                        barSize={16}
+                                        margin={{ top: 0, right: 12, left: 0, bottom: 0 }}
+                                      >
+                                        <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--divider)" />
+                                        <XAxis type="number" hide domain={[0, 1]} />
+                                        <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: 'var(--ink-soft)' }} tickLine={false} axisLine={false} width={130} />
+                                        <ChartTooltip cursor={{ fill: 'var(--panel-bg)' }} content={<KpiStatusTooltip />} />
+                                        <Bar dataKey={() => 1} radius={[4, 4, 4, 4]}>
+                                          {deptKpiDetails[dept.dept_id].map(k => (
+                                            <Cell key={k.id} fill={STATUS_COLORS[k.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.no_data} />
+                                          ))}
+                                        </Bar>
+                                      </BarChart>
+                                    </ChartContainer>
                                   </div>
-                                ))}
-                              </div>
+                                )}
+                                <div className="space-y-1">
+                                  {deptKpiDetails[dept.dept_id].map(k => (
+                                    <div key={k.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-panel-soft">
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-medium text-ink truncate">{k.name}</div>
+                                        <div className="text-[10px] text-ink-faint truncate">Target: {k.target_text}</div>
+                                      </div>
+                                      <StatusBadge status={k.status} size="sm" />
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
                             )}
                             <Button
                               variant="outline"
