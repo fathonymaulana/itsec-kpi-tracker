@@ -72,6 +72,19 @@ export function DateSidebar({ year, onYearChange, month, onMonthChange, minYear,
   // arrows only browse (rangeViewYear) until a month is actually clicked.
   const viewYear = isRange ? rangeViewYear : year
 
+  // Resync the browsed year (and clear any half-picked start month) whenever the actual selected
+  // range changes from outside — a quick-action commit, a filter elsewhere on the page resetting the
+  // range, etc. Without this, browsing to a different year via the arrows and then never picking a
+  // month leaves the grid stuck showing that year even after the real selection moves on, so the
+  // card visibly disagrees with the data every other part of the page is actually showing. The old
+  // popover-wrapped version of this grid got this "reset on reopen" for free from onOpenChange; now
+  // that the grid is always visible there's no open event to hook, so this has to watch the props
+  // directly instead.
+  useEffect(() => {
+    setRangeViewYear(year)
+    setPendingStart(null)
+  }, [year, month, toYear, toMonth])
+
   const handleRangePick = (pickYear: number, pickMonth: number) => {
     const picked = { year: pickYear, month: pickMonth }
     if (!pendingStart) {
