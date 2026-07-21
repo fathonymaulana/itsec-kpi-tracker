@@ -19,13 +19,13 @@ import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { MonthGrid } from '@/components/kpi/MonthGrid'
-import { MonthRangePicker, type MonthPeriod } from '@/components/kpi/MonthRangePicker'
+import type { MonthPeriod } from '@/components/kpi/DateSidebar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, type ChartConfig } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
-import { getStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
+import { getStatus, worstStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
@@ -115,8 +115,6 @@ function BarSegmentLabel(props: any) {
 export default function BoardPage() {
   const { user, token, ready } = useAuth()
   const router = useRouter()
-  const [month, setMonth] = useState(getDefaultMonth())
-  const [year, setYear] = useState(getDefaultYear())
   const [summaries, setSummaries] = useState<DeptSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
@@ -127,12 +125,13 @@ export default function BoardPage() {
   const [view, setView] = useState<'charts' | 'table'>('charts')
   const [visibleSeries, setVisibleSeries] = useState({ onTrack: true, watch: true, offTrack: true, noData: true })
 
-  // Full-year breakdown (Table tab only) — independent of the single `month` above, which still
-  // drives the stat cards/chart. Board summary's month_statuses already covers all 12 months of
-  // whatever year is requested, so a range spanning one year needs just one fetch; a range crossing
-  // a year boundary fetches each year involved and merges them.
-  const [rangeFrom, setRangeFrom] = useState<MonthPeriod>({ year: getDefaultYear(), month: 1 })
-  const [rangeTo, setRangeTo] = useState<MonthPeriod>({ year: getDefaultYear(), month: 12 })
+  // The single date control for this whole page now — CorPlan's sidebar picker (see DateSidebar's
+  // range mode). Defaults to a one-month "range" (today's default period, both ends the same) so a
+  // fresh page load reads exactly like the old single-month dashboard; widening the range is what
+  // switches the stat cards/chart into an aggregate-across-the-range view. The Table tab's full-year
+  // breakdown reads the same rangeFrom/rangeTo — no separate picker for it anymore.
+  const [rangeFrom, setRangeFrom] = useState<MonthPeriod>({ year: getDefaultYear(), month: getDefaultMonth() })
+  const [rangeTo, setRangeTo] = useState<MonthPeriod>({ year: getDefaultYear(), month: getDefaultMonth() })
   const [yearSummaries, setYearSummaries] = useState<Record<number, DeptSummary[]>>({})
 
   useEffect(() => {
@@ -146,13 +145,18 @@ export default function BoardPage() {
     setLoading(true)
     try {
       // /api/board/summary already aggregates strictly one department per row, keyed by dept_id —
-      // no department's figures ever blend into another's here or in the table/chart below.
-      const sumRes = await fetch(`/api/board/summary/${year}?month=${month}`, { headers: authHeaders(token) })
+      // no department's figures ever blend into another's here or in the table/chart below. Each
+      // KPI counts once, as its worst status across every period in the range (on_track/watch/
+      // off_track/no_data tallies reflect that "worst wins" rule, not a raw per-month sum).
+      const sumRes = await fetch(
+        `/api/board/summary/${rangeFrom.year}?fromMonth=${rangeFrom.month}&toYear=${rangeTo.year}&toMonth=${rangeTo.month}`,
+        { headers: authHeaders(token) }
+      )
       const sumData = await sumRes.json()
       setSummaries(sumData.departments || [])
     } catch { /* non-fatal */ }
     finally { setLoading(false) }
-  }, [user, token, year, month])
+  }, [user, token, rangeFrom.year, rangeFrom.month, rangeTo.year, rangeTo.month])
 
   useEffect(() => { if (user) fetchData() }, [user, fetchData])
 
@@ -187,40 +191,50 @@ export default function BoardPage() {
 
   // Lazy-loaded on first expand — the board summary endpoint only carries aggregate counts, not KPI
   // names/targets, so seeing the actual per-KPI breakdown for one department means a real fetch.
+  // Fetches actuals for every year the selected range touches (usually just one), then — matching
+  // the board summary API's own "worst status across the range" rule — takes each KPI's worst status
+  // among every period in rangePeriods, not just a single month's.
   const fetchDeptKpiDetails = useCallback(async (deptId: string) => {
     if (!token || deptKpiDetails[deptId] || loadingDeptDetails.has(deptId)) return
     setLoadingDeptDetails(prev => new Set(prev).add(deptId))
     try {
-      const [kpiRes, actRes] = await Promise.all([
+      const years = Array.from(new Set(rangePeriods.map(p => p.year)))
+      const [kpiRes, ...actResList] = await Promise.all([
         fetch(`/api/departments/${deptId}/kpis`, { headers: authHeaders(token) }),
-        fetch(`/api/actuals?dept_id=${deptId}&year=${year}`, { headers: authHeaders(token) }),
+        ...years.map(y => fetch(`/api/actuals?dept_id=${deptId}&year=${y}`, { headers: authHeaders(token) })),
       ])
       const kpiData = await kpiRes.json()
-      const actData = await actRes.json()
-      const actualsByMonth: Record<number, Record<number, number>> = {}
-      for (const a of (actData.actuals || [])) {
-        if (!actualsByMonth[a.month]) actualsByMonth[a.month] = {}
-        actualsByMonth[a.month][a.sub_metric_id] = a.value
+      const actualsByYearMonth: Record<number, Record<number, Record<number, number>>> = {}
+      for (let i = 0; i < years.length; i++) {
+        const actData = await actResList[i].json()
+        const y = years[i]
+        actualsByYearMonth[y] = {}
+        for (const a of (actData.actuals || [])) {
+          if (!actualsByYearMonth[y][a.month]) actualsByYearMonth[y][a.month] = {}
+          actualsByYearMonth[y][a.month][a.sub_metric_id] = a.value
+        }
       }
       interface KpiRow {
         id: number; name: string; target_text: string; numeric_target: number | null; direction: number
         frequency?: string | null; sub_metrics: (SubMetricLike & { unit: string })[]
       }
       const summariesForDept: DeptKpiSummary[] = (kpiData.kpis || []).map((kpi: KpiRow) => {
-        const { overall } = getPeriodStatuses(kpi.sub_metrics, actualsByMonth, kpi.frequency, month)
-        const status = overall ?? getStatus(
-          resolvePrimaryValue(kpi.sub_metrics, actualsByMonth[month] || {}),
-          kpi.numeric_target,
-          kpi.direction
-        )
-        return { id: kpi.id, name: kpi.name, target_text: kpi.target_text, status }
+        const statuses = rangePeriods.map(p => {
+          const actualsByMonth = actualsByYearMonth[p.year] || {}
+          const { overall } = getPeriodStatuses(kpi.sub_metrics, actualsByMonth, kpi.frequency, p.month)
+          return overall ?? getStatus(resolvePrimaryValue(kpi.sub_metrics, actualsByMonth[p.month] || {}), kpi.numeric_target, kpi.direction)
+        })
+        return { id: kpi.id, name: kpi.name, target_text: kpi.target_text, status: worstStatus(statuses) }
       })
       setDeptKpiDetails(prev => ({ ...prev, [deptId]: summariesForDept }))
     } catch { /* non-fatal */ }
     finally {
       setLoadingDeptDetails(prev => { const next = new Set(prev); next.delete(deptId); return next })
     }
-  }, [token, year, month, deptKpiDetails, loadingDeptDetails])
+    // rangePeriods is derived fresh each render from rangeFrom/rangeTo — depend on those directly
+    // rather than the derived array itself, which would never be referentially stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, rangeFrom.year, rangeFrom.month, rangeTo.year, rangeTo.month, deptKpiDetails, loadingDeptDetails])
 
   const toggleDept = (id: string) => {
     setExpandedDepts(prev => {
@@ -253,6 +267,10 @@ export default function BoardPage() {
 
   const pct = (n: number) => totals.total > 0 ? Math.round(n / totals.total * 100) : 0
 
+  const periodLabel = (p: MonthPeriod) => `${MONTHS[p.month - 1]} ${p.year}`
+  const isSinglePeriod = rangeFrom.year === rangeTo.year && rangeFrom.month === rangeTo.month
+  const rangeLabel = isSinglePeriod ? periodLabel(rangeFrom) : `${periodLabel(rangeFrom)} – ${periodLabel(rangeTo)}`
+
   return (
     <div className="h-screen flex flex-col bg-app overflow-hidden">
       <DeptTopNav
@@ -267,11 +285,13 @@ export default function BoardPage() {
       <div className="flex-1 relative overflow-hidden">
         <AnimatedAside open={leftPanelOpen} width={350} side="left" className="absolute inset-y-0 left-0 z-10 hidden md:block" contentClassName="p-12 overflow-y-auto">
           <DateSidebar
-            year={year}
-            onYearChange={setYear}
-            month={month}
-            onMonthChange={setMonth}
-            minYear={CURRENT_YEAR - 1}
+            year={rangeFrom.year}
+            onYearChange={() => {}}
+            month={rangeFrom.month}
+            toYear={rangeTo.year}
+            toMonth={rangeTo.month}
+            onRangeChange={(f, t) => { setRangeFrom(f); setRangeTo(t) }}
+            minYear={CURRENT_YEAR - 2}
             maxYear={CURRENT_YEAR + 1}
           />
         </AnimatedAside>
@@ -289,12 +309,12 @@ export default function BoardPage() {
               <div>
                 <h1 className="text-2xl font-semibold text-ink tracking-[-0.6px]">Dashboard</h1>
                 <p className="text-sm text-ink-muted mt-1">
-                  Every department&apos;s KPI status for {MONTHS[month - 1]} {year}, at a glance.
+                  Every department&apos;s KPI status for {rangeLabel}, at a glance.
                 </p>
               </div>
               <DownloadReportButton
-                title={`Department KPI Status — ${MONTHS[month - 1]} ${year}`}
-                filename={`department-kpi-status-${year}-${String(month).padStart(2, '0')}`}
+                title={`Department KPI Status — ${rangeLabel}`}
+                filename={`department-kpi-status-${rangeFrom.year}-${String(rangeFrom.month).padStart(2, '0')}${isSinglePeriod ? '' : `-to-${rangeTo.year}-${String(rangeTo.month).padStart(2, '0')}`}`}
                 columns={[
                   { key: 'department_name', label: 'Department', width: 28 },
                   { key: 'total', label: 'Total KPIs' },
@@ -314,7 +334,17 @@ export default function BoardPage() {
               />
             </div>
 
-            <MobileDatePicker year={year} onYearChange={setYear} month={month} onMonthChange={setMonth} minYear={CURRENT_YEAR - 1} maxYear={CURRENT_YEAR + 1} className="mb-6" />
+            <MobileDatePicker
+              year={rangeFrom.year}
+              onYearChange={() => {}}
+              month={rangeFrom.month}
+              toYear={rangeTo.year}
+              toMonth={rangeTo.month}
+              onRangeChange={(f, t) => { setRangeFrom(f); setRangeTo(t) }}
+              minYear={CURRENT_YEAR - 2}
+              maxYear={CURRENT_YEAR + 1}
+              className="mb-6"
+            />
 
             {/* Summary stat cards — same layout/sizing as the dept_head dashboard's stat cards
                 (app/dept/dashboard/page.tsx), so this reads identically across roles. */}
@@ -323,7 +353,7 @@ export default function BoardPage() {
                 { label: 'On Track', variant: 'success' as const, value: totals.on_track, pct: pct(totals.on_track), color: 'var(--success-text)', Icon: TrendingUp, caption: 'performing at or above target' },
                 { label: 'Watch', variant: 'warning' as const, value: totals.watch, pct: pct(totals.watch), color: 'var(--warning-text)', Icon: Minus, caption: 'trending toward target, worth watching' },
                 { label: 'Off Track', variant: 'danger' as const, value: totals.off_track, pct: pct(totals.off_track), color: 'var(--danger-text)', Icon: Minus, caption: 'below target — needs attention' },
-                { label: 'No Data', variant: 'outline' as const, value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-muted)', Icon: Minus, caption: 'not yet entered this month' },
+                { label: 'No Data', variant: 'outline' as const, value: totals.no_data, pct: pct(totals.no_data), color: 'var(--ink-muted)', Icon: Minus, caption: 'not yet entered this period' },
               ].map(s => (
                 <div key={s.label} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-2xl p-6 flex flex-col gap-1.5">
                   <Badge variant={s.variant} className="h-auto px-2 py-0.5 text-[10px] w-fit">{s.label}</Badge>
@@ -357,7 +387,7 @@ export default function BoardPage() {
                     <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium text-ink text-sm">Department KPI Status</h3>
-                        <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{MONTHS[month - 1]} {year}</Badge>
+                        <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), iconHoverClass)}>
@@ -586,16 +616,12 @@ export default function BoardPage() {
                   </Table>
                 </div>
 
-                {/* Full-year breakdown — every month in the selected range, per department */}
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                {/* Every month in the range picked in the sidebar, per department — that's the one
+                    date control for the whole page now, so this just reflects the current selection
+                    rather than offering its own separate picker. */}
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <h3 className="font-medium text-ink text-sm">Full Period Overview</h3>
-                  <MonthRangePicker
-                    from={rangeFrom}
-                    to={rangeTo}
-                    onChange={(f, t) => { setRangeFrom(f); setRangeTo(t) }}
-                    minYear={CURRENT_YEAR - 2}
-                    maxYear={CURRENT_YEAR + 1}
-                  />
+                  <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
                 </div>
                 {/* Mobile/tablet: one card per department, matching the Figma "Table Card
                     Responsive" pattern used everywhere else — muted header (department name),
