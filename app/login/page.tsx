@@ -219,23 +219,16 @@ function LoginForm() {
                 </div>
               )}
 
-              {/* Wrapping motion.div (not the Button itself) carries the loading glow ring — same
-                  red pulse the PIN boxes get while still processing — so the submit action reads as
-                  one continuous "working" state across both, not just a spinner tucked inside the
-                  button. Once verified, the pulse hands off to a GREEN conic-gradient sweep rotating
-                  in a thin ring around the button (p-[2px] reserves that ring's width; the button's
-                  own opaque fill covers everything else, so the sweep only ever shows in that
-                  outline) — same color switch as the PIN boxes: red means still working, green means
-                  confirmed. */}
+              {/* Wrapping motion.div (not the Button itself) carries the "verified" glow ring — a
+                  GREEN conic-gradient sweep rotating in a thin ring around the button (p-[2px]
+                  reserves that ring's width; the button's own opaque fill covers everything else, so
+                  the sweep only ever shows in that outline). The processing phase deliberately has no
+                  glow of its own — the spinner + cycling status text already read as "working" on
+                  their own, and the eventual "Verified" label is informative enough without an extra
+                  pulsing effect leading up to it. */}
               <motion.div
-                animate={
-                  phase === 'verifying'
-                    ? { boxShadow: ['0 0 0px 0px rgba(204,31,31,0)', '0 0 20px 4px rgba(204,31,31,0.45)', '0 0 0px 0px rgba(204,31,31,0)'] }
-                    : phase === 'success'
-                      ? { boxShadow: '0 0 16px 3px rgba(34,197,94,0.4)' }
-                      : { boxShadow: '0 0 0px 0px rgba(204,31,31,0)' }
-                }
-                transition={phase === 'verifying' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+                animate={phase === 'success' ? { boxShadow: '0 0 16px 3px rgba(34,197,94,0.4)' } : { boxShadow: '0 0 0px 0px rgba(34,197,94,0)' }}
+                transition={{ duration: 0.3 }}
                 className={cn('relative w-full rounded-2xl overflow-hidden', phase === 'success' ? 'p-[2px]' : 'p-0')}
               >
                 {phase === 'success' && (

@@ -119,22 +119,37 @@ export async function POST(request: NextRequest) {
 
     const { data: existingRows } = await supabase
       .from('actuals')
-      .select('sub_metric_id, data_source_url, data_source_note')
+      .select('sub_metric_id, value, data_source_url, data_source_note, last_updated_at')
       .in('sub_metric_id', smIds).eq('year', year).eq('month', month)
     const existingBySm = new Map((existingRows || []).map(e => [e.sub_metric_id, e]))
 
     const now = new Date().toISOString()
+    // The Data Entry page always re-POSTs every KPI's values on Save/Submit (not just the ones the
+    // dept_head actually touched), since locked KPI cards feed the same shared `values` state back
+    // in unchanged — see app/dept/page.tsx's saveActuals(). Without this check, that meant every
+    // Save/Submit stamped a fresh last_updated_at on the ENTIRE month, including KPIs the dept_head
+    // never edited, which in turn made it impossible to tell "just resubmitted the whole month" apart
+    // from "actually re-entered this specific KPI's number" — the exact signal
+    // /api/submissions needs to resolve only the modify request for the KPI that was truly modified,
+    // not every approved request open for this dept/period. Keeping the existing last_updated_at
+    // when the value (and data source) didn't change preserves that signal.
     const upsertRows = actuals.map(r => {
       const existing = existingBySm.get(r.sub_metric_id)
+      const dataSourceUrl = r.data_source_url || existing?.data_source_url || null
+      const dataSourceNote = r.data_source_note || existing?.data_source_note || null
+      const changed = !existing
+        || Number(existing.value) !== r.value
+        || dataSourceUrl !== (existing.data_source_url ?? null)
+        || dataSourceNote !== (existing.data_source_note ?? null)
       return {
         sub_metric_id: r.sub_metric_id,
         year: r.year,
         month: r.month,
         value: r.value ?? null,
-        data_source_url: r.data_source_url || existing?.data_source_url || null,
-        data_source_note: r.data_source_note || existing?.data_source_note || null,
+        data_source_url: dataSourceUrl,
+        data_source_note: dataSourceNote,
         submitted_by: submittedBy,
-        last_updated_at: now,
+        last_updated_at: changed ? now : existing.last_updated_at,
       }
     })
 

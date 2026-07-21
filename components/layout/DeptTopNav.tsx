@@ -16,6 +16,7 @@ import {
   CloseCircleLineDuotone as RejectedIcon,
   ShieldCheckLineDuotone as VerifiedIcon,
   DangerTriangleLineDuotone as FlaggedIcon,
+  InboxInLineDuotone as SubmissionIcon,
 } from '@solar-icons/react-perf'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -29,7 +30,7 @@ import { playNotificationSound } from '@/lib/notification-sound'
 import { ItsecLogo } from '@/components/layout/ItsecLogo'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 
-type NotifKind = 'modify_pending' | 'modify_approved' | 'modify_rejected' | 'verified' | 'flagged'
+type NotifKind = 'modify_pending' | 'modify_approved' | 'modify_rejected' | 'verified' | 'flagged' | 'submission'
 
 interface NotifItem {
   id: string
@@ -38,6 +39,12 @@ interface NotifItem {
   description: string
   timestamp: string
   href: string
+  // true = a real task-queue item (only clears once actually resolved server-side, e.g. a pending
+  // modify request). false = a one-time FYI that just clears once the bell has been opened. The two
+  // can now appear side by side in the same list (corp_planning gets both pending modify requests AND
+  // "department X just submitted" FYIs), so this lives per-item instead of being one blanket
+  // role-level switch.
+  queue: boolean
 }
 
 const NOTIF_ICONS: Record<NotifKind, typeof ModifyIcon> = {
@@ -46,12 +53,9 @@ const NOTIF_ICONS: Record<NotifKind, typeof ModifyIcon> = {
   modify_rejected: RejectedIcon,
   verified: VerifiedIcon,
   flagged: FlaggedIcon,
+  submission: SubmissionIcon,
 }
 
-// corp_planning's badge is a real task-queue count (pending modify requests never disappear on
-// their own — only resolving them removes the badge). dept_head's is a plain "something happened"
-// dot instead: those events (approved/rejected/verified/flagged) are one-time FYIs, not open work,
-// so it clears the moment the bell is opened rather than needing to be individually resolved.
 const POLL_INTERVAL_MS = 20000
 const seenKey = (userId: number) => `itsec_kpi_seen_notifications_${userId}`
 
@@ -90,7 +94,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [notifItems, setNotifItems] = useState<NotifItem[]>([])
   const [hasUnseen, setHasUnseen] = useState(false)
-  const isTaskQueue = user?.role === 'corp_planning'
+  const queueCount = notifItems.filter(it => it.queue).length
 
   const goTo = useCallback((href: string) => {
     setNotifOpen(false)
@@ -103,11 +107,14 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
   // were two disconnected things before this, and dept_head never heard back about their own
   // requests or KPI verifications at all.
   //
-  // corp_planning gets pending modify requests from every department: a real, always-current task
-  // queue (badge = how many still need review, same count admin/page.tsx's tab already shows).
-  // dept_head gets their own department's recently-reviewed modify requests and recently-verified/
-  // flagged KPIs: one-time FYIs rather than open work, so that list only shows what's still unseen
-  // and clears the moment the bell is opened, instead of accumulating forever.
+  // corp_planning gets two kinds side by side: pending modify requests are a real, always-current
+  // task queue (badge = how many still need review, same count admin/page.tsx's tab already shows;
+  // `queue: true` below keeps them listed until actually resolved), plus recent submissions from any
+  // department as one-time FYIs (`queue: false`) — CorPlan otherwise had no way to know a department
+  // had submitted at all short of manually opening Data Review and checking. dept_head gets their own
+  // department's recently-reviewed modify requests and recently-verified/flagged KPIs, also FYIs.
+  // FYI items only show while unseen and clear the moment the bell is opened; queue items stay until
+  // resolved server-side.
   useEffect(() => {
     if (!token || !user) return
     let cancelled = false
@@ -117,16 +124,36 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
         let items: NotifItem[] = []
 
         if (user.role === 'corp_planning') {
-          const r = await fetch('/api/modify-requests?status=pending', { headers: authHeaders(token) })
-          const data = await r.json()
-          items = (data.requests || []).map((req: { id: number; dept_name: string | null; requested_by_name: string | null; kpi_name: string | null; month: number; year: number; requested_at: string }) => ({
+          const [modifyRes, subRes] = await Promise.all([
+            fetch('/api/modify-requests?status=pending', { headers: authHeaders(token) }),
+            fetch('/api/submissions?limit=15', { headers: authHeaders(token) }),
+          ])
+          const modifyData = await modifyRes.json()
+          const subData = await subRes.json()
+
+          const pending: NotifItem[] = (modifyData.requests || []).map((req: { id: number; dept_name: string | null; requested_by_name: string | null; kpi_name: string | null; month: number; year: number; requested_at: string }) => ({
             id: `modify_pending-${req.id}`,
             kind: 'modify_pending' as const,
             title: `New modify request from ${req.dept_name ?? 'a department'}`,
             description: `${req.requested_by_name ?? 'Someone'} wants to edit "${req.kpi_name ?? 'a KPI'}" for ${MONTHS[req.month - 1]} ${req.year}. Review it to approve or reject.`,
             timestamp: req.requested_at,
             href: '/admin?tab=modify',
+            queue: true,
           }))
+
+          type SubRow = { id: number; dept_id: string; dept_name: string | null; year: number; month: number; submitted_at: string }
+          const submissions: NotifItem[] = (subData.submissions || []).map((sub: SubRow) => ({
+            id: `submission-${sub.id}`,
+            kind: 'submission' as const,
+            title: `${sub.dept_name ?? sub.dept_id} submitted ${MONTHS[sub.month - 1]} ${sub.year}`,
+            description: 'Their data is locked in and ready for review in Data Review.',
+            timestamp: sub.submitted_at,
+            href: `/admin?dept=${sub.dept_id}&tab=data`,
+            queue: false,
+          }))
+
+          items = [...pending, ...submissions]
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
         } else if (user.role === 'dept_head' && user.dept_id) {
           const [modifyRes, verRes] = await Promise.all([
             fetch(`/api/modify-requests?dept_id=${user.dept_id}`, { headers: authHeaders(token) }),
@@ -147,6 +174,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
               description: `This matrix is unlocked for editing for ${MONTHS[req.month - 1]} ${req.year} — head to Data Entry to make your change. Everything else stays submitted.`,
               timestamp: req.reviewed_at as string,
               href: '/dept',
+              queue: false,
             } : {
               id: `modify_rejected-${req.id}`,
               kind: 'modify_rejected' as const,
@@ -156,6 +184,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
                 : `${MONTHS[req.month - 1]} ${req.year} stays locked as submitted.`,
               timestamp: req.reviewed_at as string,
               href: '/dept',
+              queue: false,
             })
 
           type VerifRow = { id: number; status: string; note: string | null; kpi_name: string | null; verified_at: string }
@@ -166,6 +195,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
             description: 'Corporate Planning confirmed your figures are accurate for this period.',
             timestamp: v.verified_at,
             href: '/dept',
+            queue: false,
           } : {
             id: `flagged-${v.id}`,
             kind: 'flagged' as const,
@@ -175,6 +205,7 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
               : 'Corporate Planning flagged this for correction — take another look in Data Entry.',
             timestamp: v.verified_at,
             href: '/dept',
+            queue: false,
           })
 
           items = [...reviewed, ...verifications]
@@ -210,32 +241,42 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
           }
         }
 
-        // Task-queue items stay visible until actually resolved; FYI items only show while unseen,
-        // and merely opening the bell (see below) commits them to the seen-set.
-        setNotifItems(isTaskQueue ? items : items.filter(it => !seenIds.has(it.id)))
+        // Queue items stay visible until actually resolved server-side, so they're shown regardless
+        // of seen-state; FYI items only show while unseen, and merely opening the bell (see below)
+        // commits them to the seen-set. Queue items also get committed to the seen-set right away —
+        // otherwise the same still-pending item would re-toast on every single poll instead of once.
+        setNotifItems(items.filter(it => it.queue || !seenIds.has(it.id)))
         setHasUnseen(newOnes.length > 0)
-        if (isTaskQueue) localStorage.setItem(key, JSON.stringify(items.map(it => it.id)))
+        const queueIds = items.filter(it => it.queue).map(it => it.id)
+        if (queueIds.length > 0) {
+          const merged = new Set(seenIds)
+          queueIds.forEach(id => merged.add(id))
+          localStorage.setItem(key, JSON.stringify(Array.from(merged)))
+        }
       } catch { /* non-fatal — next poll retries */ }
     }
 
     poll()
     const id = setInterval(poll, POLL_INTERVAL_MS)
     return () => { cancelled = true; clearInterval(id) }
-  }, [token, user, goTo, isTaskQueue])
+  }, [token, user, goTo])
 
-  // Opening the bell is what "reads" FYI-style notifications for dept_head — commits everything
-  // currently shown to the seen-set so they drop off on the next poll, instead of a task-queue item
-  // that only clears once actually resolved (approve/reject/verify/flag).
+  // Opening the bell is what "reads" FYI-style notifications (for both roles now) — commits whatever
+  // FYI items are currently shown to the seen-set so they drop off on the next poll. Queue items
+  // (pending modify requests) are untouched here — those only clear once actually resolved
+  // server-side (approve/reject), and are already committed to the seen-set as soon as they're
+  // fetched (see the poll effect above), so re-toasting on every cycle isn't a concern either way.
   useEffect(() => {
-    if (!notifOpen || isTaskQueue || !user || notifItems.length === 0) return
+    const fyiShown = notifItems.filter(it => !it.queue)
+    if (!notifOpen || !user || fyiShown.length === 0) return
     try {
       const key = seenKey(user.user_id)
       const seenIds = new Set<string>(JSON.parse(localStorage.getItem(key) || '[]'))
-      notifItems.forEach(it => seenIds.add(it.id))
+      fyiShown.forEach(it => seenIds.add(it.id))
       localStorage.setItem(key, JSON.stringify(Array.from(seenIds)))
     } catch { /* storage unavailable — non-fatal, just won't persist the seen-set */ }
     setHasUnseen(false)
-  }, [notifOpen, isTaskQueue, user, notifItems])
+  }, [notifOpen, user, notifItems])
 
   return (
     <header className="bg-panel shadow-[0_1px_3px_rgba(0,0,0,0.1)] grid grid-cols-3 items-center px-6 h-16 shrink-0">
@@ -319,16 +360,16 @@ export function DeptTopNav({ leftPanelOpen, onToggleLeftPanel, rightPanelOpen, o
             title="Notifications"
           >
             {notifOpen ? <BellBold size={18} className="text-ink" /> : <BellLine size={18} className="text-ink" />}
-            {(isTaskQueue ? notifItems.length > 0 : hasUnseen) && (
+            {(queueCount > 0 || hasUnseen) && (
               <span className="absolute top-1 right-1 size-2 rounded-full bg-destructive ring-2 ring-panel" />
             )}
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-divider flex items-center justify-between">
               <div className="text-sm font-semibold text-ink">Notifications</div>
-              {isTaskQueue && notifItems.length > 0 && (
+              {queueCount > 0 && (
                 <Badge className="size-5 rounded-full p-0 justify-center bg-muted text-muted-foreground text-[10px]">
-                  {notifItems.length}
+                  {queueCount}
                 </Badge>
               )}
             </div>
