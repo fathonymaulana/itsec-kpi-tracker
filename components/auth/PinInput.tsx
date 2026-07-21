@@ -29,7 +29,8 @@ interface PinInputProps {
   className?: string
 }
 
-const GLOW = '204,31,31' // #CC1F1F as an rgb triple, for building drop-shadow strings at various alphas
+const GLOW_RED = '204,31,31' // #CC1F1F as an rgb triple — still processing, matches the rest of the brand's red
+const GLOW_GREEN = '34,197,94' // #22C55E as an rgb triple — credential confirmed; green reads as "done, success" everywhere else in this app too (see StatusBadge/getStatusColors' on_track)
 
 // Perimeter of the box's own rounded-rect outline (x=2 y=2 w=44 h=44 rx=10 in a 48×48 viewBox) —
 // the four straight edges (2*(44-2*10) each, twice over) plus the four quarter-circle corners
@@ -66,9 +67,9 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
     // A real neon tube reads as layered light, not one flat blur: a tight near-white hot core right
     // against the line, a mid-radius red glow, and a soft wide halo outside that. Each state below
     // stacks all three as separate drop-shadow() layers (CSS supports chaining them) instead of one.
-    const NEON_OFF = `drop-shadow(0 0 0px rgba(255,235,225,0)) drop-shadow(0 0 0px rgba(${GLOW},0)) drop-shadow(0 0 0px rgba(${GLOW},0))`
-    const NEON_BRIGHT = `drop-shadow(0 0 1.5px rgba(255,235,225,0.95)) drop-shadow(0 0 5px rgba(${GLOW},0.9)) drop-shadow(0 0 11px rgba(${GLOW},0.6))`
-    const NEON_DIM = `drop-shadow(0 0 1px rgba(255,235,225,0.6)) drop-shadow(0 0 3px rgba(${GLOW},0.55)) drop-shadow(0 0 6px rgba(${GLOW},0.3))`
+    const NEON_OFF = `drop-shadow(0 0 0px rgba(255,235,225,0)) drop-shadow(0 0 0px rgba(${GLOW_RED},0)) drop-shadow(0 0 0px rgba(${GLOW_RED},0))`
+    const NEON_BRIGHT = `drop-shadow(0 0 1.5px rgba(255,235,225,0.95)) drop-shadow(0 0 5px rgba(${GLOW_RED},0.9)) drop-shadow(0 0 11px rgba(${GLOW_RED},0.6))`
+    const NEON_DIM = `drop-shadow(0 0 1px rgba(255,235,225,0.6)) drop-shadow(0 0 3px rgba(${GLOW_RED},0.55)) drop-shadow(0 0 6px rgba(${GLOW_RED},0.3))`
     gsap.set(strokes, { strokeDashoffset: BOX_PERIMETER, opacity: 1, filter: NEON_OFF })
     const tl = gsap.timeline()
     tl.to(strokes, { strokeDashoffset: 0, duration: 0.55, ease: 'power2.out' })
@@ -85,7 +86,20 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
   useGSAP(() => {
     const boxes = boxRefs.current.filter((el): el is HTMLDivElement => !!el)
     const dots = dotRefs.current.filter((el): el is HTMLSpanElement => !!el)
+    const strokes = strokeRefs.current.filter((el): el is SVGRectElement => !!el)
     if (phase !== 'success' || !boxes.length || !containerRef.current) return
+
+    // Red means "still working", green means "confirmed" — the stroke (and the checkmark that
+    // appears once boxes finish merging) both shift color the instant this phase starts, on top of
+    // whatever red glow the verifying phase left behind.
+    if (strokes.length) {
+      gsap.to(strokes, {
+        stroke: '#22C55E',
+        filter: `drop-shadow(0 0 1.5px rgba(255,255,255,0.95)) drop-shadow(0 0 6px rgba(${GLOW_GREEN},0.9)) drop-shadow(0 0 13px rgba(${GLOW_GREEN},0.6))`,
+        duration: 0.35,
+        ease: 'sine.out',
+      })
+    }
 
     const containerRect = containerRef.current.getBoundingClientRect()
     const centerX = containerRect.left + containerRect.width / 2
@@ -178,7 +192,7 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
                         in its own circle/square, which would double up with the box already drawn
                         here — so this is a plain hand-drawn check path instead. */}
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M4 10.5L8 14.5L16 6" stroke="#CC1F1F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M4 10.5L8 14.5L16 6" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                 )}

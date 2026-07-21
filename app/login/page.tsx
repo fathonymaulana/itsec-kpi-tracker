@@ -220,18 +220,19 @@ function LoginForm() {
               )}
 
               {/* Wrapping motion.div (not the Button itself) carries the loading glow ring — same
-                  red pulse the PIN boxes get — so the submit action reads as one continuous "working"
-                  state across both, not just a spinner tucked inside the button. Once verified, the
-                  pulse hands off to a conic-gradient sweep rotating in a thin ring around the button
-                  (p-[0.5px] reserves that ring's width; the button's own opaque fill covers
-                  everything else, so the sweep only ever shows in that outline) — the same neon that
-                  traced the PIN boxes, now circling the button instead of pulsing statically. */}
+                  red pulse the PIN boxes get while still processing — so the submit action reads as
+                  one continuous "working" state across both, not just a spinner tucked inside the
+                  button. Once verified, the pulse hands off to a GREEN conic-gradient sweep rotating
+                  in a thin ring around the button (p-[2px] reserves that ring's width; the button's
+                  own opaque fill covers everything else, so the sweep only ever shows in that
+                  outline) — same color switch as the PIN boxes: red means still working, green means
+                  confirmed. */}
               <motion.div
                 animate={
                   phase === 'verifying'
                     ? { boxShadow: ['0 0 0px 0px rgba(204,31,31,0)', '0 0 20px 4px rgba(204,31,31,0.45)', '0 0 0px 0px rgba(204,31,31,0)'] }
                     : phase === 'success'
-                      ? { boxShadow: '0 0 16px 3px rgba(204,31,31,0.4)' }
+                      ? { boxShadow: '0 0 16px 3px rgba(34,197,94,0.4)' }
                       : { boxShadow: '0 0 0px 0px rgba(204,31,31,0)' }
                 }
                 transition={phase === 'verifying' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
@@ -243,7 +244,7 @@ function LoginForm() {
                     className="absolute inset-[-50%] [animation:spin_1.6s_linear_infinite]"
                     style={{
                       background:
-                        'conic-gradient(from 0deg, transparent 0%, transparent 76%, rgba(204,31,31,0.9) 86%, rgba(255,150,130,1) 90%, rgba(204,31,31,0.9) 94%, transparent 100%)',
+                        'conic-gradient(from 0deg, transparent 0%, transparent 76%, rgba(34,197,94,0.9) 86%, rgba(160,255,190,1) 90%, rgba(34,197,94,0.9) 94%, transparent 100%)',
                     }}
                   />
                 )}
