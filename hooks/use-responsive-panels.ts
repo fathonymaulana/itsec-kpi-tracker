@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 
 // The left (date picker) and right (add-ons) panels are fixed-width (350px/400px) and lay on top
 // of the main content via reserved padding — comfortable at a genuinely wide desktop window, but a
@@ -21,6 +21,10 @@ const RESIZE_DEBOUNCE_MS = 100
 const LEFT_KEY = 'itsec_kpi_left_panel_open'
 const RIGHT_KEY = 'itsec_kpi_right_panel_open'
 
+// useLayoutEffect is a no-op (with a dev warning) during Next's server render — this guards it so
+// the correction below only ever runs the browser-only branch, never the SSR one.
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
+
 function readStored(key: string): boolean | null {
   try {
     const v = localStorage.getItem(key)
@@ -40,12 +44,25 @@ export function useResponsivePanels() {
   const leftOverridden = useRef(false)
   const rightOverridden = useRef(false)
 
-  useEffect(() => {
+  // Runs synchronously before the browser paints the new page — a plain useEffect here would let
+  // the very first frame paint with both panels at their default-open state, and only correct them
+  // a tick later. With framer-motion's AnimatePresence driving each panel's mount/exit animation off
+  // that same open/closed flag, that one-tick delay was enough to visibly start the "opening"
+  // animation before immediately reversing into "closing" — which reads as "my collapsed preference
+  // didn't stick" even though the state was technically correct a moment later. Correcting before
+  // paint means a panel the user previously closed never gets drawn open at all, on any page.
+  useIsomorphicLayoutEffect(() => {
     const storedLeft = readStored(LEFT_KEY)
     const storedRight = readStored(RIGHT_KEY)
     if (storedLeft !== null) { leftOverridden.current = true; setLeftPanelOpen(storedLeft) }
     if (storedRight !== null) { rightOverridden.current = true; setRightPanelOpen(storedRight) }
 
+    const w = window.innerWidth
+    if (!rightOverridden.current) setRightPanelOpen(w >= RIGHT_PANEL_MIN_WIDTH)
+    if (!leftOverridden.current) setLeftPanelOpen(w >= LEFT_PANEL_MIN_WIDTH)
+  }, [])
+
+  useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
     const evaluate = () => {
       const w = window.innerWidth
@@ -56,7 +73,6 @@ export function useResponsivePanels() {
       clearTimeout(timer)
       timer = setTimeout(evaluate, RESIZE_DEBOUNCE_MS)
     }
-    evaluate() // no-op for whichever panel(s) were just restored from storage above
     window.addEventListener('resize', onResize)
     return () => { clearTimeout(timer); window.removeEventListener('resize', onResize) }
   }, [])
