@@ -87,9 +87,10 @@ function LoginForm() {
       const role = stored.role
       // Give the boxes' merge-into-checkmark animation (see PinInput) time to actually play before
       // navigating away — jumping straight to router.push the instant login() resolves would mean
-      // this component unmounts before anyone ever sees it.
+      // this component unmounts before anyone ever sees it. ~0.95s for the full sequence plus a
+      // short hold on the resolved checkmark.
       setPhase('success')
-      await new Promise(resolve => setTimeout(resolve, 900))
+      await new Promise(resolve => setTimeout(resolve, 1100))
       if (role === 'dept_head') router.push('/dept/dashboard')
       else router.push('/board')
       // Intentionally leave `phase` at 'success' here instead of resetting it — this component
@@ -220,7 +221,11 @@ function LoginForm() {
 
               {/* Wrapping motion.div (not the Button itself) carries the loading glow ring — same
                   red pulse the PIN boxes get — so the submit action reads as one continuous "working"
-                  state across both, not just a spinner tucked inside the button. */}
+                  state across both, not just a spinner tucked inside the button. Once verified, the
+                  pulse hands off to a conic-gradient sweep rotating in a thin ring around the button
+                  (p-[0.5px] reserves that ring's width; the button's own opaque fill covers
+                  everything else, so the sweep only ever shows in that outline) — the same neon that
+                  traced the PIN boxes, now circling the button instead of pulsing statically. */}
               <motion.div
                 animate={
                   phase === 'verifying'
@@ -230,8 +235,18 @@ function LoginForm() {
                       : { boxShadow: '0 0 0px 0px rgba(204,31,31,0)' }
                 }
                 transition={phase === 'verifying' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
-                className="w-full rounded-2xl"
+                className={cn('relative w-full rounded-2xl overflow-hidden', phase === 'success' ? 'p-[2px]' : 'p-0')}
               >
+                {phase === 'success' && (
+                  <div
+                    aria-hidden
+                    className="absolute inset-[-50%] [animation:spin_1.6s_linear_infinite]"
+                    style={{
+                      background:
+                        'conic-gradient(from 0deg, transparent 0%, transparent 76%, rgba(204,31,31,0.9) 86%, rgba(255,150,130,1) 90%, rgba(204,31,31,0.9) 94%, transparent 100%)',
+                    }}
+                  />
+                )}
                 <Button
                   type="submit"
                   disabled={!selected || pin.length !== 4 || loading}
@@ -244,7 +259,7 @@ function LoginForm() {
                     // disabled state intentionally stays full-opacity (muted-foreground text carries
                     // that "disabled" read on its own) — only the signing-in state below fades its
                     // content, as processing feedback distinct from "not ready to submit yet".
-                    'w-full h-12 rounded-2xl bg-primary hover:bg-primary/80 font-medium disabled:opacity-100 disabled:bg-primary disabled:pointer-events-none',
+                    'relative z-10 w-full h-12 rounded-2xl bg-primary hover:bg-primary/80 font-medium disabled:opacity-100 disabled:bg-primary disabled:pointer-events-none',
                     formFilled ? 'text-primary-foreground' : 'text-muted-foreground'
                   )}
                 >

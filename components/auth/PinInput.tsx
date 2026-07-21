@@ -63,17 +63,17 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
   useGSAP(() => {
     const strokes = strokeRefs.current.filter((el): el is SVGRectElement => !!el)
     if (phase !== 'verifying' || !strokes.length) return
-    gsap.set(strokes, { strokeDashoffset: BOX_PERIMETER, opacity: 1, filter: `drop-shadow(0 0 0px rgba(${GLOW},0))` })
+    // A real neon tube reads as layered light, not one flat blur: a tight near-white hot core right
+    // against the line, a mid-radius red glow, and a soft wide halo outside that. Each state below
+    // stacks all three as separate drop-shadow() layers (CSS supports chaining them) instead of one.
+    const NEON_OFF = `drop-shadow(0 0 0px rgba(255,235,225,0)) drop-shadow(0 0 0px rgba(${GLOW},0)) drop-shadow(0 0 0px rgba(${GLOW},0))`
+    const NEON_BRIGHT = `drop-shadow(0 0 1.5px rgba(255,235,225,0.95)) drop-shadow(0 0 5px rgba(${GLOW},0.9)) drop-shadow(0 0 11px rgba(${GLOW},0.6))`
+    const NEON_DIM = `drop-shadow(0 0 1px rgba(255,235,225,0.6)) drop-shadow(0 0 3px rgba(${GLOW},0.55)) drop-shadow(0 0 6px rgba(${GLOW},0.3))`
+    gsap.set(strokes, { strokeDashoffset: BOX_PERIMETER, opacity: 1, filter: NEON_OFF })
     const tl = gsap.timeline()
     tl.to(strokes, { strokeDashoffset: 0, duration: 0.55, ease: 'power2.out' })
-    tl.to(strokes, { filter: `drop-shadow(0 0 10px rgba(${GLOW},0.7))`, duration: 0.4, ease: 'sine.out' }, '-=0.1')
-    tl.to(strokes, {
-      filter: `drop-shadow(0 0 4px rgba(${GLOW},0.35))`,
-      duration: 1,
-      ease: 'sine.inOut',
-      repeat: -1,
-      yoyo: true,
-    })
+    tl.to(strokes, { filter: NEON_BRIGHT, duration: 0.4, ease: 'sine.out' }, '-=0.1')
+    tl.to(strokes, { filter: NEON_DIM, duration: 1, ease: 'sine.inOut', repeat: -1, yoyo: true })
     return () => { tl.kill() }
   }, [phase])
 
@@ -96,22 +96,39 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
     // First/last box tilt hardest, the two inner ones less — a fan closing shut, not a flat slide.
     const TILT = [-14, -5, 5, 14]
 
+    // Explicit absolute timestamps (not GSAP's relative "-=n" shorthand) — the relative form chains
+    // off whatever tween was added immediately before it in *call order*, which stops meaning
+    // anything useful once several properties are being layered on the same elements and made this
+    // very timeline hard to reason about and easy to get subtly wrong. The one hard rule driving
+    // these numbers: rotation and scale must both be fully settled back to their resting values
+    // *before* the boxes actually finish arriving at center (ROT_DONE/SCALE_DONE < MOVE_DONE) — a
+    // tilted or oversized box still visibly correcting itself right as it lands read as unfinished,
+    // not physical.
+    const MOVE_START = 0.05, MOVE_DUR = 0.6
+    const TILT_START = 0.05, TILT_DUR = 0.2
+    const UNTILT_START = TILT_START + TILT_DUR // 0.25
+    const UNTILT_DUR = 0.24 // ends 0.49, comfortably before MOVE_START+MOVE_DUR (0.65)
+    const HIDE_START = MOVE_START + MOVE_DUR - 0.08 // 0.57 — just before landing, not mid-flight
+    const HIDE_DUR = 0.2
+    const CHECK_START = HIDE_START + 0.08
+
     const tl = gsap.timeline()
     if (dots.length) tl.to(dots, { opacity: 0, duration: 0.15, ease: 'sine.out' }, 0)
-    // Position glides in one continuous motion (this app's own signature curve, see pinGlide above)
-    // — nothing needs to overshoot past center and slide back, that'd look like the boxes colliding.
-    tl.to(boxes, { x: i => targetX[i], duration: 0.42, ease: 'pinGlide' }, 0.05)
+    // Position: a plain smooth ease-in-out, not pinGlide's fast-off-the-mark character — over 0.6s
+    // that snappier curve read as a quick dart followed by a long crawl rather than one continuous
+    // glide. Nothing here needs to overshoot past center and slide back, that'd look like collisions.
+    tl.to(boxes, { x: i => targetX[i], duration: MOVE_DUR, ease: 'power2.inOut' }, MOVE_START)
     // Rotation and scale are the parts that actually get "pulled too far, then spring back" — tilt
     // in first, then straighten; grow past resting size, then settle. pinPop is this app's own
     // hand-tuned overshoot curve (a classic easeOutBack shape), used on the way back for both so the
-    // spring-back reads as one connected motion rather than two independently-timed corrections.
-    tl.to(boxes, { rotation: i => TILT[i], duration: 0.22, ease: 'pinGlide' }, 0.05)
-    tl.to(boxes, { rotation: 0, duration: 0.25, ease: 'pinPop' }, '-=0.02')
-    tl.to(boxes, { scale: 1.18, duration: 0.2, ease: 'sine.out' }, 0.05)
-    tl.to(boxes, { scale: 1, duration: 0.25, ease: 'pinPop' }, '-=0.03')
-    tl.to(boxes.slice(0, -1), { opacity: 0, duration: 0.18, ease: 'sine.in' }, '-=0.3')
+    // spring-back reads as one connected motion, fully resolved well ahead of the boxes landing.
+    tl.to(boxes, { rotation: i => TILT[i], duration: TILT_DUR, ease: 'pinGlide' }, TILT_START)
+    tl.to(boxes, { rotation: 0, duration: UNTILT_DUR, ease: 'pinPop' }, UNTILT_START)
+    tl.to(boxes, { scale: 1.18, duration: TILT_DUR, ease: 'sine.out' }, TILT_START)
+    tl.to(boxes, { scale: 1, duration: UNTILT_DUR, ease: 'pinPop' }, UNTILT_START)
+    tl.to(boxes.slice(0, -1), { opacity: 0, duration: HIDE_DUR, ease: 'sine.in' }, HIDE_START)
     if (checkRef.current) {
-      tl.fromTo(checkRef.current, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.8)' }, '-=0.15')
+      tl.fromTo(checkRef.current, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.8)' }, CHECK_START)
     }
     return () => { tl.kill() }
   }, [phase])
@@ -139,7 +156,7 @@ export function PinInput({ length = 4, value, onChange, phase = 'idle', error = 
           const isActive = phase === 'idle' && focused && !disabled && !error && i === value.length
           const isLast = i === length - 1
           return (
-            <div key={i} ref={el => { boxRefs.current[i] = el }} className="relative size-12">
+            <div key={i} ref={el => { boxRefs.current[i] = el }} className="relative size-12 overflow-hidden rounded-xl">
               <div
                 className={cn(
                   'relative flex size-12 items-center justify-center rounded-xl border-2 transition-colors duration-150',
