@@ -9,7 +9,7 @@ import {
   ChartLineDuotone as ChartLine, ChartBold as ChartBold,
   ListLineDuotone as ListLine, ListBold as ListBold,
 } from '@solar-icons/react-perf'
-import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar, type MonthPeriod } from '@/components/kpi/DateSidebar'
@@ -19,13 +19,12 @@ import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { useResponsivePanels } from '@/hooks/use-responsive-panels'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { getStatus, getStatusColors, worstStatus, MONTHS, type KpiStatus } from '@/lib/status'
+import { getStatus, worstStatus, MONTHS, type KpiStatus } from '@/lib/status'
 import { getPrimarySubMetric, resolvePrimaryValue, getPeriodStatuses } from '@/lib/kpi-primary'
 import { parsePeriod, periodLabel } from '@/lib/frequency'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { Badge } from '@/components/ui/badge'
-import { StatusBadge } from '@/components/kpi/StatusBadge'
 import { CountUpNumber } from '@/components/ui/animated-number'
 import { MobileDatePicker } from '@/components/kpi/MobileDatePicker'
 import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
@@ -36,44 +35,6 @@ const CURRENT_YEAR = new Date().getFullYear()
 // mode too, so the line and its gradient fill went nearly invisible against a dark panel.
 const CHART_COLOR = 'var(--foreground)'
 
-// Legend/CSS-var config for the department-wide status overview chart below — one bar per KPI,
-// colored by that KPI's status. Colors mirror board/page.tsx's STATUS_COLORS exactly (same semantic
-// green/amber/red/gray), just sourced from getStatusColors so this file doesn't duplicate the map.
-const STATUS_CHART_CONFIG: ChartConfig = {
-  on_track: { label: 'On Track', color: getStatusColors('on_track').text },
-  watch: { label: 'Watch', color: getStatusColors('watch').text },
-  off_track: { label: 'Off Track', color: getStatusColors('off_track').text },
-  no_data: { label: 'No Data', color: getStatusColors('no_data').text },
-}
-const STATUS_LEGEND_BADGE_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'outline'> = {
-  on_track: 'success',
-  watch: 'warning',
-  off_track: 'danger',
-  no_data: 'outline',
-}
-
-interface KpiStatusRow {
-  id: number
-  name: string
-  target_text: string
-  status: KpiStatus
-}
-
-// Tooltip for the overview chart — a plain custom Tooltip (not ChartTooltipContent) since each bar's
-// color comes from a per-KPI status via <Cell>, not a chartConfig series, so there's no single
-// label/color pair to look up the usual way.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function KpiStatusTooltip({ active, payload }: any) {
-  if (!active || !payload?.length) return null
-  const d = payload[0].payload as KpiStatusRow
-  return (
-    <div className="rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl min-w-40 space-y-1">
-      <div className="font-medium text-ink">{d.name}</div>
-      <div className="text-ink-muted text-[11px]">Target: {d.target_text}</div>
-      <StatusBadge status={d.status} size="sm" />
-    </div>
-  )
-}
 
 interface SubMetric {
   id: number; name: string; unit: string;
@@ -188,10 +149,6 @@ export default function DeptDashboard() {
   const statuses = kpis.map(kpi =>
     worstStatus(rangePeriods.map(p => statusFor(kpi, actualsByYearMonth[p.year] || {}, p.month).status))
   )
-  // Paired with `statuses` above (same index order) — feeds the department-wide overview chart at
-  // the top of the Charts tab, one bar per KPI colored by its status.
-  const kpiStatusRows: KpiStatusRow[] = kpis.map((kpi, i) => ({ id: kpi.id, name: kpi.name, target_text: kpi.target_text, status: statuses[i] }))
-
   const onTrack = statuses.filter(s => s === 'on_track').length
   const watch = statuses.filter(s => s === 'watch').length
   const offTrack = statuses.filter(s => s === 'off_track').length
@@ -351,40 +308,63 @@ export default function DeptDashboard() {
                 <TabsContent value="charts" className="space-y-4">
                   {/* One at-a-glance overview card for the whole department — every metric's own
                       target/unit differs too much to plot on a shared numeric axis (a "2x ROAS" and
-                      a "30% SoV" aren't comparable lengths), so this reads like board's own
-                      department-rollup chart: one bar per KPI, uniform length, colored by status.
-                      The per-KPI trend cards below stay for drilling into any one metric's history. */}
-                  {kpiStatusRows.length > 0 && (
+                      a "30% SoV" aren't directly comparable), so instead of one combined chart this
+                      is a small-multiples grid: a compact trend sparkline per KPI, each on its own
+                      scale, showing the actual Jan–Dec values rather than a same-for-everyone status
+                      color. Line/area reads trends over time far better than a bar chart would here —
+                      bars suit comparing discrete categories, not a metric's shape across months. The
+                      full-size versions of these same charts are the per-KPI cards further below. */}
+                  {kpisWithData.length > 0 && (
                     <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5">
                       <div className="flex items-center gap-2 mb-4">
                         <h3 className="font-medium text-ink text-sm">{user.dept_name} KPI Status</h3>
                         <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
                       </div>
                       <div className="-mx-5 border-t border-divider mb-4" />
-                      <ChartContainer
-                        config={STATUS_CHART_CONFIG}
-                        className="w-full aspect-auto"
-                        style={{ height: Math.max(kpiStatusRows.length * 34 + 16, 80) }}
-                      >
-                        <BarChart data={kpiStatusRows} layout="vertical" barSize={20} margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                          <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--divider)" />
-                          <XAxis type="number" hide domain={[0, 1]} />
-                          <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'var(--ink-soft)' }} tickLine={false} axisLine={false} width={180} />
-                          <ChartTooltip cursor={{ fill: 'var(--panel-soft-bg)' }} content={<KpiStatusTooltip />} />
-                          <Bar dataKey={() => 1} radius={[6, 6, 6, 6]}>
-                            {kpiStatusRows.map(row => (
-                              <Cell key={row.id} fill={getStatusColors(row.status).text} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ChartContainer>
-                      <div className="flex items-center justify-center gap-2 pt-3 flex-wrap">
-                        {Object.entries(STATUS_CHART_CONFIG).map(([key, cfg]) => (
-                          <Badge key={key} variant={STATUS_LEGEND_BADGE_VARIANT[key] ?? 'outline'} className="h-auto px-2 py-0.5 text-[10px] md:text-xs">
-                            <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
-                            {cfg.label}
-                          </Badge>
-                        ))}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {kpisWithData.map(({ kpi, unit, monthValues, hasData, currentV }) => {
+                          const miniConfig: ChartConfig = { value: { label: kpi.name, color: CHART_COLOR } }
+                          return (
+                            <div key={kpi.id} className="bg-panel-soft border border-divider rounded-2xl p-3 min-w-0">
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="text-xs font-medium text-ink truncate">{kpi.name}</span>
+                                {currentV !== null && <span className="text-xs text-ink-muted shrink-0">{formatValue(currentV, unit)}</span>}
+                              </div>
+                              {hasData ? (
+                                <ChartContainer config={miniConfig} className="h-[64px] w-full aspect-auto">
+                                  <AreaChart data={monthValues} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                                    <defs>
+                                      <linearGradient id={`mini-grad-${kpi.id}`} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={CHART_COLOR} stopOpacity={0.18} />
+                                        <stop offset="95%" stopColor={CHART_COLOR} stopOpacity={0} />
+                                      </linearGradient>
+                                    </defs>
+                                    <ChartTooltip
+                                      content={
+                                        <ChartTooltipContent
+                                          indicator="dot"
+                                          formatter={(value) => [unit === '%' ? `${value}%` : `${value}`, kpi.name]}
+                                        />
+                                      }
+                                    />
+                                    <Area
+                                      type="monotone"
+                                      dataKey="value"
+                                      stroke={CHART_COLOR}
+                                      strokeWidth={1.5}
+                                      fill={`url(#mini-grad-${kpi.id})`}
+                                      connectNulls={false}
+                                      dot={false}
+                                      activeDot={{ r: 2.5, fill: CHART_COLOR }}
+                                    />
+                                  </AreaChart>
+                                </ChartContainer>
+                              ) : (
+                                <div className="h-[64px] flex items-center justify-center text-[10px] text-ink-faint">No data yet</div>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
