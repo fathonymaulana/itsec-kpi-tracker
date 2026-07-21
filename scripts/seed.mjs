@@ -260,15 +260,15 @@ addKpi('Investor_Relations','Analyst Coverage Expansion (Non-Rated Report)','5â€
   {name:'No. of Non-Rated Analyst Reports Published',target:5,dir:1},
   {name:'No. of Analyst Meetings Held (Related to Non-Rated Reports)',target:5,dir:1},
 ])
-addKpi('Investor_Relations','Corporate Actions','All corporate actions completed on time',null,0,'As needed',[
+addKpi('Investor_Relations','Corporate Actions','All corporate actions completed on time',null,0,'Bi-Annually',[
   {name:'No. of Corporate Actions Completed',dir:0},
   {name:'No. of Regulatory Filings / Responses Submitted',dir:0},
 ])
-addKpi('Investor_Relations','Share Price Monitoring','Responsive shareholder engagement',null,0,'Monthly',[
+addKpi('Investor_Relations','Share Price Monitoring','Responsive shareholder engagement',null,0,'Bi-Annually',[
   {name:'No. of Shareholder Queries Responded To',dir:0},
   {name:'No. of Investor Calls / Roadshows Conducted',dir:0},
 ])
-addKpi('Investor_Relations','Regulatory Reporting','100% on-time disclosures',1,1,'As required',[
+addKpi('Investor_Relations','Regulatory Reporting','100% on-time disclosures',1,1,'Bi-Annually',[
   {name:'No. of Disclosures Released On Time',dir:0},
   {name:'Total Regulatory Disclosures Due',dir:0},
   {name:'On-Time Disclosure Rate % (Auto-calc)',is_calc:1,fk:'A/B',unit:'%',dir:0},
