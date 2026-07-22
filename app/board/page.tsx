@@ -26,7 +26,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuChe
 import { getStatus, worstStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
-import { formatKpiValue } from '@/components/kpi/KpiSparklineGrid'
+import { KpiSparklineGrid, formatKpiValue } from '@/components/kpi/KpiSparklineGrid'
 import { parsePeriod, periodLabel as frequencyLabel } from '@/lib/frequency'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
@@ -434,75 +434,30 @@ export default function BoardPage() {
               </TabsList>
 
               <TabsContent value="charts">
-                {/* KPI Breakdown — every department's every KPI, actual values per month, grouped by
-                    department. Replaces the old "Department KPI Status" bar chart, which only ever
-                    showed status-category counts per department — the same level CorPlan already got
-                    from the stat cards above it. This gives CorPlan the same value-level detail a
-                    dept_head sees on their own dashboard's Table tab, for every department at once,
-                    instead of having to open Data Review one department at a time to see an actual
-                    number. Each department's rows load independently (loadingDeptDetails, same set the
-                    accordion below already used) so the table fills in progressively rather than
-                    blocking on all 12 departments' fetches at once. */}
+                {/* Same per-KPI monthly data as the Table tab's KPI Breakdown, rendered as sparkline
+                    trend charts instead of raw numbers — one small-multiples grid per department, so
+                    CorPlan can scan every department's KPI trends without leaving the board page. Each
+                    department's data loads independently (loadingDeptDetails, same fetch the accordion
+                    below already used) so cards fill in progressively instead of blocking on all 12
+                    departments' fetches at once. */}
                 {!loading && filteredSummaries.length > 0 && (
-                  <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <h3 className="font-medium text-ink text-sm">KPI Breakdown — All Departments</h3>
-                      <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
-                    </div>
-                    <div className="-mx-5 border-t border-divider mb-4" />
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="sticky left-0 bg-panel min-w-[220px]">KPI</TableHead>
-                            {rangePeriods.map(p => (
-                              <TableHead key={`${p.year}-${p.month}`} className="text-right whitespace-nowrap">
-                                {MONTHS[p.month - 1].slice(0, 3)}{isMultiYear ? ` '${String(p.year).slice(2)}` : ''}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredSummaries.map(dept => (
-                            <Fragment key={dept.dept_id}>
-                              <TableRow className="bg-panel-soft hover:bg-panel-soft">
-                                <TableCell colSpan={rangePeriods.length + 1} className="sticky left-0 bg-panel-soft font-semibold text-ink text-xs py-2">
-                                  {dept.department_name}
-                                </TableCell>
-                              </TableRow>
-                              {deptKpiDetails[dept.dept_id] ? (
-                                deptKpiDetails[dept.dept_id].map(k => (
-                                  <TableRow key={k.id}>
-                                    <TableCell className="sticky left-0 bg-panel font-medium text-ink min-w-[220px]">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <span className="truncate" title={k.name}>{k.name}</span>
-                                        {k.frequency && (
-                                          <span className="shrink-0 inline-flex items-center border border-divider bg-panel-soft text-ink-muted px-2 py-0.5 text-[10px] rounded font-medium tracking-wide">
-                                            {frequencyLabel(parsePeriod(k.frequency))}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="text-[10px] text-ink-muted font-normal mt-0.5 truncate" title={`Target: ${k.target_text}`}>Target: {k.target_text}</div>
-                                    </TableCell>
-                                    {k.monthValues.map((mv, i) => (
-                                      <TableCell key={i} className="text-right text-ink whitespace-nowrap text-sm">
-                                        {formatKpiValue(mv.raw, k.unit)}
-                                      </TableCell>
-                                    ))}
-                                  </TableRow>
-                                ))
-                              ) : (
-                                <TableRow>
-                                  <TableCell colSpan={rangePeriods.length + 1} className="sticky left-0 bg-panel">
-                                    <div className="h-8 bg-panel-soft rounded-lg animate-pulse my-1" />
-                                  </TableCell>
-                                </TableRow>
-                              )}
-                            </Fragment>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                  <div className="space-y-4 mb-6">
+                    {filteredSummaries.map(dept => (
+                      <div key={dept.dept_id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                          <h3 className="font-medium text-ink text-sm">{dept.department_name}</h3>
+                          <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
+                        </div>
+                        <div className="-mx-5 border-t border-divider mb-4" />
+                        {deptKpiDetails[dept.dept_id] ? (
+                          <KpiSparklineGrid items={deptKpiDetails[dept.dept_id]} />
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-panel-soft rounded-2xl animate-pulse" />)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -786,6 +741,70 @@ export default function BoardPage() {
                     </TableBody>
                   </Table>
                 </div>
+
+                {/* KPI Breakdown — every department's every KPI, actual values per month, grouped by
+                    department. The same detail a dept_head already sees on their own dashboard's Table
+                    tab, for every department at once, instead of having to open Data Review one
+                    department at a time to see an actual number. First column is deliberately narrow
+                    (name truncates, frequency badge drops to a tooltip-only title) — the point of this
+                    table is the monthly values, so they get the horizontal room instead of the label. */}
+                {!loading && filteredSummaries.length > 0 && (
+                  <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <h3 className="font-medium text-ink text-sm">KPI Breakdown — All Departments</h3>
+                      <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
+                    </div>
+                    <div className="-mx-5 border-t border-divider mb-4" />
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="sticky left-0 bg-panel w-[130px] max-w-[130px]">KPI</TableHead>
+                            {rangePeriods.map(p => (
+                              <TableHead key={`${p.year}-${p.month}`} className="text-right whitespace-nowrap">
+                                {MONTHS[p.month - 1].slice(0, 3)}{isMultiYear ? ` '${String(p.year).slice(2)}` : ''}
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredSummaries.map(dept => (
+                            <Fragment key={dept.dept_id}>
+                              <TableRow className="bg-panel-soft hover:bg-panel-soft">
+                                <TableCell colSpan={rangePeriods.length + 1} className="sticky left-0 bg-panel-soft font-semibold text-ink text-xs py-2">
+                                  {dept.department_name}
+                                </TableCell>
+                              </TableRow>
+                              {deptKpiDetails[dept.dept_id] ? (
+                                deptKpiDetails[dept.dept_id].map(k => (
+                                  <TableRow key={k.id}>
+                                    <TableCell
+                                      className="sticky left-0 bg-panel font-medium text-ink w-[130px] max-w-[130px] truncate text-xs"
+                                      title={`${k.name}${k.frequency ? ` — ${frequencyLabel(parsePeriod(k.frequency))}` : ''} — Target: ${k.target_text}`}
+                                    >
+                                      {k.name}
+                                    </TableCell>
+                                    {k.monthValues.map((mv, i) => (
+                                      <TableCell key={i} className="text-right text-ink whitespace-nowrap text-sm">
+                                        {formatKpiValue(mv.raw, k.unit)}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                ))
+                              ) : (
+                                <TableRow>
+                                  <TableCell colSpan={rangePeriods.length + 1} className="sticky left-0 bg-panel">
+                                    <div className="h-8 bg-panel-soft rounded-lg animate-pulse my-1" />
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </Fragment>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
