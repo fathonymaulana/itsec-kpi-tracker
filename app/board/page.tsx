@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   AltArrowDownLineDuotone as ChevronDown,
@@ -11,7 +11,6 @@ import {
   ListLineDuotone as ListLine, ListBold as ListBold,
   TuningLineDuotone as IconFilters,
 } from '@solar-icons/react-perf'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts'
 import { useAuth, authHeaders } from '@/lib/auth'
 import { DeptTopNav } from '@/components/layout/DeptTopNav'
 import { DateSidebar } from '@/components/kpi/DateSidebar'
@@ -22,13 +21,13 @@ import { useResponsivePanels } from '@/hooks/use-responsive-panels'
 import type { MonthPeriod } from '@/components/kpi/DateSidebar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, type ChartConfig } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { getStatus, worstStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
-import { KpiSparklineGrid } from '@/components/kpi/KpiSparklineGrid'
+import { formatKpiValue } from '@/components/kpi/KpiSparklineGrid'
+import { parsePeriod, periodLabel as frequencyLabel } from '@/lib/frequency'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
 import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
@@ -66,7 +65,8 @@ interface DeptKpiSummary {
   target_text: string
   status: KpiStatus
   unit: string
-  monthValues: { month: string; value: number | null }[]
+  frequency: string | null
+  monthValues: { month: string; value: number | null; raw: number | null }[]
   hasData: boolean
   currentV: number | null
 }
@@ -82,52 +82,6 @@ const STATUS_COLORS = {
   no_data: 'var(--ink-faint)',
 }
 
-const chartConfig: ChartConfig = {
-  onTrack: { label: 'On Track', color: STATUS_COLORS.on_track },
-  watch: { label: 'Watch', color: STATUS_COLORS.watch },
-  offTrack: { label: 'Off Track', color: STATUS_COLORS.off_track },
-  noData: { label: 'No Data', color: STATUS_COLORS.no_data },
-}
-
-const LEGEND_BADGE_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'outline'> = {
-  onTrack: 'success',
-  watch: 'warning',
-  offTrack: 'danger',
-  noData: 'outline',
-}
-
-// Custom legend (not the shared ChartLegendContent) — that component's default swatch is a small
-// square rather than a circle, so this reads chartConfig's own solid color values directly and
-// renders them as circles instead, per the requested legend style. Each entry is a <Badge> (not a
-// raw span) so the same status colors used everywhere else in the app (StatusBadge, stat cards)
-// carry through here too.
-function ChartLegendCircles() {
-  return (
-    <div className="flex items-center justify-center gap-2 pt-3 flex-wrap">
-      {Object.entries(chartConfig).map(([key, cfg]) => (
-        <Badge key={key} variant={LEGEND_BADGE_VARIANT[key] ?? 'outline'} className="h-auto px-2 py-0.5 text-[10px] md:text-xs">
-          <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
-          {cfg.label}
-        </Badge>
-      ))}
-    </div>
-  )
-}
-
-// Value label centered inside each stacked bar segment — skips rendering below ~20px of width so a
-// 2-3 digit number never overflows a sliver-thin segment. White text reads correctly on every status
-// color in both themes since each segment is a solid, fairly saturated fill either way.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function BarSegmentLabel(props: any) {
-  const { x, y, width, height, value } = props
-  if (!value || width < 20) return null
-  return (
-    <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={13} fontWeight={600}>
-      {value}
-    </text>
-  )
-}
-
 export default function BoardPage() {
   const { user, token, ready } = useAuth()
   const router = useRouter()
@@ -138,10 +92,8 @@ export default function BoardPage() {
   const [loadingDeptDetails, setLoadingDeptDetails] = useState<Set<string>>(new Set())
   const { leftPanelOpen, rightPanelOpen, toggleLeftPanel, toggleRightPanel } = useResponsivePanels()
   const [view, setView] = useState<'charts' | 'table'>('charts')
-  const [visibleSeries, setVisibleSeries] = useState({ onTrack: true, watch: true, offTrack: true, noData: true })
   // Membership = hidden, not shown — starts empty (nothing hidden, every department visible) so
-  // this doesn't need to know the full department list before the first fetch resolves, mirroring
-  // visibleSeries' own "default everything on" convention.
+  // this doesn't need to know the full department list before the first fetch resolves.
   const [hiddenDepts, setHiddenDepts] = useState<Set<string>>(new Set())
   // null = the "All" tab (worst-status-across-the-range aggregate, the default/original behavior).
   // Set to a specific period once the range spans more than one month and the user picks one of the
@@ -267,11 +219,11 @@ export default function BoardPage() {
             ? unit === '%' ? parseFloat((v * 100).toFixed(1)) : parseFloat(v.toFixed(2))
             : null
           const label = isMultiYear ? `${MONTHS[p.month - 1].slice(0, 3)} '${String(p.year).slice(2)}` : MONTHS[p.month - 1].slice(0, 3)
-          return { month: label, value: displayValue }
+          return { month: label, value: displayValue, raw: v }
         })
         const hasData = monthValues.some(d => d.value !== null)
         const currentV = resolvePrimaryValue(kpi.sub_metrics, actualsByYearMonth[rangeTo.year]?.[rangeTo.month] || {})
-        return { id: kpi.id, name: kpi.name, target_text: kpi.target_text, status: worstStatus(statuses), unit, monthValues, hasData, currentV }
+        return { id: kpi.id, name: kpi.name, target_text: kpi.target_text, status: worstStatus(statuses), unit, frequency: kpi.frequency ?? null, monthValues, hasData, currentV }
       })
       setDeptKpiDetails(prev => ({ ...prev, [deptId]: summariesForDept }))
     } catch { /* non-fatal */ }
@@ -288,6 +240,17 @@ export default function BoardPage() {
   // tab's period set) so re-expanding a department fetches fresh, correct-for-the-new-tab data
   // instead of silently showing stale statuses.
   useEffect(() => { setDeptKpiDetails({}) }, [breakdownPeriod])
+
+  // The org-wide KPI Breakdown table (replacing the old department-status bar chart) needs every
+  // department's per-KPI detail up front, not just the one a user happens to expand below — fetch
+  // them all as soon as the department list loads. fetchDeptKpiDetails already no-ops for any dept_id
+  // that's cached or mid-fetch, so this is safe to re-run whenever `summaries` changes (a new array
+  // reference on every refetch, even when the content is identical) without duplicating requests.
+  useEffect(() => {
+    if (!token || summaries.length === 0) return
+    summaries.forEach(d => fetchDeptKpiDetails(d.dept_id))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, summaries])
 
   const toggleDept = (id: string) => {
     setExpandedDepts(prev => {
@@ -322,15 +285,6 @@ export default function BoardPage() {
     off_track: acc.off_track + d.off_track,
     no_data: acc.no_data + d.no_data,
   }), { total: 0, on_track: 0, watch: 0, off_track: 0, no_data: 0 })
-
-  // Bar chart data: one bar group per dept
-  const chartData = filteredSummaries.map(d => ({
-    name: d.department_name.length > 8 ? d.dept_id.slice(0, 8) : d.department_name,
-    onTrack: d.on_track,
-    watch: d.watch,
-    offTrack: d.off_track,
-    noData: d.no_data,
-  }))
 
   const pct = (n: number) => totals.total > 0 ? Math.round(n / totals.total * 100) : 0
 
@@ -480,67 +434,75 @@ export default function BoardPage() {
               </TabsList>
 
               <TabsContent value="charts">
-                {/* Stacked bar chart */}
-                {!loading && chartData.length > 0 && (
+                {/* KPI Breakdown — every department's every KPI, actual values per month, grouped by
+                    department. Replaces the old "Department KPI Status" bar chart, which only ever
+                    showed status-category counts per department — the same level CorPlan already got
+                    from the stat cards above it. This gives CorPlan the same value-level detail a
+                    dept_head sees on their own dashboard's Table tab, for every department at once,
+                    instead of having to open Data Review one department at a time to see an actual
+                    number. Each department's rows load independently (loadingDeptDetails, same set the
+                    accordion below already used) so the table fills in progressively rather than
+                    blocking on all 12 departments' fetches at once. */}
+                {!loading && filteredSummaries.length > 0 && (
                   <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5 mb-6">
-                    <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-ink text-sm">Department KPI Status</h3>
-                        <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'shadow-xs', iconHoverClass)}>
-                          <IconFilters size={15} />
-                          Filters
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuCheckboxItem checked={visibleSeries.onTrack} onCheckedChange={v => setVisibleSeries(s => ({ ...s, onTrack: v }))}>
-                            On Track
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem checked={visibleSeries.watch} onCheckedChange={v => setVisibleSeries(s => ({ ...s, watch: v }))}>
-                            Watch
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem checked={visibleSeries.offTrack} onCheckedChange={v => setVisibleSeries(s => ({ ...s, offTrack: v }))}>
-                            Off Track
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem checked={visibleSeries.noData} onCheckedChange={v => setVisibleSeries(s => ({ ...s, noData: v }))}>
-                            No Data
-                          </DropdownMenuCheckboxItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div className="flex items-center gap-2 mb-4">
+                      <h3 className="font-medium text-ink text-sm">KPI Breakdown — All Departments</h3>
+                      <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
                     </div>
                     <div className="-mx-5 border-t border-divider mb-4" />
-                    <ChartContainer config={chartConfig} className="h-[380px] w-full aspect-auto">
-                      <BarChart data={chartData} layout="vertical" barSize={34} barCategoryGap="28%" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                        <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--divider)" />
-                        <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ink-faint)' }} tickLine={false} axisLine={false} />
-                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'var(--ink-soft)' }} tickLine={false} axisLine={false} width={84} />
-                        <ChartTooltip cursor={{ fill: 'var(--panel-soft-bg)' }} content={<ChartTooltipContent />} />
-                        <ChartLegend content={<ChartLegendCircles />} />
-                        {/* Solid fills from chartConfig's own theme-aware CSS vars (ChartContainer auto-
-                            generates --color-onTrack etc. from chartConfig) — no gradient defs needed. */}
-                        {visibleSeries.onTrack && (
-                          <Bar dataKey="onTrack" stackId="a" fill="var(--color-onTrack)" radius={[6, 6, 6, 6]}>
-                            <LabelList dataKey="onTrack" content={<BarSegmentLabel />} />
-                          </Bar>
-                        )}
-                        {visibleSeries.watch && (
-                          <Bar dataKey="watch" stackId="a" fill="var(--color-watch)" radius={[6, 6, 6, 6]}>
-                            <LabelList dataKey="watch" content={<BarSegmentLabel />} />
-                          </Bar>
-                        )}
-                        {visibleSeries.offTrack && (
-                          <Bar dataKey="offTrack" stackId="a" fill="var(--color-offTrack)" radius={[6, 6, 6, 6]}>
-                            <LabelList dataKey="offTrack" content={<BarSegmentLabel />} />
-                          </Bar>
-                        )}
-                        {visibleSeries.noData && (
-                          <Bar dataKey="noData" stackId="a" fill="var(--color-noData)" radius={[6, 6, 6, 6]}>
-                            <LabelList dataKey="noData" content={<BarSegmentLabel />} />
-                          </Bar>
-                        )}
-                      </BarChart>
-                    </ChartContainer>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="sticky left-0 bg-panel min-w-[220px]">KPI</TableHead>
+                            {rangePeriods.map(p => (
+                              <TableHead key={`${p.year}-${p.month}`} className="text-right whitespace-nowrap">
+                                {MONTHS[p.month - 1].slice(0, 3)}{isMultiYear ? ` '${String(p.year).slice(2)}` : ''}
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredSummaries.map(dept => (
+                            <Fragment key={dept.dept_id}>
+                              <TableRow className="bg-panel-soft hover:bg-panel-soft">
+                                <TableCell colSpan={rangePeriods.length + 1} className="sticky left-0 bg-panel-soft font-semibold text-ink text-xs py-2">
+                                  {dept.department_name}
+                                </TableCell>
+                              </TableRow>
+                              {deptKpiDetails[dept.dept_id] ? (
+                                deptKpiDetails[dept.dept_id].map(k => (
+                                  <TableRow key={k.id}>
+                                    <TableCell className="sticky left-0 bg-panel font-medium text-ink min-w-[220px]">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="truncate" title={k.name}>{k.name}</span>
+                                        {k.frequency && (
+                                          <span className="shrink-0 inline-flex items-center border border-divider bg-panel-soft text-ink-muted px-2 py-0.5 text-[10px] rounded font-medium tracking-wide">
+                                            {frequencyLabel(parsePeriod(k.frequency))}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="text-[10px] text-ink-muted font-normal mt-0.5 truncate" title={`Target: ${k.target_text}`}>Target: {k.target_text}</div>
+                                    </TableCell>
+                                    {k.monthValues.map((mv, i) => (
+                                      <TableCell key={i} className="text-right text-ink whitespace-nowrap text-sm">
+                                        {formatKpiValue(mv.raw, k.unit)}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                ))
+                              ) : (
+                                <TableRow>
+                                  <TableCell colSpan={rangePeriods.length + 1} className="sticky left-0 bg-panel">
+                                    <div className="h-8 bg-panel-soft rounded-lg animate-pulse my-1" />
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </Fragment>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 )}
 
@@ -627,28 +589,19 @@ export default function BoardPage() {
                                 {[...Array(3)].map((_, i) => <div key={i} className="h-8 bg-panel-soft rounded-lg animate-pulse" />)}
                               </div>
                             ) : deptKpiDetails[dept.dept_id] && (
-                              <>
-                                {/* Same sparkline grid dept_head sees on their own dashboard — gives
-                                    CorPlan the actual trend/shape behind each KPI, not just its status
-                                    category, without leaving the board page. This is a different axis
-                                    of information from the StatusBadge list below (magnitude/trend vs.
-                                    a categorical verdict), so the two aren't duplicating each other the
-                                    way the removed bar chart + badges used to. */}
-                                <KpiSparklineGrid items={deptKpiDetails[dept.dept_id]} />
-                                {/* One row per KPI with its own StatusBadge — a badge already carries
-                                    color, a status dot, AND a readable label in one compact element. */}
-                                <div className="space-y-1">
-                                  {deptKpiDetails[dept.dept_id].map(k => (
-                                    <div key={k.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-panel-soft">
-                                      <div className="min-w-0">
-                                        <div className="text-xs font-medium text-ink truncate">{k.name}</div>
-                                        <div className="text-[10px] text-ink-faint truncate">Target: {k.target_text}</div>
-                                      </div>
-                                      <StatusBadge status={k.status} size="sm" />
+                              // One row per KPI with its own StatusBadge — a badge already carries
+                              // color, a status dot, AND a readable label in one compact element.
+                              <div className="space-y-1">
+                                {deptKpiDetails[dept.dept_id].map(k => (
+                                  <div key={k.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-panel-soft">
+                                    <div className="min-w-0">
+                                      <div className="text-xs font-medium text-ink truncate">{k.name}</div>
+                                      <div className="text-[10px] text-ink-faint truncate">Target: {k.target_text}</div>
                                     </div>
-                                  ))}
-                                </div>
-                              </>
+                                    <StatusBadge status={k.status} size="sm" />
+                                  </div>
+                                ))}
+                              </div>
                             )}
                             <Button
                               variant="outline"
