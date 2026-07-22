@@ -469,9 +469,12 @@ export default function BoardPage() {
                   <div className="space-y-4 mb-6">
                     {filteredSummaries.map(dept => (
                       <div key={dept.dept_id} className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5">
-                        <div className="flex items-center gap-2 mb-4">
-                          <h3 className="font-medium text-ink text-sm">{dept.department_name}</h3>
-                          <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
+                        <div className="flex items-center justify-between gap-2 mb-4">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-ink text-sm">{dept.department_name}</h3>
+                            <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
+                          </div>
+                          <span className="text-xs text-ink-muted shrink-0">{dept.total} KPI{dept.total !== 1 ? 's' : ''}</span>
                         </div>
                         <div className="-mx-5 border-t border-divider mb-4" />
                         {deptKpiDetails[dept.dept_id] ? (
