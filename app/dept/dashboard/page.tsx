@@ -340,10 +340,15 @@ export default function DeptDashboard() {
                           const miniConfig: ChartConfig = { value: { label: kpi.name, color: CHART_COLOR } }
                           return (
                             <div key={kpi.id} className="bg-panel-soft border border-divider rounded-2xl p-3 min-w-0">
-                              <div className="flex items-center justify-between gap-2 mb-1">
-                                <span className="text-xs font-medium text-ink truncate">{kpi.name}</span>
-                                {currentV !== null && <span className="text-xs text-ink-muted shrink-0">{formatValue(currentV, unit)}</span>}
-                              </div>
+                              {/* Name as a small label above a bold headline number (not side-by-side
+                                  as equally-weighted text) — borrowed from the shadcn interactive bar
+                                  chart's tab headers, where the metric name is a small muted caption
+                                  and the total is the actual visual anchor. The sparkline stays as
+                                  supporting context underneath, same role it already had. */}
+                              <div className="text-xs font-medium text-ink-muted truncate mb-0.5">{kpi.name}</div>
+                              {currentV !== null && (
+                                <div className="text-xl font-semibold text-ink tracking-tight leading-tight mb-1">{formatValue(currentV, unit)}</div>
+                              )}
                               {hasData ? (
                                 <ChartContainer config={miniConfig} className="h-[64px] w-full aspect-auto">
                                   <AreaChart data={monthValues} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
@@ -400,7 +405,7 @@ export default function DeptDashboard() {
                           </div>
                           {currentV !== null && (
                             <div className="text-right shrink-0">
-                              <div className="text-lg font-medium text-ink">{formatValue(currentV, unit)}</div>
+                              <div className="text-2xl font-semibold text-ink tracking-tight">{formatValue(currentV, unit)}</div>
                               <div className="text-[10px] text-ink-muted">{MONTHS[rangeTo.month - 1]}{isMultiYear ? ` ${rangeTo.year}` : ''}</div>
                             </div>
                           )}
