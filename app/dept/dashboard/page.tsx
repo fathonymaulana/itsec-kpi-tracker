@@ -17,6 +17,7 @@ import { AddOnsPanel } from '@/components/layout/AddOnsPanel'
 import { AnimatedAside } from '@/components/layout/AnimatedAside'
 import { PageSkeleton } from '@/components/layout/PageSkeleton'
 import { useResponsivePanels } from '@/hooks/use-responsive-panels'
+import { KpiSparklineGrid } from '@/components/kpi/KpiSparklineGrid'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { getStatus, worstStatus, MONTHS, type KpiStatus } from '@/lib/status'
@@ -320,14 +321,13 @@ export default function DeptDashboard() {
                 </TabsList>
 
                 <TabsContent value="charts" className="space-y-4">
-                  {/* One at-a-glance overview card for the whole department — every metric's own
-                      target/unit differs too much to plot on a shared numeric axis (a "2x ROAS" and
-                      a "30% SoV" aren't directly comparable), so instead of one combined chart this
-                      is a small-multiples grid: a compact trend sparkline per KPI, each on its own
-                      scale, showing the actual Jan–Dec values rather than a same-for-everyone status
-                      color. Line/area reads trends over time far better than a bar chart would here —
-                      bars suit comparing discrete categories, not a metric's shape across months. The
-                      full-size versions of these same charts are the per-KPI cards further below. */}
+                  {/* One at-a-glance overview card for the whole department — small-multiples grid of
+                      compact trend sparklines, one per KPI, each on its own scale (see
+                      KpiSparklineGrid for why: unit incompatibility rules out one combined chart).
+                      Shared with Corporate Planning's own per-department drill-down on the board page,
+                      so both sides see the same at-a-glance trend view instead of CorPlan only ever
+                      seeing status categories with no shape behind them. The full-size versions of
+                      these same charts are the per-KPI cards further below. */}
                   {kpisWithData.length > 0 && (
                     <div className="bg-panel border border-divider shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-3xl p-5">
                       <div className="flex items-center gap-2 mb-4">
@@ -335,56 +335,11 @@ export default function DeptDashboard() {
                         <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
                       </div>
                       <div className="-mx-5 border-t border-divider mb-4" />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {kpisWithData.map(({ kpi, unit, monthValues, hasData, currentV }) => {
-                          const miniConfig: ChartConfig = { value: { label: kpi.name, color: CHART_COLOR } }
-                          return (
-                            <div key={kpi.id} className="bg-panel-soft border border-divider rounded-2xl p-3 min-w-0">
-                              {/* Name as a small label above a bold headline number (not side-by-side
-                                  as equally-weighted text) — borrowed from the shadcn interactive bar
-                                  chart's tab headers, where the metric name is a small muted caption
-                                  and the total is the actual visual anchor. The sparkline stays as
-                                  supporting context underneath, same role it already had. */}
-                              <div className="text-xs font-medium text-ink-muted truncate mb-0.5">{kpi.name}</div>
-                              {currentV !== null && (
-                                <div className="text-xl font-semibold text-ink tracking-tight leading-tight mb-1">{formatValue(currentV, unit)}</div>
-                              )}
-                              {hasData ? (
-                                <ChartContainer config={miniConfig} className="h-[64px] w-full aspect-auto">
-                                  <AreaChart data={monthValues} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                                    <defs>
-                                      <linearGradient id={`mini-grad-${kpi.id}`} x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={CHART_COLOR} stopOpacity={0.18} />
-                                        <stop offset="95%" stopColor={CHART_COLOR} stopOpacity={0} />
-                                      </linearGradient>
-                                    </defs>
-                                    <ChartTooltip
-                                      content={
-                                        <ChartTooltipContent
-                                          indicator="dot"
-                                          formatter={(value) => [unit === '%' ? `${value}%` : `${value}`, kpi.name]}
-                                        />
-                                      }
-                                    />
-                                    <Area
-                                      type="monotone"
-                                      dataKey="value"
-                                      stroke={CHART_COLOR}
-                                      strokeWidth={1.5}
-                                      fill={`url(#mini-grad-${kpi.id})`}
-                                      connectNulls={false}
-                                      dot={false}
-                                      activeDot={{ r: 2.5, fill: CHART_COLOR }}
-                                    />
-                                  </AreaChart>
-                                </ChartContainer>
-                              ) : (
-                                <div className="h-[64px] flex items-center justify-center text-[10px] text-ink-faint">No data yet</div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
+                      <KpiSparklineGrid
+                        items={kpisWithData.map(({ kpi, unit, monthValues, hasData, currentV }) => ({
+                          id: kpi.id, name: kpi.name, unit, monthValues, hasData, currentV,
+                        }))}
+                      />
                     </div>
                   )}
 

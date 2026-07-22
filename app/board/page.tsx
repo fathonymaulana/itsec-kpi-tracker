@@ -28,6 +28,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuChe
 import { getStatus, worstStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
+import { KpiSparklineGrid } from '@/components/kpi/KpiSparklineGrid'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
 import { CrossfadeSwap } from '@/components/ui/crossfade-swap'
@@ -64,6 +65,10 @@ interface DeptKpiSummary {
   name: string
   target_text: string
   status: KpiStatus
+  unit: string
+  monthValues: { month: string; value: number | null }[]
+  hasData: boolean
+  currentV: number | null
 }
 
 // Status colors are semantic (green/amber/red/gray for on-track/watch/off-track/no-data) and stay
@@ -211,19 +216,23 @@ export default function BoardPage() {
   }
   const statusForPeriod = (deptId: string, p: MonthPeriod): KpiStatus | undefined =>
     yearSummaries[p.year]?.find(d => d.dept_id === deptId)?.month_statuses[p.month]
+  const isMultiYear = rangeFrom.year !== rangeTo.year
 
   // Lazy-loaded on first expand — the board summary endpoint only carries aggregate counts, not KPI
   // names/targets, so seeing the actual per-KPI breakdown for one department means a real fetch.
-  // Fetches actuals for every year the selected range touches (usually just one). When a specific
-  // month tab is active (breakdownPeriod set), each KPI's status is just that one period's — same
-  // rule the collapsed badge counts use via tallyFor. On "All", falls back to the worst status
-  // across every period in rangePeriods, matching the range-wide aggregate.
+  // When a specific month tab is active (breakdownPeriod set), each KPI's status is just that one
+  // period's — same rule the collapsed badge counts use via tallyFor. On "All", falls back to the
+  // worst status across every period in rangePeriods, matching the range-wide aggregate. The trend
+  // sparkline data (monthValues) always covers the FULL rangePeriods regardless of which tab is
+  // active though — narrowing it to a single month's worth of data would make a one-point "trend"
+  // useless, and it's the same sparkline grid dept_head sees on their own dashboard for the whole
+  // selected range, tab selection aside.
   const detailPeriods = breakdownPeriod ? [breakdownPeriod] : rangePeriods
   const fetchDeptKpiDetails = useCallback(async (deptId: string) => {
     if (!token || deptKpiDetails[deptId] || loadingDeptDetails.has(deptId)) return
     setLoadingDeptDetails(prev => new Set(prev).add(deptId))
     try {
-      const years = Array.from(new Set(detailPeriods.map(p => p.year)))
+      const years = Array.from(new Set(rangePeriods.map(p => p.year)))
       const [kpiRes, ...actResList] = await Promise.all([
         fetch(`/api/departments/${deptId}/kpis`, { headers: authHeaders(token) }),
         ...years.map(y => fetch(`/api/actuals?dept_id=${deptId}&year=${y}`, { headers: authHeaders(token) })),
@@ -249,15 +258,29 @@ export default function BoardPage() {
           const { overall } = getPeriodStatuses(kpi.sub_metrics, actualsByMonth, kpi.frequency, p.month)
           return overall ?? getStatus(resolvePrimaryValue(kpi.sub_metrics, actualsByMonth[p.month] || {}), kpi.numeric_target, kpi.direction)
         })
-        return { id: kpi.id, name: kpi.name, target_text: kpi.target_text, status: worstStatus(statuses) }
+        const primary = kpi.sub_metrics.find(sm => sm.is_calculated) ?? kpi.sub_metrics[0]
+        const unit = primary?.unit || ''
+        const monthValues = rangePeriods.map(p => {
+          const vals = actualsByYearMonth[p.year]?.[p.month] || {}
+          const v = resolvePrimaryValue(kpi.sub_metrics, vals)
+          const displayValue = v !== null
+            ? unit === '%' ? parseFloat((v * 100).toFixed(1)) : parseFloat(v.toFixed(2))
+            : null
+          const label = isMultiYear ? `${MONTHS[p.month - 1].slice(0, 3)} '${String(p.year).slice(2)}` : MONTHS[p.month - 1].slice(0, 3)
+          return { month: label, value: displayValue }
+        })
+        const hasData = monthValues.some(d => d.value !== null)
+        const currentV = resolvePrimaryValue(kpi.sub_metrics, actualsByYearMonth[rangeTo.year]?.[rangeTo.month] || {})
+        return { id: kpi.id, name: kpi.name, target_text: kpi.target_text, status: worstStatus(statuses), unit, monthValues, hasData, currentV }
       })
       setDeptKpiDetails(prev => ({ ...prev, [deptId]: summariesForDept }))
     } catch { /* non-fatal */ }
     finally {
       setLoadingDeptDetails(prev => { const next = new Set(prev); next.delete(deptId); return next })
     }
-    // detailPeriods is derived fresh each render — depend on its own inputs directly rather than the
-    // derived array itself, which would never be referentially stable.
+    // detailPeriods/rangePeriods/isMultiYear are derived fresh each render — depend on their own
+    // inputs directly rather than the derived values themselves, which would never be referentially
+    // stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, rangeFrom.year, rangeFrom.month, rangeTo.year, rangeTo.month, breakdownPeriod, deptKpiDetails, loadingDeptDetails])
 
@@ -604,27 +627,28 @@ export default function BoardPage() {
                                 {[...Array(3)].map((_, i) => <div key={i} className="h-8 bg-panel-soft rounded-lg animate-pulse" />)}
                               </div>
                             ) : deptKpiDetails[dept.dept_id] && (
-                              // One row per KPI with its own StatusBadge — used to also show a same-
-                              // data colored bar chart above this list (plus a whole-year MonthGrid
-                              // above that), but a badge already carries color, a status dot, AND a
-                              // readable label in one compact element, and the bar chart's bars were
-                              // all the same fixed length (no shared numeric unit across a %, an
-                              // x-multiple, and an IDR value to plot length by) — so it was never
-                              // actually comparing magnitudes, just re-coloring the same status a
-                              // second time. Dropping both removed the duplication without losing any
-                              // information, and keeps this list scannable without extra scrolling for
-                              // departments with a lot of KPIs.
-                              <div className="space-y-1">
-                                {deptKpiDetails[dept.dept_id].map(k => (
-                                  <div key={k.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-panel-soft">
-                                    <div className="min-w-0">
-                                      <div className="text-xs font-medium text-ink truncate">{k.name}</div>
-                                      <div className="text-[10px] text-ink-faint truncate">Target: {k.target_text}</div>
+                              <>
+                                {/* Same sparkline grid dept_head sees on their own dashboard — gives
+                                    CorPlan the actual trend/shape behind each KPI, not just its status
+                                    category, without leaving the board page. This is a different axis
+                                    of information from the StatusBadge list below (magnitude/trend vs.
+                                    a categorical verdict), so the two aren't duplicating each other the
+                                    way the removed bar chart + badges used to. */}
+                                <KpiSparklineGrid items={deptKpiDetails[dept.dept_id]} />
+                                {/* One row per KPI with its own StatusBadge — a badge already carries
+                                    color, a status dot, AND a readable label in one compact element. */}
+                                <div className="space-y-1">
+                                  {deptKpiDetails[dept.dept_id].map(k => (
+                                    <div key={k.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-panel-soft">
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-medium text-ink truncate">{k.name}</div>
+                                        <div className="text-[10px] text-ink-faint truncate">Target: {k.target_text}</div>
+                                      </div>
+                                      <StatusBadge status={k.status} size="sm" />
                                     </div>
-                                    <StatusBadge status={k.status} size="sm" />
-                                  </div>
-                                ))}
-                              </div>
+                                  ))}
+                                </div>
+                              </>
                             )}
                             <Button
                               variant="outline"
