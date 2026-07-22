@@ -5,6 +5,7 @@ import {
   AltArrowDownLineDuotone as ChevronDown,
   AltArrowUpLineDuotone as ChevronUp,
   GraphNewUpLineDuotone as TrendingUp,
+  GraphDownNewLineDuotone as TrendingDown,
   MinusCircleLineDuotone as Minus,
   ClipboardCheckLineDuotone as FileSearch,
   ChartLineDuotone as ChartLine, ChartBold as ChartBold,
@@ -26,7 +27,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuChe
 import { getStatus, worstStatus, MONTHS, getDefaultMonth, getDefaultYear, type KpiStatus } from '@/lib/status'
 import { getPeriodStatuses, resolvePrimaryValue, type SubMetricLike } from '@/lib/kpi-primary'
 import { StatusBadge } from '@/components/kpi/StatusBadge'
-import { KpiSparklineGrid, formatKpiValue } from '@/components/kpi/KpiSparklineGrid'
+import { KpiStatusGrid, formatKpiValue } from '@/components/kpi/KpiStatusGrid'
 import { parsePeriod, periodLabel as frequencyLabel } from '@/lib/frequency'
 import { DownloadReportButton } from '@/components/ui/download-report-button'
 import { CountUpNumber } from '@/components/ui/animated-number'
@@ -69,6 +70,15 @@ interface DeptKpiSummary {
   monthValues: { month: string; value: number | null; raw: number | null }[]
   hasData: boolean
   currentV: number | null
+  // Status-card fields (KpiStatusGrid) — currentStatus is the LATEST period's status specifically,
+  // distinct from `status` above (the worst status across detailPeriods, used by the accordion's
+  // StatusBadge list). target/direction come from the primary sub-metric, not a KPI-level field —
+  // see the comment where these are computed for why.
+  currentStatus: KpiStatus
+  target: number | null
+  direction: number
+  pctOfTarget: number | null
+  deltaRaw: number | null
 }
 
 // Status colors are semantic (green/amber/red/gray for on-track/watch/off-track/no-data) and stay
@@ -220,15 +230,26 @@ export default function BoardPage() {
             ? unit === '%' ? parseFloat((v * 100).toFixed(1)) : parseFloat(v.toFixed(2))
             : null
           const label = isMultiYear ? `${MONTHS[p.month - 1].slice(0, 3)} '${String(p.year).slice(2)}` : MONTHS[p.month - 1].slice(0, 3)
-          // Status rides along with each point (shown on chart hover, see KpiSparklineGrid) rather
-          // than a separate always-visible dot table.
-          const { overall } = getPeriodStatuses(kpi.sub_metrics, actualsByMonth, kpi.frequency, p.month)
-          const status = overall ?? getStatus(v, kpi.numeric_target, kpi.direction)
-          return { month: label, value: displayValue, raw: v, status }
+          return { month: label, value: displayValue, raw: v }
         })
         const hasData = monthValues.some(d => d.value !== null)
         const currentV = resolvePrimaryValue(kpi.sub_metrics, actualsByYearMonth[rangeTo.year]?.[rangeTo.month] || {})
-        return { id: kpi.id, name: kpi.name, target_text: kpi.target_text, status: worstStatus(statuses), unit, frequency: kpi.frequency ?? null, monthValues, hasData, currentV }
+        // Status-card fields — target/direction come from the primary sub-metric (kpi.numeric_target/
+        // direction are stale for KPIs with multiple independently-targeted components), and
+        // currentStatus is specifically the latest period's status, not the detailPeriods-worst
+        // `status` above (which stays as-is for the accordion's StatusBadge list further down).
+        const target = primary?.numeric_target ?? null
+        const direction = primary?.direction ?? 1
+        const { overall: currentOverall } = getPeriodStatuses(kpi.sub_metrics, actualsByYearMonth[rangeTo.year] || {}, kpi.frequency, rangeTo.month)
+        const currentStatus = currentOverall ?? getStatus(currentV, target, direction)
+        const pctOfTarget = (currentV !== null && target) ? (currentV / target) * 100 : null
+        const previousV = monthValues.length >= 2 ? monthValues[monthValues.length - 2].raw : null
+        const deltaRaw = (currentV !== null && previousV !== null) ? currentV - previousV : null
+        return {
+          id: kpi.id, name: kpi.name, target_text: kpi.target_text, status: worstStatus(statuses), unit,
+          frequency: kpi.frequency ?? null, monthValues, hasData, currentV,
+          currentStatus, target, direction, pctOfTarget, deltaRaw,
+        }
       })
       setDeptKpiDetails(prev => ({ ...prev, [deptId]: summariesForDept }))
     } catch { /* non-fatal */ }
@@ -439,12 +460,11 @@ export default function BoardPage() {
               </TabsList>
 
               <TabsContent value="charts">
-                {/* Same per-KPI monthly data as the Table tab's KPI Breakdown, rendered as sparkline
-                    trend charts instead of raw numbers — one small-multiples grid per department, so
-                    CorPlan can scan every department's KPI trends without leaving the board page. Each
-                    department's data loads independently (loadingDeptDetails, same fetch the accordion
-                    below already used) so cards fill in progressively instead of blocking on all 12
-                    departments' fetches at once. */}
+                {/* Same per-KPI status cards as the dept_head's own dashboard — one grid per
+                    department, so CorPlan can scan every department's "who needs attention right now"
+                    without leaving the board page. Each department's data loads independently
+                    (loadingDeptDetails, same fetch the accordion below already used) so cards fill in
+                    progressively instead of blocking on all 12 departments' fetches at once. */}
                 {!loading && filteredSummaries.length > 0 && (
                   <div className="space-y-4 mb-6">
                     {filteredSummaries.map(dept => (
@@ -455,10 +475,10 @@ export default function BoardPage() {
                         </div>
                         <div className="-mx-5 border-t border-divider mb-4" />
                         {deptKpiDetails[dept.dept_id] ? (
-                          <KpiSparklineGrid items={deptKpiDetails[dept.dept_id]} />
+                          <KpiStatusGrid items={deptKpiDetails[dept.dept_id]} TrendUpIcon={TrendingUp} TrendDownIcon={TrendingDown} />
                         ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-panel-soft rounded-2xl animate-pulse" />)}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {[...Array(2)].map((_, i) => <div key={i} className="h-32 bg-panel-soft rounded-2xl animate-pulse" />)}
                           </div>
                         )}
                       </div>
