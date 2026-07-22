@@ -295,21 +295,43 @@ export default function AdminPage() {
 
             {/* Tabs — Modify Requests is global (any department), so it works with no department selected */}
             <Tabs value={tab} onValueChange={v => v && setTab(v as TabKey)}>
-            <TabsList variant="pill" className="mb-4 w-full sm:w-fit">
-              {([
+            {(() => {
+              const tabItems = [
                 { key: 'data', label: 'Data Review', icon: ChevronRight, boldIcon: ChevronRightBold },
                 { key: 'verifications', label: `Verifications${pendingVerifications > 0 ? ` (${pendingVerifications})` : ''}`, icon: Shield, boldIcon: ShieldBold },
                 { key: 'modify', label: `Modify Requests${modifyRequests.length > 0 ? ` (${modifyRequests.length})` : ''}`, icon: LockUnlocked, boldIcon: LockUnlockedBold },
-              ] as { key: TabKey; label: string; icon: React.ElementType; boldIcon: React.ElementType }[]).map(t => {
-                const Icon = tab === t.key ? t.boldIcon : t.icon
-                return (
-                  <TabsTrigger key={t.key} value={t.key}>
-                    <Icon data-icon="inline-start" size={12} />
-                    {t.label}
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
+              ] as { key: TabKey; label: string; icon: React.ElementType; boldIcon: React.ElementType }[]
+              return (
+                <>
+                  {/* Small screens: full-width underline tabs — three pill-shaped tabs with count
+                      badges ("Modify Requests (N)") don't fit a narrow screen without clipping, an
+                      underline strip scales down to a 12px label without needing pill padding. */}
+                  <TabsList variant="line" className="mb-4 w-full sm:hidden">
+                    {tabItems.map(t => {
+                      const Icon = tab === t.key ? t.boldIcon : t.icon
+                      return (
+                        <TabsTrigger key={t.key} value={t.key} className="text-xs">
+                          <Icon data-icon="inline-start" size={14} />
+                          {t.label}
+                        </TabsTrigger>
+                      )
+                    })}
+                  </TabsList>
+                  {/* sm and up: the app's standard pill tab style, unchanged. */}
+                  <TabsList variant="pill" className="mb-4 w-full sm:w-fit hidden sm:inline-flex">
+                    {tabItems.map(t => {
+                      const Icon = tab === t.key ? t.boldIcon : t.icon
+                      return (
+                        <TabsTrigger key={t.key} value={t.key}>
+                          <Icon data-icon="inline-start" size={12} />
+                          {t.label}
+                        </TabsTrigger>
+                      )
+                    })}
+                  </TabsList>
+                </>
+              )
+            })()}
 
             {/* MODIFY REQUESTS TAB */}
             {tab === 'modify' && (
