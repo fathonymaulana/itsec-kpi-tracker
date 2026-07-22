@@ -358,7 +358,7 @@ export default function DeptDashboard() {
                         <Badge variant="outline" className="h-auto px-2 py-0.5 text-[10px]">{rangeLabel}</Badge>
                       </div>
                       <div className="-mx-5 border-t border-divider mb-4" />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {kpisWithData.map(({ kpi, unit, currentV, currentStatus, target, pctOfTarget, deltaRaw, direction }) => {
                           const { value, suffix } = formatValueParts(currentV, unit)
                           const delta = formatDelta(deltaRaw, unit, direction)
