@@ -1,6 +1,8 @@
 'use client'
 import { AreaChart, Area } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
+import { StatusBadge } from '@/components/kpi/StatusBadge'
+import type { KpiStatus } from '@/lib/status'
 
 // var(--foreground), not a literal hex — a fixed color would stay black in dark mode too, going
 // nearly invisible against a dark panel.
@@ -17,7 +19,7 @@ export interface KpiSparklineItem {
   id: number
   name: string
   unit: string
-  monthValues: { month: string; value: number | null }[]
+  monthValues: { month: string; value: number | null; status?: KpiStatus }[]
   hasData: boolean
   currentV: number | null
 }
@@ -58,7 +60,17 @@ export function KpiSparklineGrid({ items }: { items: KpiSparklineItem[] }) {
                     content={
                       <ChartTooltipContent
                         indicator="dot"
-                        formatter={(value) => [unit === '%' ? `${value}%` : `${value}`, name]}
+                        // Status only shows up here, on hover — not as a permanent badge on the card
+                        // itself, which would just be re-stating the same on/off-track verdict the
+                        // Table tab's KPI Breakdown already carries in text form right below this.
+                        formatter={(value, _name, _item, _index, payload) => {
+                          const status = (payload as { status?: KpiStatus } | undefined)?.status
+                          return [
+                            unit === '%' ? `${value}%` : `${value}`,
+                            name,
+                            status ? <StatusBadge key="status" status={status} size="sm" /> : null,
+                          ]
+                        }}
                       />
                     }
                   />
